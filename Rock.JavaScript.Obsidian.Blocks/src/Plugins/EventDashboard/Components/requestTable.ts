@@ -70,6 +70,7 @@ export default defineComponent({
             { text: "Registration", value: "Registration" },
             { text: "Web Calendar", value: "Web Calendar" },
             { text: "Production", value: "Production" },
+            { text: "Worship", value: "Worship" },
             { text: "Publicity", value: "Publicity" }
           ]
         };

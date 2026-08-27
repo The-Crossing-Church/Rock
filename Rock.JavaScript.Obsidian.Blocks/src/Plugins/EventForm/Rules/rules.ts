@@ -63,7 +63,7 @@ const rules = {
     }
     return true
   },
-  maxRegistration: (value: number, rooms: string, locs: Array<any>, key: string, hasOnline: boolean) => {
+  maxRegistration: (value: number, rooms: string | undefined, locs: Array<any>, key: string | null | undefined, hasOnline: boolean) => {
     if(rooms) {
       let selectedRooms = JSON.parse(rooms)
       if(selectedRooms && selectedRooms.value) {
@@ -520,7 +520,10 @@ const rules = {
                 this.timeCannotBeAfterEvent(ccStartTime, endTime, '') != true ||
                 this.required(events[i].attributeValues?.ChildcareEndTime, '') != true ||
                 this.required(events[i].attributeValues?.ChildcareOptions, '') != true ||
-                this.required(events[i].attributeValues?.EstimatedNumberofKids, '') != true
+                this.required(events[i].attributeValues?.EstimatedNumberofKids, '') != true ||
+                this.required(events[i].attributeValues?.ChildcareBudgetMinistry, '') != true ||
+                this.required(events[i].attributeValues?.ChildcareBudgetLine, '') != true ||
+                this.required(events[i].attributeValues?.ChildcareOptions, '') != true 
               ) {
                 requestIsValid = false
                 eventIsValid = false
@@ -529,11 +532,23 @@ const rules = {
                   invalidSections.push('Childcare')
                 }
               }
+              if(this.nonNegativeNumber(events[i].attributeValues?.ChildcareCost as string, '') != true ||
+                this.required(events[i].attributeValues?.ChildcareRegistrationCloseDate, '') != true ||
+                this.childcareCloseIsValid(events[i].attributeValues?.ChildcareRegistrationCloseDate as string, request.attributeValues.EventDates) != true 
+              ) {
+                requestIsValid = false
+                eventIsValid = false
+                let idx = invalidSections.indexOf('Childcare Registration')
+                if(idx < 0) {
+                  invalidSections.push('Childcare Registration')
+                }
+              }
             }
             if(request.attributeValues.NeedsChildCareCatering == 'True') {
               let ccFoodTime = events[i].attributeValues?.ChildcareFoodTime as string
               let endTime = events[i].attributeValues?.EndTime as string
               if(this.required(events[i].attributeValues?.ChildcareVendor, '') != true ||
+                this.required(events[i].attributeValues?.ChildcareCateringBudgetMinistry, '') != true ||
                 this.required(events[i].attributeValues?.ChildcareCateringBudgetLine, '') != true ||
                 this.required(events[i].attributeValues?.ChildcarePreferredMenu, '') != true ||
                 this.required(events[i].attributeValues?.ChildcareFoodTime, '') != true ||
@@ -551,6 +566,7 @@ const rules = {
               let regStartDate = events[i].attributeValues?.RegistrationStartDate as string
               let regEndDate = events[i].attributeValues?.RegistrationEndDate as string
               let lastDate = events[i].attributeValues?.EventDate as string
+              let maxReg = parseInt(events[i].attributeValues?.MaxRegistrants as string) 
               if(lastDate == '') {
                 let dates = request.attributeValues.EventDates.split(",").map((d: string) => d.trim())
                 if(dates && dates.length > 0) {
@@ -563,12 +579,19 @@ const rules = {
                 (events[i].attributeValues?.RegistrationFeeType.split(",").includes('Online Fee') && this.required(events[i].attributeValues?.OnlineRegistrationFee, '') != true) ||
                 (events[i].attributeValues?.RegistrationFeeType.split(",").includes('Fee per Individual') && this.required(events[i].attributeValues?.IndividualRegistrationFee, '') != true) ||
                 (events[i].attributeValues?.RegistrationFeeType.split(",").includes('Fee per Couple') && this.required(events[i].attributeValues?.CoupleRegistrationFee, '') != true) ||
+                (!events[i].attributeValues?.RegistrationFeeType.split(",").includes('No Fees') && this.required(events[i].attributeValues?.RegistrationFeeBudgetMinistry, '') != true) ||
+                (!events[i].attributeValues?.RegistrationFeeType.split(",").includes('No Fees') && this.required(events[i].attributeValues?.RegistrationFeeBudgetLine, '') != true) ||
                 this.required(events[i].attributeValues?.RegistrationEndDate, '') != true ||
                 this.dateCannotBeAfterEvent(regEndDate, lastDate, '') != true ||
                 this.required(events[i].attributeValues?.RegistrationEndTime, '') != true ||
+                this.maxRegistration(maxReg, events[i].attributeValues?.Rooms, locations as any[], events[i].attributes?.MaxRegistrants.name, request.attributeValues.NeedsOnline == 'True') != true ||
                 this.required(events[i].attributeValues?.RegistrationConfirmationEmailSender, '') != true ||
-                this.required(events[i].attributeValues?.RegistrationConfirmationEmailAdditionalDetails, '') != true ||
-                (events[i].attributeValues?.NeedsReminderEmail == 'True' && this.required(events[i].attributeValues?.RegistrationReminderEmailAdditionalDetails, '') != true)
+                (events[i].attributeValues?.NeedsCustomCommContent == 'True' && this.required(events[i].attributeValues?.RegistrationConfirmationEmailAdditionalDetails, '') != true) ||
+                (events[i].attributeValues?.NeedsCustomCommContent == 'True' && events[i].attributeValues?.NeedsReminderEmail == 'True' && this.required(events[i].attributeValues?.RegistrationReminderEmailAdditionalDetails, '') != true) ||
+                this.required(events[i].attributeValues?.DatabaseSupportStartTime, '') != true ||
+                this.timeCannotBeAfterEvent(events[i].attributeValues?.DatabaseSupportStartTime as string, events[i].attributeValues?.StartTime as string, '') != true ||
+                this.charLimit(events[i].attributeValues?.CheckinGroupName as string, 22, 'Check-in group names', true, '') != true ||
+                this.nonASCII(events[i].attributeValues?.CheckinGroupName as string, 'Check-in group names', true, '') != true
               ) {
                 requestIsValid = false
                 eventIsValid = false

@@ -49,7 +49,7 @@ export default defineComponent({
           }
         })
         if(rooms) {
-          rooms = rooms.flat().filter((r: string) => { return r.includes('Gym') })
+          rooms = rooms.flat().filter((r: string) => { return r?.includes('Gym') })
           if(rooms && rooms.length > 0) {
             return true
           }
@@ -68,7 +68,7 @@ export default defineComponent({
           }
         })
         if(rooms) {
-          rooms = rooms.flat().filter((r: string) => { return r.includes('Auditorium') })
+          rooms = rooms.flat().filter((r: string) => { return r?.includes('Auditorium') })
           if(rooms && rooms.length > 0) {
             return true
           }

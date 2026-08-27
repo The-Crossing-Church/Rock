@@ -68,7 +68,7 @@ export default defineComponent({
       },
       sectionIsValid() {
         if(this.requestValidation?.invalidSections) {
-          if(this.requestValidation.invalidSections.includes("Childcare")) {
+          if(this.requestValidation.invalidSections.includes("Childcare") || this.requestValidation.invalidSections.includes("Childcare Registration") || this.requestValidation.invalidSections.includes("Childcare Catering")) {
             return false
           } else {
             return true
