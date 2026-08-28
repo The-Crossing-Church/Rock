@@ -299,7 +299,7 @@ export default defineComponent({
   <template v-if="viewModel.request.attributeValues.IsSame == 'True' && viewModel.request.attributeValues.NeedsSpace == 'False'">
     <div class="row mt-2">
       <div class="col col-xs-12 col-md-6">
-        <tcc-validator :name="viewModel.events[0].attributeValues.OffsiteLocation.key" :rules="[rules.required(viewModel.events[0].attributeValues.OffsiteLocation, viewModel.events[0].attributeValues.OffsiteLocation.key)]" ref="validators_location">
+        <tcc-validator :name="viewModel.events[0].attributes.OffsiteLocation.key" :rules="[rules.required(viewModel.events[0].attributeValues.OffsiteLocation, viewModel.events[0].attributes.OffsiteLocation.name)]" ref="validators_location">
           <rck-field
             v-model="viewModel.events[0].attributeValues.OffsiteLocation"
             :attribute="viewModel.events[0].attributes.OffsiteLocation"
@@ -310,7 +310,7 @@ export default defineComponent({
         </tcc-validator>
       </div>
       <div class="col col-xs-12 col-md-6">
-        <tcc-validator :name="viewModel.events[0].attributeValues.ExpectedAttendance.key" :rules="[rules.required(viewModel.events[0].attributeValues.ExpectedAttendance, viewModel.events[0].attributeValues.ExpectedAttendance.key)]" ref="validators_attendance">
+        <tcc-validator :name="viewModel.events[0].attributes.ExpectedAttendance.key" :rules="[rules.required(viewModel.events[0].attributeValues.ExpectedAttendance, viewModel.events[0].attributes.ExpectedAttendance.name)]" ref="validators_attendance">
           <rck-field
             v-model="viewModel.events[0].attributeValues.ExpectedAttendance"
             :attribute="viewModel.events[0].attributes.ExpectedAttendance"

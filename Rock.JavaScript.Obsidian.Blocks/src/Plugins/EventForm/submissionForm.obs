@@ -871,6 +871,7 @@ export default defineComponent({
         if(idx < 0) {
           this.resources.push('Room')
         }
+        this.clearEventDetailsData("Event Offsite")
       }
     },
     'viewModel.request.attributeValues.NeedsOnline'(val) {

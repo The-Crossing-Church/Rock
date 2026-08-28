@@ -91,6 +91,15 @@ export default defineComponent({
     }
   },
   watch: {
+    'request.attributeValues.IsExecApproved'(val) {
+      if(val == 'False') {
+        if(this.request?.attributeValues) {
+          this.request.attributeValues.HasMedia = 'False'
+          this.request.attributeValues.ProductionSetup = ''
+          this.request.attributeValues.ProductionLightingNeeds = ''
+        }
+      }
+    },
     errors: {
       handler(val) {
         this.$emit("validation-change", { ref: this.refName, errors: val})

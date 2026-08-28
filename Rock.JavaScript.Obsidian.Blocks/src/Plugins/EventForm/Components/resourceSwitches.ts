@@ -158,11 +158,13 @@ export default defineComponent({
     },
     'viewModel.request.attributeValues.NeedsSpace': {
       handler(val) {
-        if(val == 'False' && this.viewModel?.request?.attributeValues) {
-          this.viewModel.request.attributeValues.NeedsOpsAccommodations = "False"
-          this.viewModel.request.attributeValues.NeedsProductionAccommodations = "False"
-          this.viewModel.request.attributeValues.NeedsChildCare = "False"
-          this.viewModel.request.attributeValues.NeedsChildCareCatering = "False"
+        if(this.viewModel?.request?.attributeValues) {
+          if(val == 'False') {
+            this.viewModel.request.attributeValues.NeedsOpsAccommodations = "False"
+            this.viewModel.request.attributeValues.NeedsProductionAccommodations = "False"
+            this.viewModel.request.attributeValues.NeedsChildCare = "False"
+            this.viewModel.request.attributeValues.NeedsChildCareCatering = "False"
+          } 
         }
       }
     },
