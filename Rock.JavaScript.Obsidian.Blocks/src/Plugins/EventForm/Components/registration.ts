@@ -437,7 +437,7 @@ export default defineComponent({
         ></rck-field>
       </div>
       <div class="col col-xs-12 col-md-6">
-        <tcc-validator :name="e.attributes.MaxRegistrants.key" :rules="[rules.maxRegistration(e.attributeValues.MaxRegistrants, e.attributeValues.Rooms, locations, e.attributes.MaxRegistrants.name, request.attributeValues.NeedsOnline == 'True')]" ref="validator_maxreg">
+        <tcc-validator :name="e.attributes.MaxRegistrants.key" :rules="[rules.required(e.attributeValues.MaxRegistrants, e.attributes.MaxRegistrants.name), rules.maxRegistration(e.attributeValues.MaxRegistrants, e.attributeValues.Rooms, locations, e.attributes.MaxRegistrants.name, request.attributeValues.NeedsOnline == 'True')]" ref="validator_maxreg">
           <rck-field
             v-model="e.attributeValues.MaxRegistrants"
             :attribute="e.attributes.MaxRegistrants"
