@@ -123,44 +123,48 @@ const rules = {
   charLimit: (value: string, limit: number, key: string, isList: boolean, separator: string) => {
     let checkVals = [] as string[]
     let errorVals = [] as string[]
-    if(isList) {
-      if(separator) {
-        checkVals = value.split(separator)
+    if(value && value != '') {
+      if(isList) {
+        if(separator) {
+          checkVals = value.split(separator)
+        } else {
+          checkVals = JSON.parse(value)
+        }
       } else {
-        checkVals = JSON.parse(value)
+        checkVals.push(value)
       }
-    } else {
-      checkVals.push(value)
-    }
-    for(let i = 0; i < checkVals.length; i++) {
-      if(checkVals[i].length > limit) {
-        errorVals.push(checkVals[i])
+      for(let i = 0; i < checkVals.length; i++) {
+        if(checkVals[i].length > limit) {
+          errorVals.push(checkVals[i])
+        }
       }
-    }
-    if(errorVals.length > 0) {
-      return `${key} cannot exceed a length of ${limit} characters. (${errorVals.join(', ')})`
+      if(errorVals.length > 0) {
+        return `${key} cannot exceed a length of ${limit} characters. (${errorVals.join(', ')})`
+      }
     }
     return true
   },
   nonASCII: (value: string, key: string, isList: boolean, separator: string) => {
     let checkVals = [] as string[]
     let errorVals = [] as string[]
-    if(isList) {
-      if(separator) {
-        checkVals = value.split(separator)
+    if(value && value != '') {
+      if(isList) {
+        if(separator) {
+          checkVals = value.split(separator)
+        } else {
+          checkVals = JSON.parse(value)
+        }
       } else {
-        checkVals = JSON.parse(value)
+        checkVals.push(value)
       }
-    } else {
-      checkVals.push(value)
-    }
-    for(let i = 0; i < checkVals.length; i++) {
-      if(/[^\x00-\x7F]/.test(checkVals[i])) {
-        errorVals.push(checkVals[i])
+      for(let i = 0; i < checkVals.length; i++) {
+        if(/[^\x00-\x7F]/.test(checkVals[i])) {
+          errorVals.push(checkVals[i])
+        }
       }
-    }
-    if(errorVals.length > 0) {
-      return `${key} can only contain ACSII characters. (${errorVals.join(', ')})`
+      if(errorVals.length > 0) {
+        return `${key} can only contain ACSII characters. (${errorVals.join(', ')})`
+      }
     }
     return true
   },
