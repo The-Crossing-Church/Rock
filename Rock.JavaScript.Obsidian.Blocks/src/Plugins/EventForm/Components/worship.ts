@@ -129,7 +129,7 @@ export default defineComponent({
   </div>
   <template v-if="isFuneralRequest">
     <h4 class="text-accent">Funeral Worship Information</h4>
-    <div class="row">
+    <div class="row row-equal-height">
       <div class="col col-xs-12 col-md-6">
         <rck-field
           v-model="request.attributeValues.Pastor"
@@ -156,8 +156,15 @@ export default defineComponent({
           id="boolHasVisitation"
         ></rck-field>
       </div>
-    </div>
-    <div class="row">
+      <div class="col col-xs-12 col-md-6" v-if="request.attributeValues.HasVisitation == 'True'">
+        <rck-field
+          v-model="request.attributeValues.VisitationTimeSpan"
+          :attribute="request.attributes.VisitationTimeSpan"
+          :is-edit-mode="!readonly"
+          :showEmptyValue="true"
+          id="txtVisitationTimeSpan"
+        ></rck-field>
+      </div>
       <div class="col col-xs-12 col-md-6">
         <tcc-switch
           v-model="request.attributeValues.HasGuestMusician"
