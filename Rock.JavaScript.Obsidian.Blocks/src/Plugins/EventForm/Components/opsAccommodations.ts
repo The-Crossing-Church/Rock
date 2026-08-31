@@ -592,7 +592,6 @@ export default defineComponent({
         v-model="e.attributeValues.NeedsSecurity"
         :label="e.attributes.NeedsSecurity.name"
         :hint="e.attributeValues.ExpectedAttendance >= 200 ? 'Events expecting 200 or more people are required to have security personnel' : ''"
-        :disabled="e.attributeValues.ExpectedAttendance >= 200"
         id="boolNeedsSecurity"
         v-if="!readonly"
       ></tcc-switch>
