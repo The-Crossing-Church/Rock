@@ -45,6 +45,11 @@ namespace Rock.Field.Types
         private const string SHOW_COUNT_DOWN = "showcountdown";
         private const string IS_FIRST_NAME = "isfirstname";
 
+        // CROSSING (not needed after v18.4): per-field opt-in that allows HTML / Lava to be entered through
+        // a workflow entry form. Enforced by Rock.Security.WorkflowFormInputValidator.
+        private const string ALLOW_HTML = "allowhtml";
+        private const string ALLOW_LAVA = "allowlava";
+
         /// <summary>
         /// Determines whether the Attribute Configuration for this field has IsPassword = True
         /// </summary>
@@ -137,6 +142,9 @@ namespace Rock.Field.Types
             configKeys.Add( MAX_CHARACTERS );
             configKeys.Add( SHOW_COUNT_DOWN );
             configKeys.Add( IS_FIRST_NAME );
+            // CROSSING (not needed after v18.4): expose the Allow HTML / Allow Lava config keys.
+            configKeys.Add( ALLOW_HTML );
+            configKeys.Add( ALLOW_LAVA );
             return configKeys;
         }
 
@@ -181,6 +189,22 @@ namespace Rock.Field.Types
             cbIsFirstNameField.Label = "FirstName Field";
             cbIsFirstNameField.Help = "When set, edit field will be validated as a first name.";
 
+            // CROSSING (not needed after v18.4): Allow HTML
+            var cbAllowHtml = new RockCheckBox();
+            controls.Add( cbAllowHtml );
+            cbAllowHtml.AutoPostBack = true;
+            cbAllowHtml.CheckedChanged += OnQualifierUpdated;
+            cbAllowHtml.Label = "Allow HTML";
+            cbAllowHtml.Help = "When set, basic HTML may be entered in this field through a workflow entry form. Scripts are never allowed. Leave off to reject any HTML.";
+
+            // CROSSING (not needed after v18.4): Allow Lava
+            var cbAllowLava = new RockCheckBox();
+            controls.Add( cbAllowLava );
+            cbAllowLava.AutoPostBack = true;
+            cbAllowLava.CheckedChanged += OnQualifierUpdated;
+            cbAllowLava.Label = "Allow Lava";
+            cbAllowLava.Help = "When set, Lava may be entered in this field through a workflow entry form. Leave off (the default) to reject Lava. Only enable for trusted, staff-facing forms.";
+
             return controls;
         }
 
@@ -196,6 +220,9 @@ namespace Rock.Field.Types
             configurationValues.Add( MAX_CHARACTERS, new ConfigurationValue( "Max Characters", "The maximum number of characters to allow. Leave this field empty to allow for an unlimited amount of text.", "" ) );
             configurationValues.Add( SHOW_COUNT_DOWN, new ConfigurationValue( "Show Character Limit Countdown", "When set, displays a countdown showing how many characters remain (for the Max Characters setting).", "" ) );
             configurationValues.Add( IS_FIRST_NAME, new ConfigurationValue( "FirstName Field", "When set, edit field will be validated as a first name.", "" ) );
+            // CROSSING (not needed after v18.4): Allow HTML / Allow Lava config values.
+            configurationValues.Add( ALLOW_HTML, new ConfigurationValue( "Allow HTML", "When set, basic HTML may be entered in this field through a workflow entry form. Scripts are never allowed. Leave off to reject any HTML.", "" ) );
+            configurationValues.Add( ALLOW_LAVA, new ConfigurationValue( "Allow Lava", "When set, Lava may be entered in this field through a workflow entry form. Leave off (the default) to reject Lava. Only enable for trusted, staff-facing forms.", "" ) );
 
             if ( controls != null )
             {
@@ -232,6 +259,25 @@ namespace Rock.Field.Types
                     if ( cbIsFirstNameField != null )
                     {
                         configurationValues[IS_FIRST_NAME].Value = cbIsFirstNameField.Checked.ToString();
+                    }
+                }
+
+                // CROSSING (not needed after v18.4): read the Allow HTML / Allow Lava checkboxes.
+                if ( controls.Count > 4 )
+                {
+                    CheckBox cbAllowHtml = controls[4] as CheckBox;
+                    if ( cbAllowHtml != null )
+                    {
+                        configurationValues[ALLOW_HTML].Value = cbAllowHtml.Checked.ToString();
+                    }
+                }
+
+                if ( controls.Count > 5 )
+                {
+                    CheckBox cbAllowLava = controls[5] as CheckBox;
+                    if ( cbAllowLava != null )
+                    {
+                        configurationValues[ALLOW_LAVA].Value = cbAllowLava.Checked.ToString();
                     }
                 }
             }
@@ -281,6 +327,25 @@ namespace Rock.Field.Types
                     if ( cbIsFirstNameField != null )
                     {
                         cbIsFirstNameField.Checked = configurationValues[IS_FIRST_NAME].Value.AsBoolean();
+                    }
+                }
+
+                // CROSSING (not needed after v18.4): restore the Allow HTML / Allow Lava checkboxes.
+                if ( controls.Count > 4 && configurationValues.ContainsKey( ALLOW_HTML ) )
+                {
+                    CheckBox cbAllowHtml = controls[4] as CheckBox;
+                    if ( cbAllowHtml != null )
+                    {
+                        cbAllowHtml.Checked = configurationValues[ALLOW_HTML].Value.AsBoolean();
+                    }
+                }
+
+                if ( controls.Count > 5 && configurationValues.ContainsKey( ALLOW_LAVA ) )
+                {
+                    CheckBox cbAllowLava = controls[5] as CheckBox;
+                    if ( cbAllowLava != null )
+                    {
+                        cbAllowLava.Checked = configurationValues[ALLOW_LAVA].Value.AsBoolean();
                     }
                 }
             }

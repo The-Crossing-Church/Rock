@@ -408,6 +408,15 @@ namespace RockWeb.Blocks.WorkFlow
                 return;
             }
 
+            // CROSSING (not needed after v18.4): enforce the per-field Lava/HTML content policy on all
+            // user-entered values (person entry + form fields) before anything is
+            // created or saved. If a value is not allowed, show a validation message
+            // and stop without creating a person, saving values, or completing the form.
+            if ( !ValidatePersonEntryInput() || !ValidateWorkflowFormInput() )
+            {
+                return;
+            }
+
             /* 
                 01/20/2023 ETD
                 Update to Mike's comment on 5/18/2022
@@ -632,7 +641,21 @@ namespace RockWeb.Blocks.WorkFlow
                 {
                     if ( param.Value != null && param.Value.ToString().IsNotNullOrWhiteSpace() )
                     {
-                        _workflow.SetAttributeValue( param.Key, param.Value.ToString() );
+                        var paramValue = param.Value.ToString();
+
+                        // CROSSING (not needed after v18.4): never seed a workflow attribute from a query-string
+                        // value that contains Lava/HTML the target attribute is not
+                        // configured to allow. Query-string values are attacker-controllable,
+                        // so an offending value is dropped rather than stored.
+                        var seedAttributes = _workflow.Attributes;
+                        if ( seedAttributes != null
+                            && seedAttributes.ContainsKey( param.Key )
+                            && Rock.Security.WorkflowFormInputValidator.Validate( seedAttributes[param.Key], paramValue ) != null )
+                        {
+                            continue;
+                        }
+
+                        _workflow.SetAttributeValue( param.Key, paramValue );
                     }
                 }
 
@@ -2117,6 +2140,134 @@ namespace RockWeb.Blocks.WorkFlow
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// CROSSING (not needed after v18.4): Validates the Person Entry inputs (person, spouse, and address)
+        /// against the plain-text content policy before a Person record is created or
+        /// updated. Shows a validation message and returns <c>false</c> on the first
+        /// disallowed value.
+        /// </summary>
+        /// <returns><c>true</c> if all person-entry values are allowed; otherwise <c>false</c>.</returns>
+        private bool ValidatePersonEntryInput()
+        {
+            if ( _actionType == null )
+            {
+                return true;
+            }
+
+            var form = _actionType.WorkflowForm;
+
+            if ( form == null )
+            {
+                return true;
+            }
+
+            var workflowType = GetWorkflowType();
+
+            if ( !form.GetAllowPersonEntry( workflowType?.FormBuilderTemplate ) )
+            {
+                return true;
+            }
+
+            if ( !ValidatePersonEditorInput( pePerson1, string.Empty ) )
+            {
+                return false;
+            }
+
+            if ( pePerson2.Visible && !ValidatePersonEditorInput( pePerson2, "Spouse " ) )
+            {
+                return false;
+            }
+
+            if ( acPersonEntryAddress.Visible
+                && ( !CheckPlainTextInput( "Address Line 1", acPersonEntryAddress.Street1 )
+                    || !CheckPlainTextInput( "Address Line 2", acPersonEntryAddress.Street2 )
+                    || !CheckPlainTextInput( "City", acPersonEntryAddress.City )
+                    || !CheckPlainTextInput( "State", acPersonEntryAddress.State )
+                    || !CheckPlainTextInput( "Postal Code", acPersonEntryAddress.PostalCode )
+                    || !CheckPlainTextInput( "Country", acPersonEntryAddress.Country ) ) )
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// CROSSING (not needed after v18.4): Validates a single person editor's free-text fields against the
+        /// plain-text content policy.
+        /// </summary>
+        /// <param name="personEditor">The person editor to validate.</param>
+        /// <param name="labelPrefix">A label prefix (e.g. "Spouse ") used in messages.</param>
+        /// <returns><c>true</c> if the editor's values are allowed; otherwise <c>false</c>.</returns>
+        private bool ValidatePersonEditorInput( Rock.Web.UI.Controls.PersonBasicEditor personEditor, string labelPrefix )
+        {
+            if ( personEditor == null || !personEditor.Visible )
+            {
+                return true;
+            }
+
+            return CheckPlainTextInput( labelPrefix + "First Name", personEditor.FirstName )
+                && CheckPlainTextInput( labelPrefix + "Last Name", personEditor.LastName )
+                && CheckPlainTextInput( labelPrefix + "Email", personEditor.Email );
+        }
+
+        /// <summary>
+        /// CROSSING (not needed after v18.4): Runs the plain-text content policy against a single entered value
+        /// and, on a violation, shows a validation message and returns <c>false</c>.
+        /// </summary>
+        /// <param name="fieldLabel">The user-facing label of the field.</param>
+        /// <param name="value">The entered value.</param>
+        /// <returns><c>true</c> if the value is allowed; otherwise <c>false</c>.</returns>
+        private bool CheckPlainTextInput( string fieldLabel, string value )
+        {
+            var violation = Rock.Security.WorkflowFormInputValidator.ComposeFieldViolation( fieldLabel, value );
+
+            if ( violation != null )
+            {
+                ShowMessage( NotificationBoxType.Validation, "Invalid Input", violation, false );
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// CROSSING (not needed after v18.4): Validates the user-entered workflow form values against the
+        /// per-field Lava/HTML content policy (see
+        /// <see cref="Rock.Security.WorkflowFormInputValidator"/>). Shows a
+        /// validation message and returns <c>false</c> on the first disallowed value.
+        /// </summary>
+        /// <returns><c>true</c> if all entered values are allowed; otherwise <c>false</c>.</returns>
+        private bool ValidateWorkflowFormInput()
+        {
+            var formEditAttributesValues = GetWorkflowFormEditAttributeValues();
+
+            if ( formEditAttributesValues == null )
+            {
+                return true;
+            }
+
+            foreach ( var formEditAttributesValue in formEditAttributesValues.Values )
+            {
+                var attribute = AttributeCache.Get( formEditAttributesValue.AttributeId );
+
+                if ( attribute == null )
+                {
+                    continue;
+                }
+
+                var reason = Rock.Security.WorkflowFormInputValidator.Validate( attribute, formEditAttributesValue.Value );
+
+                if ( reason != null )
+                {
+                    ShowMessage( NotificationBoxType.Validation, "Invalid Input", $"The value entered for \"{attribute.Name}\" {reason}. Please remove it and try again.", false );
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         /// <summary>

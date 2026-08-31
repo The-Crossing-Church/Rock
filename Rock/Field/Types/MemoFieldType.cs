@@ -41,6 +41,10 @@ namespace Rock.Field.Types
         private const string MAX_CHARACTERS = "maxcharacters";
         private const string SHOW_COUNT_DOWN = "showcountdown";
 
+        // CROSSING (not needed after v18.4): per-field opt-in that allows Lava to be entered through a
+        // workflow entry form. Enforced by Rock.Security.WorkflowFormInputValidator.
+        private const string ALLOW_LAVA = "allowlava";
+
         #endregion
 
         #region Edit Control
@@ -80,6 +84,8 @@ namespace Rock.Field.Types
             configKeys.Add( ALLOW_HTML );
             configKeys.Add( MAX_CHARACTERS );
             configKeys.Add( SHOW_COUNT_DOWN );
+            // CROSSING (not needed after v18.4): expose the Allow Lava config key.
+            configKeys.Add( ALLOW_LAVA );
             return configKeys;
         }
 
@@ -125,6 +131,14 @@ namespace Rock.Field.Types
             cbCountDown.Label = "Show Character Limit Countdown";
             cbCountDown.Help = "When set, displays a countdown showing how many characters remain (for the Max Characters setting).";
 
+            // CROSSING (not needed after v18.4): Allow Lava
+            var cbAllowLava = new RockCheckBox();
+            controls.Add( cbAllowLava );
+            cbAllowLava.AutoPostBack = true;
+            cbAllowLava.CheckedChanged += OnQualifierUpdated;
+            cbAllowLava.Label = "Allow Lava";
+            cbAllowLava.Help = "When set, Lava may be entered in this field through a workflow entry form. Leave off (the default) to reject Lava. Only enable for trusted, staff-facing forms.";
+
             return controls;
         }
 
@@ -140,6 +154,8 @@ namespace Rock.Field.Types
             configurationValues.Add( ALLOW_HTML, new ConfigurationValue( "Allow HTML", "Controls whether server should prevent HTML from being entered in this field or not.", "" ) );
             configurationValues.Add( MAX_CHARACTERS, new ConfigurationValue( "Max Characters", "The maximum number of characters to allow. Leave this field empty to allow for an unlimited amount of text.", "" ) );
             configurationValues.Add( SHOW_COUNT_DOWN, new ConfigurationValue( "Show Character Limit Countdown", "When set, displays a countdown showing how many characters remain (for the Max Characters setting).", "" ) );
+            // CROSSING (not needed after v18.4): Allow Lava config value.
+            configurationValues.Add( ALLOW_LAVA, new ConfigurationValue( "Allow Lava", "When set, Lava may be entered in this field through a workflow entry form. Leave off (the default) to reject Lava. Only enable for trusted, staff-facing forms.", "" ) );
 
             if ( controls != null )
             {
@@ -161,6 +177,12 @@ namespace Rock.Field.Types
                 if ( controls.Count > 3 && controls[3] != null && controls[3] is CheckBox )
                 {
                     configurationValues[SHOW_COUNT_DOWN].Value = ( ( CheckBox ) controls[3] ).Checked.ToString();
+                }
+
+                // CROSSING (not needed after v18.4): read the Allow Lava checkbox.
+                if ( controls.Count > 4 && controls[4] != null && controls[4] is RockCheckBox )
+                {
+                    configurationValues[ALLOW_LAVA].Value = ( ( RockCheckBox ) controls[4] ).Checked.ToString();
                 }
             }
 
@@ -194,6 +216,12 @@ namespace Rock.Field.Types
                 if ( controls[3] != null && controls[3] is CheckBox && configurationValues.ContainsKey( SHOW_COUNT_DOWN ) )
                 {
                     ( ( CheckBox ) controls[3] ).Checked = configurationValues[SHOW_COUNT_DOWN].Value.AsBoolean();
+                }
+
+                // CROSSING (not needed after v18.4): restore the Allow Lava checkbox.
+                if ( controls.Count > 4 && controls[4] != null && controls[4] is RockCheckBox && configurationValues.ContainsKey( ALLOW_LAVA ) )
+                {
+                    ( ( RockCheckBox ) controls[4] ).Checked = configurationValues[ALLOW_LAVA].Value.AsBoolean();
                 }
             }
         }
