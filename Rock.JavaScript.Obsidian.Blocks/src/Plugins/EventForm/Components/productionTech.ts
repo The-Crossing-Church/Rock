@@ -94,9 +94,10 @@ export default defineComponent({
     'request.attributeValues.IsExecApproved'(val) {
       if(val == 'False') {
         if(this.request?.attributeValues) {
-          this.request.attributeValues.HasMedia = 'False'
           this.request.attributeValues.ProductionSetup = ''
           this.request.attributeValues.ProductionLightingNeeds = ''
+          this.request.attributeValues.ProductionMediaNeeds = ''
+          this.request.attributeValues.NeedsLivestream = 'False'
         }
       }
     },
@@ -145,24 +146,8 @@ export default defineComponent({
   </div>
 
   <template v-if="request.attributeValues.IsExecApproved == 'True'">
-    <div class="row">
+    <div class="row" v-if="request.attributeValues.NeedsWorship == 'False'">
       <div class="col col-xs-12 col-md-6">
-        <tcc-switch
-          v-model="request.attributeValues.HasMedia"
-          :label="request.attributes.HasMedia.name"
-          v-if="!readonly"
-          id="boolHasMedia"
-        ></tcc-switch>
-        <rck-field
-          v-else
-          v-model="request.attributeValues.HasMedia"
-          :attribute="request.attributes.HasMedia"
-          :is-edit-mode="false"
-          :showEmptyValue="true"
-          id="boolHasMedia"
-        ></rck-field>
-      </div>
-      <div class="col col-xs-12 col-md-6" v-if="request.attributeValues.NeedsWorship == 'False'">
         <tcc-validator :name="request.attributes.PublicArrivalTime.key" :rules="[rules.required(request.attributeValues.PublicArrivalTime, request.attributes.PublicArrivalTime.name)]" ref="validators_doors_open" v-if="!readonly">
           <tcc-time 
             :label="request.attributes.PublicArrivalTime.name"
@@ -203,6 +188,17 @@ export default defineComponent({
           ></rck-field>
         </tcc-validator>
       </div>
+      <div class="col col-xs-12">
+        <tcc-validator :name="request.attributes.ProductionMediaNeeds.key" :rules="[rules.required(request.attributeValues.ProductionMediaNeeds, request.attributes.ProductionMediaNeeds.name)]" ref="validators_prodMedia">
+          <rck-field
+            v-model="request.attributeValues.ProductionMediaNeeds"
+            :attribute="request.attributes.ProductionMediaNeeds"
+            :is-edit-mode="!readonly"
+            :showEmptyValue="true"
+            id="txtProductionMediaNeeds"
+          ></rck-field>
+        </tcc-validator>
+      </div>
     </div>
   </template>
   
@@ -221,6 +217,22 @@ export default defineComponent({
         :is-edit-mode="false"
         :showEmptyValue="true"
         id="boolGymLightPresets"
+      ></rck-field>
+    </div>
+    <div v-if="isAuditoriumRequested && request.attributeValues.IsExecApproved == 'True'" class="col col-xs-12 col-md-6">
+      <tcc-switch
+        v-model="request.attributeValues.NeedsLivestream"
+        :label="request.attributes.NeedsLivestream.name"
+        v-if="!readonly"
+        id="boolNeedsLivestream"
+      ></tcc-switch>
+      <rck-field
+        v-else
+        v-model="request.attributeValues.NeedsLivestream"
+        :attribute="request.attributes.NeedsLivestream"
+        :is-edit-mode="false"
+        :showEmptyValue="true"
+        id="boolNeedsLivestream"
       ></rck-field>
     </div>
     <div class="col col-xs-12 col-md-6">

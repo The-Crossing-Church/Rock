@@ -430,6 +430,7 @@ const rules = {
         }
         if(request.attributeValues.NeedsProductionAccommodations == 'True' && request.attributeValues.IsExecApproved == 'True') {
           if(this.required(request.attributeValues?.ProductionLightingNeeds, '') != true ||
+            this.required(request.attributeValues?.ProductionMediaNeeds, '') != true ||
             this.required(request.attributeValues?.ProductionSetup, '') != true ||
             this.required(request.attributeValues?.PublicArrivalTime, '') != true
           ) {
