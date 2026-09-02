@@ -568,32 +568,42 @@ const rules = {
               }
             }
             if(request.attributeValues.NeedsRegistration == 'True') {
-              let regStartDate = events[i].attributeValues?.RegistrationStartDate as string
-              let regEndDate = events[i].attributeValues?.RegistrationEndDate as string
-              let lastDate = events[i].attributeValues?.EventDate as string
-              let maxReg = parseInt(events[i].attributeValues?.MaxRegistrants as string) 
-              if(lastDate == '') {
-                let dates = request.attributeValues.EventDates.split(",").map((d: string) => d.trim())
-                if(dates && dates.length > 0) {
-                  lastDate == dates[dates.length - 1]
+              if(i == 0 || (i > 0 && events[i].attributeValues?.EventNeedsSeparateLink == 'True')) {
+                let regStartDate = events[i].attributeValues?.RegistrationStartDate as string
+                let regEndDate = events[i].attributeValues?.RegistrationEndDate as string
+                let lastDate = events[i].attributeValues?.EventDate as string
+                let maxReg = parseInt(events[i].attributeValues?.MaxRegistrants as string) 
+                if(lastDate == '') {
+                  let dates = request.attributeValues.EventDates.split(",").map((d: string) => d.trim())
+                  if(dates && dates.length > 0) {
+                    lastDate == dates[dates.length - 1]
+                  }
+                }
+                if(this.required(events[i].attributeValues?.RegistrationStartDate, '') != true ||
+                  this.dateCannotBeAfterEvent(regStartDate, lastDate, '') != true ||
+                  this.required(events[i].attributeValues?.RegistrationFeeType, '') != true ||
+                  (events[i].attributeValues?.RegistrationFeeType.split(",").includes('Online Fee') && this.required(events[i].attributeValues?.OnlineRegistrationFee, '') != true) ||
+                  (events[i].attributeValues?.RegistrationFeeType.split(",").includes('Fee per Individual') && this.required(events[i].attributeValues?.IndividualRegistrationFee, '') != true) ||
+                  (events[i].attributeValues?.RegistrationFeeType.split(",").includes('Fee per Couple') && this.required(events[i].attributeValues?.CoupleRegistrationFee, '') != true) ||
+                  (!events[i].attributeValues?.RegistrationFeeType.split(",").includes('No Fees') && this.required(events[i].attributeValues?.RegistrationFeeBudgetMinistry, '') != true) ||
+                  (!events[i].attributeValues?.RegistrationFeeType.split(",").includes('No Fees') && this.required(events[i].attributeValues?.RegistrationFeeBudgetLine, '') != true) ||
+                  this.required(events[i].attributeValues?.RegistrationEndDate, '') != true ||
+                  this.dateCannotBeAfterEvent(regEndDate, lastDate, '') != true ||
+                  this.required(events[i].attributeValues?.RegistrationEndTime, '') != true ||
+                  this.maxRegistration(maxReg, events[i].attributeValues?.Rooms, locations as any[], events[i].attributes?.MaxRegistrants.name, request.attributeValues.NeedsOnline == 'True') != true ||
+                  this.required(events[i].attributeValues?.RegistrationConfirmationEmailSender, '') != true ||
+                  (events[i].attributeValues?.NeedsCustomCommContent == 'True' && this.required(events[i].attributeValues?.RegistrationConfirmationEmailAdditionalDetails, '') != true) ||
+                  (events[i].attributeValues?.NeedsCustomCommContent == 'True' && events[i].attributeValues?.NeedsReminderEmail == 'True' && this.required(events[i].attributeValues?.RegistrationReminderEmailAdditionalDetails, '') != true)
+                ) {
+                  requestIsValid = false
+                  eventIsValid = false
+                  let idx = invalidSections.indexOf('Registration')
+                  if(idx < 0) {
+                    invalidSections.push('Registration')
+                  }
                 }
               }
-              if(this.required(events[i].attributeValues?.RegistrationStartDate, '') != true ||
-                this.dateCannotBeAfterEvent(regStartDate, lastDate, '') != true ||
-                this.required(events[i].attributeValues?.RegistrationFeeType, '') != true ||
-                (events[i].attributeValues?.RegistrationFeeType.split(",").includes('Online Fee') && this.required(events[i].attributeValues?.OnlineRegistrationFee, '') != true) ||
-                (events[i].attributeValues?.RegistrationFeeType.split(",").includes('Fee per Individual') && this.required(events[i].attributeValues?.IndividualRegistrationFee, '') != true) ||
-                (events[i].attributeValues?.RegistrationFeeType.split(",").includes('Fee per Couple') && this.required(events[i].attributeValues?.CoupleRegistrationFee, '') != true) ||
-                (!events[i].attributeValues?.RegistrationFeeType.split(",").includes('No Fees') && this.required(events[i].attributeValues?.RegistrationFeeBudgetMinistry, '') != true) ||
-                (!events[i].attributeValues?.RegistrationFeeType.split(",").includes('No Fees') && this.required(events[i].attributeValues?.RegistrationFeeBudgetLine, '') != true) ||
-                this.required(events[i].attributeValues?.RegistrationEndDate, '') != true ||
-                this.dateCannotBeAfterEvent(regEndDate, lastDate, '') != true ||
-                this.required(events[i].attributeValues?.RegistrationEndTime, '') != true ||
-                this.maxRegistration(maxReg, events[i].attributeValues?.Rooms, locations as any[], events[i].attributes?.MaxRegistrants.name, request.attributeValues.NeedsOnline == 'True') != true ||
-                this.required(events[i].attributeValues?.RegistrationConfirmationEmailSender, '') != true ||
-                (events[i].attributeValues?.NeedsCustomCommContent == 'True' && this.required(events[i].attributeValues?.RegistrationConfirmationEmailAdditionalDetails, '') != true) ||
-                (events[i].attributeValues?.NeedsCustomCommContent == 'True' && events[i].attributeValues?.NeedsReminderEmail == 'True' && this.required(events[i].attributeValues?.RegistrationReminderEmailAdditionalDetails, '') != true) ||
-                (events[i].attributeValues?.NeedsDatabaseSupportTeam == 'True' && this.required(events[i].attributeValues?.DatabaseSupportStartTime, '') != true) ||
+              if((events[i].attributeValues?.NeedsDatabaseSupportTeam == 'True' && this.required(events[i].attributeValues?.DatabaseSupportStartTime, '') != true) ||
                 (events[i].attributeValues?.NeedsDatabaseSupportTeam == 'True' && this.timeCannotBeAfterEvent(events[i].attributeValues?.DatabaseSupportStartTime as string, events[i].attributeValues?.StartTime as string, '') != true) ||
                 (events[i].attributeValues?.NeedsAttendanceOccurrence == 'True' && this.charLimit(events[i].attributeValues?.CheckinGroupName as string, 22, 'Check-in group names', true, '') != true) ||
                 (events[i].attributeValues?.NeedsAttendanceOccurrence == 'True' && this.nonASCII(events[i].attributeValues?.CheckinGroupName as string, 'Check-in group names', true, '') != true)
