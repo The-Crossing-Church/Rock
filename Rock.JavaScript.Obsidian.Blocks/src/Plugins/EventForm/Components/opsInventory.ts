@@ -375,7 +375,7 @@ export default defineComponent({
         </div>
       </template>
       <template v-else>
-        Click the add button below to reserve additional items
+        Click the add button to reserve additional items
       </template>
     </div>
     <div class="col col-xs-2 col-md-1">
