@@ -646,6 +646,15 @@ export default defineComponent({
         ></tcc-time>
       </tcc-validator>
     </div>
+    <div class="col col-xs-12">
+      <rck-field
+        v-model="e.attributeValues.SecurityOfficerDetails"
+        :attribute="e.attributes.SecurityOfficerDetails"
+        :is-edit-mode="!readonly"
+        :showEmptyValue="true"
+        id="txtSecurityOfficerDetails"
+      ></rck-field>
+    </div>
   </div>
 </rck-form>
 <rck-modal v-model="modal" style="min-width: 50%;" :isCloseButtonHidden="true" cancelText="" :clickBackdropToClose="true" modalWrapperClasses="modal-no-header">
