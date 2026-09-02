@@ -593,10 +593,10 @@ const rules = {
                 this.required(events[i].attributeValues?.RegistrationConfirmationEmailSender, '') != true ||
                 (events[i].attributeValues?.NeedsCustomCommContent == 'True' && this.required(events[i].attributeValues?.RegistrationConfirmationEmailAdditionalDetails, '') != true) ||
                 (events[i].attributeValues?.NeedsCustomCommContent == 'True' && events[i].attributeValues?.NeedsReminderEmail == 'True' && this.required(events[i].attributeValues?.RegistrationReminderEmailAdditionalDetails, '') != true) ||
-                this.required(events[i].attributeValues?.DatabaseSupportStartTime, '') != true ||
-                this.timeCannotBeAfterEvent(events[i].attributeValues?.DatabaseSupportStartTime as string, events[i].attributeValues?.StartTime as string, '') != true ||
-                this.charLimit(events[i].attributeValues?.CheckinGroupName as string, 22, 'Check-in group names', true, '') != true ||
-                this.nonASCII(events[i].attributeValues?.CheckinGroupName as string, 'Check-in group names', true, '') != true
+                (events[i].attributeValues?.NeedsDatabaseSupportTeam == 'True' && this.required(events[i].attributeValues?.DatabaseSupportStartTime, '') != true) ||
+                (events[i].attributeValues?.NeedsDatabaseSupportTeam == 'True' && this.timeCannotBeAfterEvent(events[i].attributeValues?.DatabaseSupportStartTime as string, events[i].attributeValues?.StartTime as string, '') != true) ||
+                (events[i].attributeValues?.NeedsAttendanceOccurrence == 'True' && this.charLimit(events[i].attributeValues?.CheckinGroupName as string, 22, 'Check-in group names', true, '') != true) ||
+                (events[i].attributeValues?.NeedsAttendanceOccurrence == 'True' && this.nonASCII(events[i].attributeValues?.CheckinGroupName as string, 'Check-in group names', true, '') != true)
               ) {
                 requestIsValid = false
                 eventIsValid = false
