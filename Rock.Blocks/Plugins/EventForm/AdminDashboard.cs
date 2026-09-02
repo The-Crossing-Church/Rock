@@ -1344,6 +1344,9 @@ namespace Rock.Blocks.Plugins.EventDashboard
             var results = filtered_items.OrderByDescending( i => i.ModifiedDateTime ).Select( cci =>
             {
                 var bag = EventFormHelper.GetCommonContentChannelItemEntityBag( cci );
+                bag.CreatedBy = cci.CreatedByPersonName;
+                bag.ModifiedBy = cci.ModifiedByPersonName;
+                bag.Id = cci.Id;
                 cci.LoadAttributes();
                 bag.LoadAttributesAndValuesForPublicView( cci, RequestContext.CurrentPerson );
                 return bag;

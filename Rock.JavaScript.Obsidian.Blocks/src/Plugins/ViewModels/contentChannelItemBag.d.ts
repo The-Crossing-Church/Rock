@@ -49,6 +49,9 @@ export type ContentChannelItemBag = {
     /** Gets or sets the created by person alias identifier. */
     createdByPersonAliasId?: number | null;
 
+    /** Gets or sets the created by person. */
+    createdBy?: string | null;
+
     /** Gets or sets the created date time. */
     createdDateTime?: string | null;
 
@@ -63,6 +66,9 @@ export type ContentChannelItemBag = {
 
     /** Gets or sets the modified by person alias identifier. */
     modifiedByPersonAliasId?: number | null;
+
+    /** Gets or sets the modified by person. */
+    modifiedBy?: string | null;
 
     /** Gets or sets the modified date time. */
     modifiedDateTime?: string | null;
