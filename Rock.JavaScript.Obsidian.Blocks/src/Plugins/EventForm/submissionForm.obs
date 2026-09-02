@@ -578,6 +578,13 @@ export default defineComponent({
       }
       window.location.assign(url)
     },
+    newForm() {
+      let url = window.location.href
+      if(url.includes("?")) {
+        url = url.split('?')[0]
+      }
+      window.location.assign(url)
+    },
     openInDashboard() {
       let url = ""
       if(this.viewModel?.isEventAdmin) {
@@ -1417,6 +1424,7 @@ export default defineComponent({
     <template #customButtons>
       <rck-btn btnType="accent" @click="continueEdit">Continue Editing</rck-btn>
       <rck-btn btnType="primary" @click="openInDashboard">Open Dashboard</rck-btn>
+      <rck-btn btnType="pendingchanges" @click="newForm">New Event Request</rck-btn>
     </template>
   </rck-modal>
   <!-- Prefill Modal --> 
