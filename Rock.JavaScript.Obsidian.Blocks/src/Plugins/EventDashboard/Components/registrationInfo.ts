@@ -18,9 +18,9 @@ export default defineComponent({
 
     },
     data() {
-        return {
-          
-        };
+      return {
+        
+      };
     },
     computed: {
       regAttrs() {
@@ -78,7 +78,11 @@ export default defineComponent({
       sectionIsValid() {
         if(this.requestValidation?.invalidSections) {
           if(this.requestValidation.invalidSections.includes("Registration")) {
-            return false
+            let errs = this.regAttrs.map(i => i.errors).flat()
+            if(errs.length > 0) {
+              return false
+            }
+            return true
           } else {
             return true
           }

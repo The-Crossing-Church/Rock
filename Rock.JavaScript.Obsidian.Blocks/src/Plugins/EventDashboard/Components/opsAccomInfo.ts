@@ -97,7 +97,11 @@ export default defineComponent({
       sectionIsValid() {
         if(this.requestValidation?.invalidSections) {
           if(this.requestValidation.invalidSections.includes("Ops")) {
-            return false
+            let errs = this.opsAttrs.map(i => i.errors).flat()
+            if(errs.length > 0) {
+              return false
+            }
+            return true
           } else {
             return true
           }

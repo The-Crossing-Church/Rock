@@ -65,7 +65,11 @@ export default defineComponent({
       sectionIsValid() {
         if(this.requestValidation?.invalidSections) {
           if(this.requestValidation.invalidSections.includes("Online")) {
-            return false
+            let errs = this.onlineAttrs.map(i => i.errors).flat()
+            if(errs.length > 0) {
+              return false
+            }
+            return true
           } else {
             return true
           }

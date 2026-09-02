@@ -78,7 +78,11 @@ export default defineComponent({
       sectionIsValid() {
         if(this.requestValidation?.invalidSections) {
           if(this.requestValidation.invalidSections.includes("Catering")) {
-            return false
+            let errs = this.cateringAttrs.map(i => i.errors).flat()
+            if(errs.length > 0) {
+              return false
+            }
+            return true
           } else {
             return true
           }
