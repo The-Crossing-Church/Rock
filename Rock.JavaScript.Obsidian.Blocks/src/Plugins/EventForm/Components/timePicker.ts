@@ -155,8 +155,10 @@ export default defineComponent({
           val = "0" + val
         }
         this.hour = val
-        let ref = this.$refs.hour as any
-        ref.validate()
+        let ref = this.$refs?.hour as any
+        if(ref) {
+          ref.validate()
+        }
       },
       validateMinute(val: any) {
         val = parseInt(val)
@@ -168,8 +170,10 @@ export default defineComponent({
           val = "0" + val
         }
         this.minute = val
-        let ref = this.$refs.min as any
-        ref.validate()
+        let ref = this.$refs?.min as any
+        if(ref) {
+          ref.validate()
+        }
       },
       quickSet(start: string, end: string) {
         let time = DateTime.fromFormat(start, "HH:mm:ss")
