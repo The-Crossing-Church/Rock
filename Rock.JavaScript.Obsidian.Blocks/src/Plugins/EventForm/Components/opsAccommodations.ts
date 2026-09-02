@@ -105,11 +105,15 @@ export default defineComponent({
       },
       selectedRooms() {
         let rawVal = this.e?.attributeValues?.Rooms as string
-        let selection = JSON.parse(rawVal) as SelectedListItem
-        let guids = selection.value.split(',')
-        return this.rooms?.filter((r: any) => {
-          return guids.includes(r.guid)
-        })
+        if(rawVal && rawVal != '') {
+          let selection = JSON.parse(rawVal) as SelectedListItem
+          let guids = selection.value.split(',')
+          return this.rooms?.filter((r: any) => {
+            return guids.includes(r.guid)
+          })
+        } else {
+          return []
+        }
       },
       groupedSetUp() {
         let arr = [] as any[]
@@ -629,22 +633,38 @@ export default defineComponent({
       </tcc-validator>
     </div>
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :name="e.attributes.SecurityStartTime.key" :rules="[rules.required(e.attributeValues.SecurityStartTime, e.attributes.SecurityStartTime.name), rules.securityMinimumHours(e.attributeValues.SecurityStartTime, e.attributeValues.SecurityEndTime)]" ref="validators_securityStart">
+      <tcc-validator  v-if="!readonly" :name="e.attributes.SecurityStartTime.key" :rules="[rules.required(e.attributeValues.SecurityStartTime, e.attributes.SecurityStartTime.name), rules.securityMinimumHours(e.attributeValues.SecurityStartTime, e.attributeValues.SecurityEndTime)]" ref="validators_securityStart">
         <tcc-time 
           :label="e.attributes.SecurityStartTime.name"
           v-model="e.attributeValues.SecurityStartTime"
           id="TimeSecurityStart"
         ></tcc-time>
       </tcc-validator>
+      <rck-field
+        v-else
+        v-model="e.attributeValues.SecurityStartTime"
+        :attribute="e.attributes.SecurityStartTime"
+        :is-edit-mode="false"
+        :showEmptyValue="true"
+        id="timeSecurityStartTime"
+      ></rck-field>
     </div>
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :name="e.attributes.SecurityEndTime.key" :rules="[rules.required(e.attributeValues.SecurityEndTime, e.attributes.SecurityEndTime.name), rules.securityMinimumHours(e.attributeValues.SecurityStartTime, e.attributeValues.SecurityEndTime)]" ref="validators_securityEnd">
+      <tcc-validator v-if="!readonly" :name="e.attributes.SecurityEndTime.key" :rules="[rules.required(e.attributeValues.SecurityEndTime, e.attributes.SecurityEndTime.name), rules.securityMinimumHours(e.attributeValues.SecurityStartTime, e.attributeValues.SecurityEndTime)]" ref="validators_securityEnd">
         <tcc-time 
           :label="e.attributes.SecurityEndTime.name"
           v-model="e.attributeValues.SecurityEndTime"
           id="TimeSecurityEnd"
         ></tcc-time>
       </tcc-validator>
+      <rck-field
+        v-else
+        v-model="e.attributeValues.SecurityEndTime"
+        :attribute="e.attributes.SecurityEndTime"
+        :is-edit-mode="false"
+        :showEmptyValue="true"
+        id="timeSecurityEndTime"
+      ></rck-field>
     </div>
     <div class="col col-xs-12">
       <rck-field
