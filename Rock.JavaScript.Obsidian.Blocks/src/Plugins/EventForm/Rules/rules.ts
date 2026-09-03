@@ -303,19 +303,19 @@ const rules = {
     return 'is'
   },
   sectionInfo: [
-    { cat:  "Event", section: "Time" },
-    { attr: "NeedsSpace", cat: "Event Space", section: "Space" },
-    { attr: "NeedsOnline", cat: "Event Online", section: "Online" },
-    { attr: "NeedsCatering", cat: "Event Catering", section: "Catering" },
-    { attr: "NeedsChildCare", cat: "Event Childcare", section: "Childcare" },
-    { attr: "NeedsChildCareCatering", cat: "Event Childcare Catering", section: "Childcare Catering" },
-    { cat:  "Event Childcare Registration", section: "Childcare Registration" },
-    { attr: "NeedsOpsAccommodations", cat: "Event Ops Requests", section: "Ops" },
-    { attr: "NeedsRegistration", cat: "Event Registration", section: "Registration" },
-    { attr: "NeedsPublicity", cat: "Event Publicity", section: "Publicity" },
-    { attr: "NeedsProductionAccommodations", cat: "Event Production", section: "Production" },
-    { attr: "NeedsWorship", cat: "Event Worship", section: "Worship" },
-    { attr: "NeedsWebCalendar", cat: "Event Calendar", section: "Calendar" }
+    {                                        cat: "Event",                         section: "Time"                                           },
+    { attr: "NeedsSpace",                    cat: "Event Space",                   section: "Space",              type: "Room"               },
+    { attr: "NeedsOnline",                   cat: "Event Online",                  section: "Online",             type: "Online Event"       },
+    { attr: "NeedsCatering",                 cat: "Event Catering",                section: "Catering",           type: "Catering"           },
+    { attr: "NeedsChildCare",                cat: "Event Childcare",               section: "Childcare",          type: "Childcare"          },
+    { attr: "NeedsChildCareCatering",        cat: "Event Childcare Catering",      section: "Childcare Catering", type: "Childcare Catering" },
+    {                                        cat: "Event Childcare Registration",  section: "Childcare Registration"                         },
+    { attr: "NeedsOpsAccommodations",        cat: "Event Ops Requests",            section: "Ops",                type: "Extra Resources"    },
+    { attr: "NeedsRegistration",             cat: "Event Registration",            section: "Registration",       type: "Registration"       },
+    { attr: "NeedsPublicity",                cat: "Event Publicity",               section: "Publicity",          type: "Publicity"          },
+    { attr: "NeedsProductionAccommodations", cat: "Event Production",              section: "Production",         type: "Production"         },
+    { attr: "NeedsWorship",                  cat: "Event Worship",                 section: "Worship",            type: "Worship"            },
+    { attr: "NeedsWebCalendar",              cat: "Event Calendar",                section: "Calendar",           type: "Web Calendar"       }
   ],
   validate(request: ContentChannelItemBag | undefined, events: ContentChannelItemBag[], locations: DefinedValueBag[] | undefined, ministries: DefinedValueBag[] | undefined, isSuperUser: boolean | undefined) {
       let requestIsValid = true
@@ -379,12 +379,38 @@ const rules = {
             request.attributeValues.NeedsWebCalendar = 'False'
             request.attributeValues.NeedsProductionAccommodations = 'False'
             request.attributeValues.NeedsRegistration = 'False'
+            request.attributeValues.NeedsWorship = 'False'
+            let removeSections = this.sectionInfo.filter(si => {
+              return si.attr == 'NeedsOnline' || si.attr == 'NeedsCatering' || si.attr == 'NeedsOpsAccommodations' || si.attr == 'NeedsWebCalendar' || 
+              si.attr == 'NeedsProductionAccommodations' || si.attr == 'NeedsRegistration' || si.attr == 'NeedsWorship' 
+            }).map(si => si.type)
+            let validSections = request.attributeValues.RequestType.split(',')
+            validSections = validSections.filter(s => {
+              return !removeSections.includes(s.trim())
+            })
+            request.attributeValues.RequestType = validSections.join(',')
           }
           if(thirtyDaysTense == 'was') {
             request.attributeValues.NeedsChildCare = 'False'
+            let removeSections = this.sectionInfo.filter(si => {
+              return si.attr == 'NeedsChildCare' || si.attr == 'NeedsChildCareCatering'
+            }).map(si => si.type)
+            let validSections = request.attributeValues.RequestType.split(',')
+            validSections = validSections.filter(s => {
+              return !removeSections.includes(s.trim())
+            })
+            request.attributeValues.RequestType = validSections.join(',')
           }
           if(sixWeeksTense == 'was') {
             request.attributeValues.NeedsPublicity = 'False'
+            let removeSections = this.sectionInfo.filter(si => {
+              return si.attr == 'NeedsPublicity'
+            }).map(si => si.type)
+            let validSections = request.attributeValues.RequestType.split(',')
+            validSections = validSections.filter(s => {
+              return !removeSections.includes(s.trim())
+            })
+            request.attributeValues.RequestType = validSections.join(',')
           }
         }
 
@@ -679,6 +705,9 @@ const rules = {
             if(invalidSections.includes('Ops')) {
               request.attributeValues.NeedsOpsAccommodations = 'False'
             }
+            if(invalidSections.includes('Worship')) {
+              request.attributeValues.NeedsWorship = 'False'
+            }
           }
           if(registrationTense == 'was') {
             if(invalidSections.includes('Registration')) {
@@ -703,6 +732,7 @@ const rules = {
             readonlySections.push('Childcare Catering')
             readonlySections.push('Ops')
             readonlySections.push('Production')
+            readonlySections.push('Worship')
           }
           if(registrationTense == 'was') {
             readonlySections.push('Registration')
@@ -722,17 +752,6 @@ const rules = {
         console.log('ReadOnly Sections')
         console.log(readonlySections)
         
-        // let sectionInfo = [
-        //   { attr: "NeedsSpace", cat: "Event Space", section: "Space" },
-        //   { attr: "NeedsOnline", cat: "Event Online", section: "Online" },
-        //   { attr: "NeedsCatering", cat: "Event Catering", section: "Catering" },
-        //   { attr: "NeedsChildCare", cat: "Event Childcare", section: "Childcare" },
-        //   { attr: "NeedsChildCareCatering", cat: "Event Childcare Catering", section: "Childcare Catering" },
-        //   { attr: "NeedsOpsAccommodations", cat: "Event Ops Requests", section: "Ops" },
-        //   { attr: "NeedsPublicity", cat: "Event Production", section: "Production" },
-        //   { attr: "NeedsProductionAccommodations", cat: "Event Publicity", section: "Publicity" },
-        //   { attr: "NeedsRegistration", cat: "Event Registration", section: "Calendar" }
-        // ]
         let invalidCategories = [] as string[]
         let readOnlyCategories = [] as string[]
         if(invalidSections.length > 0) {
