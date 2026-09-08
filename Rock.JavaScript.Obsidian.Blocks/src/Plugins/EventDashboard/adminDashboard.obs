@@ -741,7 +741,7 @@ export default defineComponent({
     -->
   </template>
   <template #customButtons>
-    <div class="d-flex justify-left w-100">
+    <div class="d-flex modal-button-wrapper w-100">
       <div style="position: relative;">
         <rck-pop v-model:isVisible="editPop" trigger="click" placement="top">
           <div style="display: flex; flex-direction: column;">
@@ -825,6 +825,11 @@ export default defineComponent({
       <rck-btn btnType="primary" @click="addBufferFromModal">
         <i class="mr-1 ti ti-clock"></i>
         Set-up Buffer
+      </rck-btn>
+      <div class="btn-spacer"></div>
+      <rck-btn btnType="default" @click="modal = false;">
+        <i class="mr-1 ti ti-window-minimize"></i>
+        Close
       </rck-btn>
     </div>
   </template>

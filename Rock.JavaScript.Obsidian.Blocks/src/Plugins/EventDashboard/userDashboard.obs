@@ -861,7 +861,7 @@ export default defineComponent({
       <tcc-comments :comments="selected.comments" v-model="commentModal" v-on:createComment="createComment"></tcc-comments>
     </template>
     <template #customButtons>
-      <div class="d-flex justify-left w-100">
+      <div class="d-flex modal-button-wrapper w-100">
         <rck-btn v-if="canEdit" btnType="primary" @click="editItem(selected.idKey)">
           <i class="mr-1 fa fa-pencil-alt"></i>
           Edit
@@ -885,6 +885,11 @@ export default defineComponent({
         <rck-btn v-if="canResubmit" btnType="med-blue" @click="copyRequest">
           <i class="mr-1 fas fa-history"></i>
           Resubmit
+        </rck-btn>
+        <div class="btn-spacer"></div>
+        <rck-btn btnType="default" @click="modal = false;">
+          <i class="mr-1 ti ti-window-minimize"></i>
+          Close
         </rck-btn>
       </div>
     </template>

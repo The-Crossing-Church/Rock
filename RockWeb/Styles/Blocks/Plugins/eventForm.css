@@ -30,6 +30,39 @@
   padding: var(--spacing-medium);
 }
 
+.modal-button-wrapper {
+  justify-content: left;
+}
+.modal-button-wrapper > .btn-spacer {
+  width: -webkit-fill-available;
+}
+
+@media (max-width: 768px) {
+  .modal-button-wrapper {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .modal-button-wrapper > .btn-spacer {
+    display: none !important;
+  }
+  .modal-button-wrapper > * {
+    margin-bottom: 12px !important;
+    width: 46%;
+  }
+  .modal-button-wrapper > button {
+    padding: 4px 0px;
+  }
+  .modal-button-wrapper > div > button {
+    width: 100%;
+  }
+  .modal-button-wrapper > *:nth-child(even) {
+    margin-left: 12px !important;
+  }
+  .modal-button-wrapper > *:nth-child(odd) {
+    margin-left: 0px !important;
+  }
+}
+
 /* ---------------------------------------------- */
 /* Buttons                                        */
 /* ---------------------------------------------- */
