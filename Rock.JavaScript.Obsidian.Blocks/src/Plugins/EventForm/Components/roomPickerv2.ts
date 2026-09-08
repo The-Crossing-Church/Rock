@@ -107,7 +107,7 @@ export default defineComponent({
           if (val) {
             let rockVal = {
               value: val.map((i: any) => i.value).join(","),
-              text: val.map((i: any) => i.text.split(" (")[0]).join(", ")
+              text: val.map((i: any) => i.text?.split(" (")[0]).join(", ")
             }
             this.$emit('update:modelValue', JSON.stringify(rockVal))
           }
