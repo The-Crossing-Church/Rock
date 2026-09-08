@@ -55,11 +55,12 @@
   .modal-button-wrapper > div > button {
     width: 100%;
   }
-  .modal-button-wrapper > *:nth-child(even) {
-    margin-left: 12px !important;
-  }
   .modal-button-wrapper > *:nth-child(odd) {
     margin-left: 0px !important;
+  }
+  .modal-button-wrapper > *:nth-child(even),
+  .modal-button-wrapper > *:last-child {
+    margin-left: 12px !important;
   }
 }
 
