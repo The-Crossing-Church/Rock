@@ -88,7 +88,6 @@ namespace Rock.Blocks.Plugins.EventDashboard
             public const string LocationList = "LocationList";
             public const string MinistryList = "MinistryList";
             public const string BudgetList = "BudgetList";
-            public const string MinistryBudgetList = "MinistryBudgetList";
             public const string DrinksList = "DrinksList";
             public const string InventoryList = "InventoryList";
             public const string SubmissionPage = "SubmissionPage";
