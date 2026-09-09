@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data.Entity;
 using System.Linq;
+using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
@@ -1373,13 +1374,15 @@ namespace Rock.Blocks.Event
 
             if ( !context.Registration.PersonAliasId.HasValue )
             {
-                // If a match was not found, create a new person
+                // If a match was not found, create a new person.
+                // HTML-encode the registrar's name/email on creation (after matching) so
+                // anonymous input cannot inject markup that later renders to staff.
                 var person = new Person
                 {
-                    FirstName = context.Registration.FirstName,
-                    LastName = context.Registration.LastName,
+                    FirstName = WebUtility.HtmlEncode( context.Registration.FirstName ),
+                    LastName = WebUtility.HtmlEncode( context.Registration.LastName ),
                     IsEmailActive = true,
-                    Email = context.Registration.ConfirmationEmail,
+                    Email = WebUtility.HtmlEncode( context.Registration.ConfirmationEmail ),
                     EmailPreference = EmailPreference.EmailAllowed,
                     RecordTypeValueId = DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.PERSON_RECORD_TYPE_PERSON.AsGuid() ).Id,
                     ConnectionStatusValueId = dvcConnectionStatusId
@@ -2933,12 +2936,14 @@ namespace Rock.Blocks.Event
                         ?? DefinedValueCache.GetId( GetAttributeValue( AttributeKey.ConnectionStatus ).AsGuid() );
                     var dvcRecordStatus = DefinedValueCache.Get( GetAttributeValue( AttributeKey.RecordStatus ).AsGuid() );
 
-                    // If a match was not found, create a new person
+                    // If a match was not found, create a new person.
+                    // HTML-encode the registrant's name/email on creation (after matching)
+                    // so anonymous input cannot inject markup that later renders to staff.
                     person = new Person();
-                    person.FirstName = firstName;
-                    person.LastName = lastName;
+                    person.FirstName = WebUtility.HtmlEncode( firstName );
+                    person.LastName = WebUtility.HtmlEncode( lastName );
                     person.IsEmailActive = true;
-                    person.Email = email;
+                    person.Email = WebUtility.HtmlEncode( email );
                     person.EmailPreference = EmailPreference.EmailAllowed;
                     person.RecordTypeValueId = DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.PERSON_RECORD_TYPE_PERSON.AsGuid() ).Id;
 
@@ -3084,7 +3089,7 @@ namespace Rock.Blocks.Event
                         case RegistrationPersonFieldType.MiddleName:
                             if ( IsFieldUnlockedForEditing( field, person.MiddleName ) )
                             {
-                                var middleName = fieldValue.ToString().Trim();
+                                var middleName = WebUtility.HtmlEncode( fieldValue.ToString().Trim() );
                                 History.EvaluateChange( personChanges, "Middle Name", person.MiddleName, middleName );
                                 person.MiddleName = middleName;
                             }

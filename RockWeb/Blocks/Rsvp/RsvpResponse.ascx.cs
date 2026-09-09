@@ -691,7 +691,9 @@ $(document).ready(function () {
                     attendance.DeclineReasonValueId = declineReasonId;
                 }
 
-                attendance.Note = declineNote;
+                // HTML-encode the public decline note before it is stored and later
+                // rendered to staff in RSVP/attendance grids and confirmation Lava.
+                attendance.Note = System.Net.WebUtility.HtmlEncode( declineNote );
             }
 
             // Note that GroupMember attributes are being set, here.  If this control saves multiple attendance records for a same group (e.g., the same group meets on multiple dates and the user RSVPs to

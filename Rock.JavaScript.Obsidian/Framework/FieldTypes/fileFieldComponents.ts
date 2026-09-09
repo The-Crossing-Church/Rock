@@ -21,6 +21,7 @@ import FileUploader from "@Obsidian/Controls/fileUploader.obs";
 import { ConfigurationValueKey, ConfigurationPropertyKey } from "./fileField.partial";
 import { ListItemBag } from "@Obsidian/ViewModels/Utility/listItemBag";
 import { updateRefValue } from "@Obsidian/Utility/component";
+import { safeParseJson } from "@Obsidian/Utility/stringUtils";
 
 export const EditComponent = defineComponent({
     name: "FileField.Edit",
@@ -125,7 +126,7 @@ export const ConfigurationComponent = defineComponent({
 
             // Construct the new value that will be emitted if it is different
             // than the current value.
-            newValue[ConfigurationValueKey.BinaryFileType] = fileType.value ?? "";
+            newValue[ConfigurationValueKey.BinaryFileType] = fileType.value ? JSON.stringify({ text: "", value: fileType.value }) : "";
 
             // Compare the new value and the old value.
             const anyValueChanged = newValue[ConfigurationValueKey.BinaryFileType] !== (props.modelValue[ConfigurationValueKey.BinaryFileType] ?? "");
@@ -155,23 +156,14 @@ export const ConfigurationComponent = defineComponent({
         // Watch for changes coming in from the parent component and update our
         // data to match the new information.
         watch(() => [props.modelValue, props.configurationProperties], () => {
-            fileType.value = props.modelValue[ConfigurationValueKey.BinaryFileType];
+            const listItem = safeParseJson<ListItemBag>(props.modelValue[ConfigurationValueKey.BinaryFileType]);
+            fileType.value = listItem?.value ?? "";
         }, {
             immediate: true
         });
 
-        // Watch for changes in properties that require new configuration
-        // properties to be retrieved from the server.
-        // THIS IS JUST A PLACEHOLDER FOR COPYING TO NEW FIELDS THAT MIGHT NEED IT.
-        // THIS FIELD DOES NOT NEED THIS
-        watch([], () => {
-            if (maybeUpdateModelValue()) {
-                emit("updateConfiguration");
-            }
-        });
-
         // Watch for changes in properties that only require a local UI update.
-        watch(fileType, () => maybeUpdateConfiguration(ConfigurationValueKey.BinaryFileType, fileType.value ?? ""));
+        watch(fileType, () => maybeUpdateConfiguration(ConfigurationValueKey.BinaryFileType, JSON.stringify({ value: fileType.value ?? "" })));
 
         return {
             fileType,

@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data.Entity;
 using System.Linq;
+using System.Net;
 
 using Rock.Attribute;
 using Rock.Crm.RecordSource;
@@ -523,9 +524,9 @@ namespace Rock.Blocks.Connection
 
                     person = new Person
                     {
-                        FirstName = bag.FirstName,
-                        LastName = bag.LastName,
-                        Email = bag.Email,
+                        FirstName = WebUtility.HtmlEncode( bag.FirstName ),
+                        LastName = WebUtility.HtmlEncode( bag.LastName ),
+                        Email = WebUtility.HtmlEncode( bag.Email ),
                         IsEmailActive = true,
                         EmailPreference = EmailPreference.EmailAllowed,
                         RecordTypeValueId = DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.PERSON_RECORD_TYPE_PERSON ).Id,
@@ -551,7 +552,7 @@ namespace Rock.Blocks.Connection
                 var connectionRequest = new ConnectionRequest
                 {
                     PersonAliasId = person.PrimaryAliasId.Value,
-                    Comments = bag.Comments ?? string.Empty,
+                    Comments = WebUtility.HtmlEncode( bag.Comments ?? string.Empty ),
                     ConnectionOpportunityId = opportunity.Id,
                     ConnectionTypeId = opportunity.ConnectionTypeId,
                     ConnectionState = ConnectionState.Active,

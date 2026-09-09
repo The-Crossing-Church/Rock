@@ -3006,12 +3006,14 @@ namespace RockWeb.Blocks.Event
             // Make sure there's an actual person associated to registration
             if ( !registration.PersonAliasId.HasValue )
             {
-                // If a match was not found, create a new person
+                // If a match was not found, create a new person.
+                // HTML-encode the registrar's name/email on creation (after matching) so
+                // anonymous input cannot inject markup that later renders to staff.
                 var person = new Person();
-                person.FirstName = registration.FirstName;
-                person.LastName = registration.LastName;
+                person.FirstName = System.Net.WebUtility.HtmlEncode( registration.FirstName );
+                person.LastName = System.Net.WebUtility.HtmlEncode( registration.LastName );
                 person.IsEmailActive = true;
-                person.Email = registration.ConfirmationEmail;
+                person.Email = System.Net.WebUtility.HtmlEncode( registration.ConfirmationEmail );
                 person.EmailPreference = EmailPreference.EmailAllowed;
                 person.RecordTypeValueId = DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.PERSON_RECORD_TYPE_PERSON.AsGuid() ).Id;
                 if ( dvcConnectionStatus != null )
@@ -3269,12 +3271,14 @@ namespace RockWeb.Blocks.Event
                         }
                         else
                         {
-                            // If a match was not found, create a new person
+                            // If a match was not found, create a new person.
+                            // HTML-encode the registrant's name/email on creation (after matching)
+                            // so anonymous input cannot inject markup that later renders to staff.
                             registrantPerson = new Person();
-                            registrantPerson.FirstName = firstName;
-                            registrantPerson.LastName = lastName;
+                            registrantPerson.FirstName = System.Net.WebUtility.HtmlEncode( firstName );
+                            registrantPerson.LastName = System.Net.WebUtility.HtmlEncode( lastName );
                             registrantPerson.IsEmailActive = true;
-                            registrantPerson.Email = email;
+                            registrantPerson.Email = System.Net.WebUtility.HtmlEncode( email );
                             registrantPerson.EmailPreference = EmailPreference.EmailAllowed;
                             registrantPerson.RecordTypeValueId = DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.PERSON_RECORD_TYPE_PERSON.AsGuid() ).Id;
                             if ( dvcConnectionStatus != null )
@@ -3337,7 +3341,7 @@ namespace RockWeb.Blocks.Event
                                     break;
 
                                 case RegistrationPersonFieldType.MiddleName:
-                                    string middleName = fieldValue.ToString().Trim();
+                                    string middleName = System.Net.WebUtility.HtmlEncode( fieldValue.ToString().Trim() );
                                     History.EvaluateChange( personChanges, "Middle Name", registrantPerson.MiddleName, middleName );
                                     registrantPerson.MiddleName = middleName;
                                     break;

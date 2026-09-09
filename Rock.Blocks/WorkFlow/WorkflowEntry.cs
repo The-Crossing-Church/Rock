@@ -592,10 +592,14 @@ namespace Rock.Blocks.Workflow
         /// <param name="fields">The fields.</param>
         private void SetInitialWorkflowAttributes( Model.Workflow workflow, Dictionary<string, string> fields )
         {
+            // CROSSING (not needed after v18.4): seed each value through
+            // SetInitialWorkflowAttributeValue so the Lava/HTML content policy is enforced
+            // (was a direct workflow.SetAttributeValue call for each value).
+
             // Set initial values from the page parameters.
             foreach ( var pageParameter in RequestContext.PageParameters )
             {
-                workflow.SetAttributeValue( pageParameter.Key, pageParameter.Value );
+                SetInitialWorkflowAttributeValue( workflow, pageParameter.Key, pageParameter.Value );
             }
 
             // Set/Update initial values from what the shell sent us.
@@ -603,9 +607,32 @@ namespace Rock.Blocks.Workflow
             {
                 foreach ( var field in fields )
                 {
-                    workflow.SetAttributeValue( field.Key, field.Value );
+                    SetInitialWorkflowAttributeValue( workflow, field.Key, field.Value );
                 }
             }
+        }
+
+        /// <summary>
+        /// CROSSING (not needed after v18.4): Seeds a single initial workflow attribute value while enforcing
+        /// the per-attribute Lava/HTML content policy. Page parameters and the values
+        /// a shell sends are attacker-controllable, so a value the target attribute is
+        /// not configured to allow is dropped rather than stored.
+        /// </summary>
+        /// <param name="workflow">The workflow being seeded.</param>
+        /// <param name="key">The attribute key to set.</param>
+        /// <param name="value">The value to set.</param>
+        private void SetInitialWorkflowAttributeValue( Model.Workflow workflow, string key, string value )
+        {
+            var attributes = workflow.Attributes;
+
+            if ( attributes != null
+                && attributes.ContainsKey( key )
+                && Rock.Security.WorkflowFormInputValidator.Validate( attributes[key], value ) != null )
+            {
+                return;
+            }
+
+            workflow.SetAttributeValue( key, value );
         }
 
         /// <summary>

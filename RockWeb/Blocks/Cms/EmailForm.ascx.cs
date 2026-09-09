@@ -442,7 +442,9 @@ namespace RockWeb.Blocks.Cms
                         formFieldKey != "send" &&
                         !rgxRockControls.IsMatch( formFieldKey ) )
                     {
-                        formFields.Add( formFieldKey, Request.Form[formFieldKey] );
+                        // HTML-encode submitted values so anonymous form input cannot inject
+                        // markup/script into the notification email or the response HTML.
+                        formFields.Add( formFieldKey, System.Net.WebUtility.HtmlEncode( Request.Form[formFieldKey] ) );
                     }
                 }
 

@@ -3091,7 +3091,9 @@ mission. We are so grateful for your commitment.</p>
             var commentTransactionAccountDetails = new List<FinancialTransactionDetail>();
             PopulateTransactionDetails( commentTransactionAccountDetails );
 
-            SetPaymentComment( paymentInfo, commentTransactionAccountDetails, tbCommentEntry.Text );
+            // HTML-encode the public donor comment before it is stored on the transaction
+            // Summary and later rendered to finance staff in transaction grids/detail.
+            SetPaymentComment( paymentInfo, commentTransactionAccountDetails, System.Net.WebUtility.HtmlEncode( tbCommentEntry.Text ) );
 
             paymentInfo.Amount = commentTransactionAccountDetails.Sum( a => a.Amount );
             var totalFeeCoverageAmounts = commentTransactionAccountDetails.Where( a => a.FeeCoverageAmount.HasValue ).Select( a => a.FeeCoverageAmount.Value );

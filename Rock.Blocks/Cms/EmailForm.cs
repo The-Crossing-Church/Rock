@@ -19,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Net;
 using System.Text;
 
 using Rock.Attribute;
@@ -393,7 +394,10 @@ namespace Rock.Blocks.Cms
                 return ActionBadRequest( "You appear to be a computer. Check the global attribute 'Email Exceptions Filter' if you are getting this in error." );
             }
 
-            var formFields = bag.FormFields.ToDictionary( k => k.Key, v => ( object ) v.Value );
+            // HTML-encode each submitted value so anonymous form input cannot inject
+            // markup/script into the notification email or the response HTML that
+            // renders these merge fields. Field keys are block-configured, not user input.
+            var formFields = bag.FormFields.ToDictionary( k => k.Key, v => ( object ) WebUtility.HtmlEncode( v.Value ) );
 
             var mergeFields = RequestContext.GetCommonMergeFields();
             mergeFields.Add( "FormFields", formFields );
@@ -479,7 +483,7 @@ namespace Rock.Blocks.Cms
 
             var responseMergeFields = mergeFields;
             string responseMessage = GetAttributeValue( AttributeKey.ResponseMessage ).ResolveMergeFields( responseMergeFields, enabledLavaCommands );
-            if ( GetAttributeValue( AttributeKey.EnableDebug ).AsBoolean() && BlockCache.IsAuthorized( Authorization.EDIT, RequestContext.CurrentPerson ) )
+            if ( GetAttributeValue( AttributeKey.EnableDebug ).AsBoolean() && BlockCache.IsAuthorized( Rock.Security.Authorization.EDIT, RequestContext.CurrentPerson ) )
             {
                 responseMessage += MergeTemplateType.GetDefaultLavaDebugInfo( new List<object>(), responseMergeFields );
             }

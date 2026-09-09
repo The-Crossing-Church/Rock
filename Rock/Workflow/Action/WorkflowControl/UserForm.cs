@@ -27,6 +27,7 @@ using Rock.Enums.Workflow;
 using Rock.Field;
 using Rock.Model;
 using Rock.Net;
+using Rock.Security;
 using Rock.Utility;
 using Rock.ViewModels.Controls;
 using Rock.ViewModels.Reporting;
@@ -266,6 +267,32 @@ namespace Rock.Workflow.Action
             if ( form == null )
             {
                 throw new Exception( "Invalid action state, could not find workflow or form details." );
+            }
+
+            // CROSSING (not needed after v18.4): enforce the per-field Lava/HTML content policy on the
+            // user-entered form and person-entry values before anything is
+            // persisted. If a value contains content it is not configured to
+            // allow, reject the whole submission and re-display an error instead
+            // of storing the value or creating a person record.
+            var contentViolation = GetFormFieldContentViolation( action, fieldValues, rockContext )
+                ?? WorkflowFormInputValidator.ValidatePersonEntry( personEntryValues );
+
+            if ( contentViolation != null )
+            {
+                return new InteractiveActionResult
+                {
+                    IsSuccess = false,
+                    ProcessingType = InteractiveActionContinueMode.Stop,
+                    ActionData = new InteractiveActionDataBag
+                    {
+                        Message = new InteractiveMessageBag
+                        {
+                            Type = InteractiveMessageType.Error,
+                            Title = "Invalid Input",
+                            Content = contentViolation
+                        }
+                    }
+                };
             }
 
             if ( form.GetAllowPersonEntry( formBuilderTemplate ) )
@@ -797,6 +824,52 @@ namespace Rock.Workflow.Action
         }
 
         /// <summary>
+        /// CROSSING (not needed after v18.4): Checks the user-entered form field values against the per-field
+        /// Lava/HTML content policy (see <see cref="WorkflowFormInputValidator"/>).
+        /// Mirrors the field iteration used by <see cref="SetFormFieldValues"/>.
+        /// </summary>
+        /// <param name="action">The action that is processing the updates.</param>
+        /// <param name="values">The form fields holding the data from the client.</param>
+        /// <param name="rockContext">The context to use if access to the database is required.</param>
+        /// <returns>A user-facing message describing the first disallowed value, or <c>null</c> if all values are allowed.</returns>
+        private static string GetFormFieldContentViolation( WorkflowAction action, Dictionary<Guid, string> values, RockContext rockContext )
+        {
+            if ( values == null )
+            {
+                return null;
+            }
+
+            var form = action.ActionTypeCache?.WorkflowForm;
+
+            if ( form == null )
+            {
+                return null;
+            }
+
+            foreach ( var formAttribute in form.FormAttributes.OrderBy( a => a.Order ) )
+            {
+                if ( formAttribute.IsVisible && !formAttribute.IsReadOnly )
+                {
+                    var attribute = AttributeCache.Get( formAttribute.AttributeId, rockContext );
+
+                    if ( attribute == null || !values.TryGetValue( attribute.Guid, out var formFieldValue ) )
+                    {
+                        continue;
+                    }
+
+                    var reason = WorkflowFormInputValidator.Validate( attribute, formFieldValue );
+
+                    if ( reason != null )
+                    {
+                        return $"The value entered for \"{attribute.Name}\" {reason}. Please remove it and try again.";
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
         /// Sets the form values.
         /// </summary>
         /// <param name="action">The action that is processing the updates.</param>
@@ -827,6 +900,20 @@ namespace Rock.Workflow.Action
                     else if ( attribute.EntityTypeId == activity.TypeId )
                     {
                         item = activity;
+                    }
+
+                    // CROSSING (not needed after v18.4): backstop enforcement of the per-field Lava/HTML
+                    // content policy for any caller that reaches this method
+                    // directly (e.g. the legacy mobile shell's GetNextForm path).
+                    // The primary web/mobile path validates earlier in
+                    // UpdateActionInternal and returns a friendly message before
+                    // reaching here; this guards the value from ever being
+                    // persisted regardless of entry point.
+                    var contentViolation = WorkflowFormInputValidator.Validate( attribute, formFieldValue );
+
+                    if ( contentViolation != null )
+                    {
+                        throw new Exception( $"The value entered for \"{attribute.Name}\" {contentViolation}." );
                     }
 
                     item?.SetPublicAttributeValue( attribute.Key, formFieldValue, null, false );
