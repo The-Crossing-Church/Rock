@@ -132,6 +132,12 @@ export default defineComponent({
     <div v-if="item.isHeader" class="text-primary text-bold">
       {{item.value}}
     </div>
+    <div v-else-if="item.disabled">
+      {{item.text}}
+      <div class="text-subscript">
+        {{item.description}}
+      </div>
+    </div>
     <div v-else @click="select(item)">
       {{item.text}}
       <div class="text-subscript">
