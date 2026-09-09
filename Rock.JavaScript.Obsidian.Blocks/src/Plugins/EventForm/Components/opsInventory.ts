@@ -19,6 +19,7 @@ type ListItem = {
   value: string,
   description: string,
   isDisabled: boolean,
+  disabled: boolean,
   isHeader: boolean,
   type: string,
   order: number
@@ -50,10 +51,10 @@ export default defineComponent({
 
   },
   data() {
-      return {
-        opsInventory: [] as InventoryReservation[],
-        modal: false
-      };
+    return {
+      opsInventory: [] as InventoryReservation[],
+      modal: false
+    };
   },
   computed: {
     inventory() {
@@ -71,6 +72,7 @@ export default defineComponent({
         }
         if(!l.isActive) {
           x.isDisabled = true
+          x.disabled = true
         }
         if(l.order) {
           x.order = l.order
