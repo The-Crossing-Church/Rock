@@ -326,15 +326,17 @@ export default defineComponent({
       },
       'e.attributeValues.Rooms': {
         handler(val) {
-          let rooms = JSON.parse(val)
-          if(rooms.value) {
-            rooms = rooms.value.split(',')
-          } else {
-            rooms = []
+          if(val) {
+            let rooms = JSON.parse(val)
+            if(rooms.value) {
+              rooms = rooms.value.split(',')
+            } else {
+              rooms = []
+            }
+            this.roomSetUp = this.roomSetUp.filter((set: any) => {
+              return rooms.includes(set.Room)
+            })
           }
-          this.roomSetUp = this.roomSetUp.filter((set: any) => {
-            return rooms.includes(set.Room)
-          })
         }
       },
       // 'e.attributeValues.ExpectedAttendance': {

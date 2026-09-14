@@ -115,10 +115,12 @@ export default defineComponent({
         deep: true
       },
       modelValue(val) {
-        let parsed = JSON.parse(val)
-        let roomGuids = parsed.value.split(',')
-        if(parsed.value != this.selectedValue.map((i: any) => i.value).join(",")) {
-          this.selectedValue = this.items.filter((i: any) =>  roomGuids.includes(i.value)).map((i: any) => { return { text: i.text, value: i.value }})
+        if(val) {
+          let parsed = JSON.parse(val)
+          let roomGuids = parsed.value.split(',')
+          if(parsed.value != this.selectedValue.map((i: any) => i.value).join(",")) {
+            this.selectedValue = this.items.filter((i: any) =>  roomGuids.includes(i.value)).map((i: any) => { return { text: i.text, value: i.value }})
+          }
         }
       },
       items: {

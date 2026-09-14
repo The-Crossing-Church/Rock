@@ -315,7 +315,10 @@ export default defineComponent({
         //Find Values that were removed 
         if(oval) {
           let original = JSON.parse(oval)
-          let current = JSON.parse(val)
+          let current = { text: "", value: "" }
+          if(val) {
+            current = JSON.parse(val)
+          }
           if(original.value) {
             original = original.value.split(',')
             if(current.value) {
