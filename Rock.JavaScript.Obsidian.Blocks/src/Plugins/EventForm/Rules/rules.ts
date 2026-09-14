@@ -616,6 +616,7 @@ const rules = {
                   this.required(events[i].attributeValues?.RegistrationEndDate, '') != true ||
                   this.dateCannotBeAfterEvent(regEndDate, lastDate, '') != true ||
                   this.required(events[i].attributeValues?.RegistrationEndTime, '') != true ||
+                  this.required(events[i].attributeValues?.MaxRegistrants, '') != true ||
                   this.maxRegistration(maxReg, events[i].attributeValues?.Rooms, locations as any[], events[i].attributes?.MaxRegistrants.name, request.attributeValues.NeedsOnline == 'True') != true ||
                   this.required(events[i].attributeValues?.RegistrationConfirmationEmailSender, '') != true ||
                   (events[i].attributeValues?.NeedsCustomCommContent == 'True' && this.required(events[i].attributeValues?.RegistrationConfirmationEmailAdditionalDetails, '') != true) ||
