@@ -313,22 +313,24 @@ export default defineComponent({
     'e.attributeValues.Rooms': {
       handler(val, oval) {
         //Find Values that were removed 
-        let original = JSON.parse(oval)
-        let current = JSON.parse(val)
-        if(original.value) {
-          original = original.value.split(',')
-          if(current.value) {
-            current = current.value.split(',')
-          } else {
-            current = []
-          }
-          let removed = original.filter((r: string) => { return !current.includes(r) } )
-          //For removed rooms make sure they are removed from the set-up list
-          if(this.e?.attributeValues?.RoomSetUp) {
-            let setUp = JSON.parse(this.e?.attributeValues?.RoomSetUp as string)
-            if(setUp) {
-              setUp = setUp.filter((set: any) => { return !removed.includes(set.Room)})
-              this.e.attributeValues.RoomSetUp = JSON.stringify(setUp)
+        if(oval) {
+          let original = JSON.parse(oval)
+          let current = JSON.parse(val)
+          if(original.value) {
+            original = original.value.split(',')
+            if(current.value) {
+              current = current.value.split(',')
+            } else {
+              current = []
+            }
+            let removed = original.filter((r: string) => { return !current.includes(r) } )
+            //For removed rooms make sure they are removed from the set-up list
+            if(this.e?.attributeValues?.RoomSetUp) {
+              let setUp = JSON.parse(this.e?.attributeValues?.RoomSetUp as string)
+              if(setUp) {
+                setUp = setUp.filter((set: any) => { return !removed.includes(set.Room)})
+                this.e.attributeValues.RoomSetUp = JSON.stringify(setUp)
+              }
             }
           }
         }
