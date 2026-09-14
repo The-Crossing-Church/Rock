@@ -48,17 +48,14 @@ export default defineComponent({
                 item.class = 'text-red'
               }
               if(key == 'AdditionalSetupImages') {
-                console.log('SET UP IMGS')
-                console.log(item.value)
                 let matrix = JSON.parse(item.value)
                 if(matrix.matrixItems) {
                   item.value = matrix.matrixItems.map(mi => mi.editValues.Image)
                 }
                 if(this.details.changes && this.details.changes.attributeValues[key] != this.details.attributeValues[key]) {
-                  matrix = JSON.parse(this.details.changes.attributeValues[key].value)
+                  matrix = JSON.parse(item.changeValue)
                   if(matrix.matrixItems) {
                     item.changeValue = matrix.matrixItems.map(mi => mi.editValues.Image)
-                    item.class = 'text-red'
                   }
                 }
               }
@@ -372,7 +369,8 @@ export default defineComponent({
             <rck-lbl :class="av.class">{{av.attr.name}}</rck-lbl>
             <div class="row mb-2">
               <div class="col col-xs-6">
-                <tcc-img v-for="(img, idx) in av.value" :value="img" :key="'img_' + idx"></tcc-img>
+                <div v-if="!av.value || av.value.length == 0">Empty</div>
+                <tcc-img v-else v-for="(img, idx) in av.value" :value="img" :key="'img_' + idx"></tcc-img>
               </div>
               <div class="col col-xs-6">
                 <tcc-img v-for="(img, idx) in av.changeValue" :value="img" :key="'new_img_' + idx"></tcc-img>
