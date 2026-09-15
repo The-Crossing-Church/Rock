@@ -194,21 +194,25 @@ const rules = {
   },
   pubStartIsValid(value: string, end: string, minPubStartDate: string, maxPubStartDate: string) {
     if(value && end) {
-      let startDt = DateTime.fromFormat(value, "yyyy-MM-dd")
-      let endDt = DateTime.fromFormat(end, "yyyy-MM-dd")
+      // let startDt = DateTime.fromFormat(value, "yyyy-MM-dd")
+      // let endDt = DateTime.fromFormat(end, "yyyy-MM-dd")
+      let startDt = this.dateFromString(value)
+      let endDt = this.dateFromString(end)
       let duration = Interval.fromDateTimes(startDt, endDt)
       let days = duration.count('days')
       if(days < 21) {
         return 'Publicity must run for a minimum of 3 weeks'
       }
       if(minPubStartDate) {
-        let minStartDt = DateTime.fromFormat(minPubStartDate, "yyyy-MM-dd")
+        // let minStartDt = DateTime.fromFormat(minPubStartDate, "yyyy-MM-dd")
+        let minStartDt = this.dateFromString(minPubStartDate)
         if(startDt < minStartDt) {
           return `Publicity cannot start before ${minStartDt.toFormat("MM/dd/yyyy")}`
         }
       }
       if(maxPubStartDate) {
-        let maxStartDt = DateTime.fromFormat(maxPubStartDate, "yyyy-MM-dd")
+        // let maxStartDt = DateTime.fromFormat(maxPubStartDate, "yyyy-MM-dd")
+        let maxStartDt = this.dateFromString(maxPubStartDate)
         if(startDt > maxStartDt) {
           return `Publicity cannot start after ${maxStartDt.toFormat("MM/dd/yyyy")}`
         }
@@ -218,21 +222,25 @@ const rules = {
   },
   pubEndIsValid(value: string, start: string, eventDates: string, minPubEndDate: string, maxPubEndDate: string) {
     if(value && start) {
-      let startDt = DateTime.fromFormat(start, "yyyy-MM-dd")
-      let endDt = DateTime.fromFormat(value, "yyyy-MM-dd")
+      // let startDt = DateTime.fromFormat(start, "yyyy-MM-dd")
+      // let endDt = DateTime.fromFormat(value, "yyyy-MM-dd")
+      let startDt = this.dateFromString(start)
+      let endDt = this.dateFromString(value)
       let duration = Interval.fromDateTimes(startDt, endDt)
       let days = duration.count('days')
       if(days < 21) {
         return 'Publicity must run for a minimum of 3 weeks'
       }
       if(minPubEndDate) {
-        let minEndDt = DateTime.fromFormat(minPubEndDate, "yyyy-MM-dd")
+        // let minEndDt = DateTime.fromFormat(minPubEndDate, "yyyy-MM-dd")
+        let minEndDt = this.dateFromString(minPubEndDate)
         if(endDt < minEndDt) {
           return `Publicity cannot end before ${minEndDt.toFormat("MM/dd/yyyy")}`
         }
       }
       if(maxPubEndDate) {
-        let maxEndDt = DateTime.fromFormat(maxPubEndDate, "yyyy-MM-dd")
+        // let maxEndDt = DateTime.fromFormat(maxPubEndDate, "yyyy-MM-dd")
+        let maxEndDt = this.dateFromString(maxPubEndDate)
         if(endDt > maxEndDt) {
           return `Publicity cannot end after ${maxEndDt.toFormat("MM/dd/yyyy")}`
         }
@@ -249,7 +257,8 @@ const rules = {
   childcareCloseIsValid(value: string, eventDates: string) {
     if(eventDates) {
       let dates = eventDates.split(",").map(d => DateTime.fromFormat(d.trim(), "yyyy-MM-dd")).sort()
-      let dt = DateTime.fromFormat(value, "yyyy-MM-dd")
+      // let dt = DateTime.fromFormat(value, "yyyy-MM-dd")
+      let dt = this.dateFromString(value)
       let maxCloseDate
       if(dates.length > 1) {
         maxCloseDate = dates[0].minus({ week: 1 })
@@ -274,13 +283,15 @@ const rules = {
         if (dates && dates.length > 0) {
           let today = DateTime.now()
           let first = dates.map((i) => {
-            return DateTime.fromFormat(i, 'yyyy-MM-dd')
+            return this.dateFromString(i) 
+            //DateTime.fromFormat(i, 'yyyy-MM-dd')
           })?.sort().shift()?.minus({ days: numDays })
           if(specificDate) {
-            if(specificDate.includes('T')) {
-              specificDate = specificDate.split('T')[0]
-            }
-            first = DateTime.fromFormat(specificDate, 'yyyy-MM-dd').minus({ days: numDays })
+            // if(specificDate.includes('T')) {
+            //   specificDate = specificDate.split('T')[0]
+            // }
+            // first = DateTime.fromFormat(specificDate, 'yyyy-MM-dd').minus({ days: numDays })
+            first = this.dateFromString(specificDate).minus({ days: numDays })
           }
           let isFuneralRequest = false
           let val = request.attributeValues.Ministry
@@ -350,6 +361,7 @@ const rules = {
         }
 
         let twoWeeksTense = this.findTense(request, ministries, 14)
+        console.log('CHILDCARE TENSE')
         let thirtyDaysTense = this.findTense(request, ministries,30)
         let pubDateCutOff = lastDate.minus({weeks: 6})
         if(request.attributeValues.PublicityStartDate) {
