@@ -151,6 +151,10 @@ export default defineComponent({
       }
     },
     watch: {
+      'e.attributeValues.EventNeedsSeparateLink'(val, original) {
+        console.log('Separate Link Update')
+        console.log(val, original)
+      },
       'e.attributeValues.RegistrationFeeType'(val, original) {
         if(val.includes('No Fees') && !original.includes('No Fees')) {
           //Overwrite options and clear out all other choices.

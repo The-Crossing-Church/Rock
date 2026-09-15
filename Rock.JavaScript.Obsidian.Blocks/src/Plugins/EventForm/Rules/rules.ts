@@ -267,6 +267,7 @@ const rules = {
   },
   findTense( request: ContentChannelItemBag, ministries: DefinedValueBag[] | undefined, numDays: any, specificDate?: any): String {
     if (request.attributeValues) {
+      console.log('Specific Date Value:', specificDate)
       let av = request?.attributeValues.EventDates
       if (av) {
         let dates = av?.split(",").map(d => d.trim())
@@ -293,9 +294,13 @@ const rules = {
           if(ministry?.value?.toLowerCase().includes("funeral")) {
             isFuneralRequest = true
           }
+          console.log(first, today)
+          console.log((first && first.startOf("day") >= today.startOf("day")))
           if (isFuneralRequest || (first && first.startOf("day") >= today.startOf("day"))) {
+            console.log('valid')
             return 'is'
           }
+          console.log('invalid')
           return 'was'
         } 
       }
@@ -317,6 +322,16 @@ const rules = {
     { attr: "NeedsWorship",                  cat: "Event Worship",                 section: "Worship",            type: "Worship"            },
     { attr: "NeedsWebCalendar",              cat: "Event Calendar",                section: "Calendar",           type: "Web Calendar"       }
   ],
+  dateFromString(value: string | null | undefined) {
+    if(value) {
+      if(value.includes('T')) {
+        value = value.split('T')[0]
+      }
+      return DateTime.fromFormat(value, 'yyyy-MM-dd')
+    } else {
+      return null
+    }
+  },
   validate(request: ContentChannelItemBag | undefined, events: ContentChannelItemBag[], locations: DefinedValueBag[] | undefined, ministries: DefinedValueBag[] | undefined, isSuperUser: boolean | undefined) {
       let requestIsValid = true
       let invalidSections = [] as string[]
@@ -349,10 +364,9 @@ const rules = {
           }
         } else {
           let registrationDates = events.map((e: any) => { 
-            let str = e?.attributeValues?.RegistrationStartDate.trim() 
-            if(str) {
-              return DateTime.fromFormat(str, 'yyyy-MM-dd')
-            }
+            return this.dateFromString(e?.attributeValues?.RegistrationStartDate)
+          }).filter((dt: any) => { 
+            return dt !== null && dt !== undefined
           }).sort((a: any, b: any) => {
             if(a < b) {
               return -1
@@ -361,12 +375,16 @@ const rules = {
             }
             return 0
           })
+          console.log('All Reg Dates', registrationDates)
           if(registrationDates && registrationDates.length > 0) {
             let regDate = registrationDates[0]
             registrationFirstGoLive = regDate?.toFormat('yyyy-MM-dd') as string
           }
         }
+        console.log('REGISTRATION TENSE')
+        console.log(registrationFirstGoLive)
         let registrationTense = this.findTense(request, ministries,14, registrationFirstGoLive)
+        console.log(registrationTense)
         let webCalTense = this.findTense(request, ministries,14, request.attributeValues.WebCalendarGoLive)
 
         //Drafts, cut anything that is past-deadline

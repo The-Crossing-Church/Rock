@@ -662,8 +662,10 @@ export default defineComponent({
     validate() {
       let req = this.viewModel?.request as any
       let events = this.viewModel?.events as any
+      console.log('Request')
       console.log(req)
-      console.log(events)
+      console.log('Events')
+      console.log(JSON.parse(JSON.stringify(events)))
       let res = this.rules.validate(this.viewModel?.request, events, this.viewModel?.locations, this.viewModel?.ministries, this.viewModel?.isSuperUser ) as any
       this.readonlySections = res.readonlySections
       if(!this.viewModel?.permissions?.includes("Edit")) {
@@ -673,6 +675,8 @@ export default defineComponent({
         this.viewModel.request.attributeValues.RequestIsValid = res?.isValid ? 'True' : 'False'
         this.viewModel.request.attributeValues.RequestErrors = JSON.stringify(this.requestErrors)
       }
+      console.log('Events Post Validation Method')
+      console.log(JSON.parse(JSON.stringify(events)))
     },
     validationChange(errs: any) {
       let exists = false
