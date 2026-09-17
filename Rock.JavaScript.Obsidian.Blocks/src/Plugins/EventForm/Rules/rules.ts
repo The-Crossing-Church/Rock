@@ -761,6 +761,7 @@ const rules = {
             readonlySections.push('Online')
             readonlySections.push('Catering')
             readonlySections.push('Childcare Catering')
+            readonlySections.push('Childcare Registration')
             readonlySections.push('Ops')
             readonlySections.push('Production')
             readonlySections.push('Worship')
@@ -797,7 +798,7 @@ const rules = {
         }
 
         request.attributeValues.RequestIsValid = requestIsValid ? 'True' : 'False'
-        return { isValid: requestIsValid, invalidSections: invalidCategories, readonlySections: readOnlyCategories }
+        return { isValid: requestIsValid, invalidSections: invalidCategories, readonlySections: readonlySections }
       }
   }
 }
