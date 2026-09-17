@@ -1568,7 +1568,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
                 for ( int k = 0; k < sharingMembership.Count(); k++ )
                 {
                     //List<DefinedValue> limitedToMinistry = null;
-                    List<string> limitedToMinistryGuid = sharingMembership[k].GetAttributeValue( "Ministry" ).Split( ',' ).ToList();
+                    List<Guid?> limitedToMinistryGuid = sharingMembership[k].GetAttributeValue( "Ministry" ).Split( ',' ).AsGuidOrNullList().Where( g => g.HasValue ).ToList();
                     bool membershipHasEdit = false;
                     if ( sharingMembership[k].GroupRole.Name == "Can Edit" )
                     {
@@ -1583,7 +1583,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
                         var requestMinistries = new AttributeValueService( context ).Queryable().Where( av => av.AttributeId == ministryAttr.Id && av.Value != personalRequest.Guid.ToString() );
                         if ( limitedToMinistryGuid.Any() )
                         {
-                            requestMinistries = requestMinistries.Where( av => limitedToMinistryGuid.Contains( av.Value ) );
+                            requestMinistries = requestMinistries.Where( av => limitedToMinistryGuid.Contains( av.Value.AsGuidOrNull() ) );
                         }
                         creatorsRequests = creatorsRequests.Join( requestMinistries,
                             cci => cci.Id,

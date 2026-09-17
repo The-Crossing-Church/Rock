@@ -584,7 +584,7 @@ namespace Rock.Blocks.Plugins.EventForm
                                 if ( ids.Contains( request.CreatedByPersonAliasId.Value ) )
                                 {
                                     sharingMembership[k].LoadAttributes();
-                                    List<Guid?> limitedToMinistryGuid = sharingMembership[k].GetAttributeValue( "Ministry" ).Split( ',' ).AsGuidOrNullList();
+                                    List<Guid?> limitedToMinistryGuid = sharingMembership[k].GetAttributeValue( "Ministry" ).Split( ',' ).AsGuidOrNullList().Where( g => g.HasValue ).ToList();
                                     if ( limitedToMinistryGuid.Any() )
                                     {
                                         Guid? requestMinistry = request.GetAttributeValue( "Ministry" ).AsGuidOrNull();
@@ -598,6 +598,11 @@ namespace Rock.Blocks.Plugins.EventForm
                                             auth.CanView = true;
                                             auth.CanEdit = membershipHasEdit;
                                         }
+                                    }
+                                    else
+                                    {
+                                        auth.CanView = true;
+                                        auth.CanEdit = membershipHasEdit;
                                     }
                                 }
                                 else
