@@ -92,7 +92,7 @@ export default defineComponent({
       </tcc-validator>
     </div>
     <div class="col col-xs-12 col-md-6">
-      <tcc-validator :name="e.attributes.ChildcareRegistrationCloseDate.key" :rules="[rules.required(e.attributeValues.ChildcareRegistrationCloseDate, e.attributes.ChildcareRegistrationCloseDate.name), rules.childcareCloseIsValid(e.attributeValues.ChildcareRegistrationCloseDate, request.attributeValues.EventDates)]" ref="validators_cc_reg_close">
+      <tcc-validator :name="e.attributes.ChildcareRegistrationCloseDate.key" :rules="[rules.required(e.attributeValues.ChildcareRegistrationCloseDate, e.attributes.ChildcareRegistrationCloseDate.name), rules.childcareCloseIsValid(e.attributeValues.ChildcareRegistrationCloseDate, request.attributeValues.EventDates)]" v-if="!readonly" ref="validators_cc_reg_close">
         <tcc-date-pkr
           :label="e.attributes.ChildcareRegistrationCloseDate.name"
           v-model="e.attributeValues.ChildcareRegistrationCloseDate"
@@ -101,6 +101,14 @@ export default defineComponent({
           id="dateChildcareRegistrationCloseDate"
         ></tcc-date-pkr>
       </tcc-validator>
+      <rck-field
+        v-else
+        v-model="e.attributeValues.ChildcareRegistrationCloseDate"
+        :attribute="e.attributes.ChildcareRegistrationCloseDate"
+        :is-edit-mode="false"
+        :showEmptyValue="true"
+        id="dateChildcareRegistrationCloseDate"
+      ></rck-field>
     </div>
     <div class="col col-xs-12">
       <rck-field
