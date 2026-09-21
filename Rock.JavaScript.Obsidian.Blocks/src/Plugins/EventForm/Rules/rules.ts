@@ -333,6 +333,33 @@ const rules = {
     { attr: "NeedsWorship",                  cat: "Event Worship",                 section: "Worship",            type: "Worship"            },
     { attr: "NeedsWebCalendar",              cat: "Event Calendar",                section: "Calendar",           type: "Web Calendar"       }
   ],
+  requestStatuses: [
+    { text: "Draft",                    value: "Draft"                    },
+    { text: "Submitted",                value: "Submitted"                },
+    { text: "In Progress",              value: "In Progress"              },
+    { text: "Pending Confirmation",     value: "Pending Confirmation"     },
+    { text: "Approved",                 value: "Approved"                 },
+    { text: "Confirmed",                value: "Confirmed"                },
+    { text: "Denied",                   value: "Denied"                   },
+    { text: "Cancelled",                value: "Cancelled"                },
+    { text: "Pending Changes",          value: "Pending Changes"          },
+    { text: "Proposed Changes Denied",  value: "Proposed Changes Denied"  },
+    { text: "Changes Accepted by User", value: "Changes Accepted by User" },
+    { text: "Cancelled by User",        value: "Cancelled by User"        }
+  ],
+  resources: [
+    { text: "Room",               value: "Room"               },
+    { text: "Online Event",       value: "Online Event"       },
+    { text: "Catering",           value: "Catering"           },
+    { text: "Childcare",          value: "Childcare"          },
+    { text: "Childcare Catering", value: "Childcare Catering" },
+    { text: "Extra Resources",    value: "Extra Resources"    },
+    { text: "Registration",       value: "Registration"       },
+    { text: "Web Calendar",       value: "Web Calendar"       },
+    { text: "Production",         value: "Production"         },
+    { text: "Worship",            value: "Worship"            },
+    { text: "Publicity",          value: "Publicity"          }
+  ],
   dateFromString(value: string | null | undefined) {
     if(value) {
       if(value.includes('T')) {

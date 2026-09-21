@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 using Newtonsoft.Json;
 
-using Rock.Blocks.Plugins.ViewModels;
 using Rock.Data;
 using Rock.Model;
 
@@ -649,5 +646,20 @@ namespace Rock.Blocks.Plugins.EventForm
         public int RequestId { get; set; }
         public bool CanEdit { get; set; }
         public bool CanView { get; set; }
+    }
+    public class Filters
+    {
+        public string title { get; set; }
+        public string ministry { get; set; }
+        public List<string> statuses { get; set; }
+        public List<string> resources { get; set; }
+        public DateRangeParts eventDates { get; set; }
+        public DateRangeParts eventModified { get; set; }
+        public string submitter { get; set; }
+    }
+    public class DateRangeParts
+    {
+        public string lowerValue { get; set; }
+        public string upperValue { get; set; }
     }
 }

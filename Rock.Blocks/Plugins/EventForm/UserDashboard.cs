@@ -6,15 +6,6 @@ using System.Data.Entity;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Web.Configuration;
-
-using DocumentFormat.OpenXml.Math;
-
-using Microsoft.Ajax.Utilities;
-
-using Newtonsoft.Json;
-
-using OpenXmlPowerTools;
 
 using Rock.Attribute;
 using Rock.Blocks.Plugins.EventForm;
@@ -23,9 +14,6 @@ using Rock.Communication;
 using Rock.Data;
 using Rock.Model;
 using Rock.Web.Cache;
-
-using static Rock.Blocks.Plugins.EventDashboard.UserDashboard;
-using static Rock.Model.StepProgram;
 
 namespace Rock.Blocks.Plugins.EventDashboard
 {
@@ -1811,21 +1799,25 @@ namespace Rock.Blocks.Plugins.EventDashboard
             public DateRangeParts eventModified { get; set; }
             public string submitter { get; set; }
         }
+
         public class Submitter
         {
             public string value { get; set; }
             public string text { get; set; }
         }
+
         public class DateRangeParts
         {
             public string lowerValue { get; set; }
             public string upperValue { get; set; }
         }
+
         public class DuplicateDates
         {
             public string originalDate { get; set; }
             public string newDate { get; set; }
         }
+
         public class RequestGridView
         {
             public int Id { get; set; }
@@ -1843,11 +1835,5 @@ namespace Rock.Blocks.Plugins.EventDashboard
             public string IsValid { get; set; }
             public int? UnreadComments { get; set; }
         }
-        //private class RequestAuthorization
-        //{
-        //    public int RequestId { get; set; }
-        //    public bool CanEdit { get; set; }
-        //    public bool CanView { get; set; }
-        //}
     }
 }
