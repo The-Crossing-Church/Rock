@@ -6,6 +6,7 @@ using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
+
 using Rock.Attribute;
 using Rock.Communication;
 using Rock.Data;
@@ -2117,22 +2118,6 @@ namespace Rock.Blocks.Plugins.EventDashboard
         {
             public ContentChannelItemBag detail { get; set; }
             public ContentChannelItemBag detailPendingChanges { get; set; }
-        }
-
-        public class Filters
-        {
-            public string title { get; set; }
-            public string ministry { get; set; }
-            public List<string> statuses { get; set; }
-            public List<string> resources { get; set; }
-            public DateRangeParts eventDates { get; set; }
-            public DateRangeParts eventModified { get; set; }
-            public string submitter { get; set; }
-        }
-        public class DateRangeParts
-        {
-            public string lowerValue { get; set; }
-            public string upperValue { get; set; }
         }
 
         public class EventPartialApproval
