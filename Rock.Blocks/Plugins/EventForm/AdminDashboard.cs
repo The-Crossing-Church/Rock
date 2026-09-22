@@ -13,6 +13,7 @@ using Rock.Model;
 using Rock.Blocks.Plugins.ViewModels;
 using Rock.Web.Cache;
 using Rock.Blocks.Plugins.EventForm;
+using Mono.CSharp.Linq;
 
 namespace Rock.Blocks.Plugins.EventDashboard
 {
@@ -1658,6 +1659,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
             PersonService p_svc = new PersonService( context );
             string sharedWithAttrKey = GetAttributeValue( AttributeKey.SharedWithAttrKey );
             var sharedWithAttr = item.GetAttributeValue( sharedWithAttrKey );
+            Guid? requestMinistry = item.GetAttributeValue( "Ministry" ).AsGuidOrNull();
             Guid? sharedRequestGroupTypeGuid = GetAttributeValue( AttributeKey.SharingGroupType ).AsGuidOrNull();
             if ( sharedRequestGroupTypeGuid.HasValue )
             {
@@ -1671,7 +1673,23 @@ namespace Rock.Blocks.Plugins.EventDashboard
                 var grpList = groups.ToList();
                 for ( int k = 0; k < grpList.Count(); k++ )
                 {
-                    users.AddRange( grpList[k].Members.Where( gm => gm.GroupRole.Name == "Can View" ).Select( gm => gm.Person ) );
+                    var additionalEditors = grpList[k].Members.Where( gm => gm.GroupRole.Name == "Can Edit" ).ToList();
+                    additionalEditors.LoadAttributes();
+                    for ( int j = 0; j < additionalEditors.Count(); j++ )
+                    {
+                        List<Guid?> limitedToMinistryGuid = additionalEditors[j].GetAttributeValue( "Ministry" ).Split( ',' ).AsGuidOrNullList().Where( g => g.HasValue ).ToList();
+                        if ( limitedToMinistryGuid.Any() )
+                        {
+                            if ( limitedToMinistryGuid.Contains( requestMinistry.Value ) )
+                            {
+                                users.Add( additionalEditors[j].Person );
+                            }
+                        }
+                        else
+                        {
+                            users.Add( additionalEditors[j].Person );
+                        }
+                    }
                 }
             }
             List<int?> sharedRequests = new List<int?>();
