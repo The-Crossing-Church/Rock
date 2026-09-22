@@ -6,15 +6,6 @@ using System.Data.Entity;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Web.Configuration;
-
-using DocumentFormat.OpenXml.Math;
-
-using Microsoft.Ajax.Utilities;
-
-using Newtonsoft.Json;
-
-using OpenXmlPowerTools;
 
 using Rock.Attribute;
 using Rock.Blocks.Plugins.EventForm;
@@ -1568,7 +1559,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
                 for ( int k = 0; k < sharingMembership.Count(); k++ )
                 {
                     //List<DefinedValue> limitedToMinistry = null;
-                    List<Guid?> limitedToMinistryGuid = sharingMembership[k].GetAttributeValue( "Ministry" ).Split( ',' ).AsGuidOrNullList().Where( g => g.HasValue ).ToList();
+                    List<string> limitedToMinistryGuid = sharingMembership[k].GetAttributeValue( "Ministry" ).Split( ',' ).AsGuidOrNullList().Where( g => g.HasValue ).Select( g => g.Value.ToString() ).ToList();
                     bool membershipHasEdit = false;
                     if ( sharingMembership[k].GroupRole.Name == "Can Edit" )
                     {
@@ -1583,7 +1574,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
                         var requestMinistries = new AttributeValueService( context ).Queryable().Where( av => av.AttributeId == ministryAttr.Id && av.Value != personalRequest.Guid.ToString() );
                         if ( limitedToMinistryGuid.Any() )
                         {
-                            requestMinistries = requestMinistries.Where( av => limitedToMinistryGuid.Contains( av.Value.AsGuidOrNull() ) );
+                            requestMinistries = requestMinistries.Where( av => limitedToMinistryGuid.Contains( av.Value ) );
                         }
                         creatorsRequests = creatorsRequests.Join( requestMinistries,
                             cci => cci.Id,
