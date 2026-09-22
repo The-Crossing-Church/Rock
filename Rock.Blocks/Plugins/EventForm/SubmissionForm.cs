@@ -4,10 +4,6 @@ using System.ComponentModel;
 using System.Data.Entity;
 using System.Linq;
 
-using Newtonsoft.Json;
-
-using OpenXmlPowerTools;
-
 using Rock.Attribute;
 using Rock.Blocks.Plugins.ViewModels;
 using Rock.Communication;
@@ -1266,7 +1262,7 @@ namespace Rock.Blocks.Plugins.EventForm
                 bool isEventAdmin = CheckSecurityRole( context, AttributeKey.EventAdminRole );
                 bool isRoomAdmin = CheckSecurityRole( context, AttributeKey.RoomAdminRole );
                 Guid? sharedRequestGroupTypeGuid = GetAttributeValue( AttributeKey.SharingGroupType ).AsGuidOrNull();
-                RequestAuthorization auth = helper.CheckRequestPermissions( request, p, isEventAdmin, isRoomAdmin, sharedRequestGroupTypeGuid );
+                RequestAuthorization auth = helper.CheckRequestPermissions( request, p, isEventAdmin, isRoomAdmin, sharedRequestGroupTypeGuid, GetAttributeValue( AttributeKey.SharedWithAttr ) );
                 List<string> permissions = new List<string>();
                 if ( auth.CanEdit )
                 {

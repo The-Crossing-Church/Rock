@@ -1603,7 +1603,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
                 bool isEventAdmin = CheckSecurityRole( context, AttributeKey.EventAdminRole );
                 bool isRoomAdmin = CheckSecurityRole( context, AttributeKey.RoomAdminRole );
                 Guid? sharedRequestGroupTypeGuid = GetAttributeValue( AttributeKey.SharingGroupType ).AsGuidOrNull();
-                return EventFormShared.CheckRequestPermissions( request, p, isEventAdmin, isRoomAdmin, sharedRequestGroupTypeGuid );
+                return EventFormShared.CheckRequestPermissions( request, p, isEventAdmin, isRoomAdmin, sharedRequestGroupTypeGuid, GetAttributeValue( AttributeKey.SharedWithAttrKey ) );
             }
         }
 

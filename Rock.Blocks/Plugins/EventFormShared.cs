@@ -9,6 +9,7 @@ using Newtonsoft.Json;
 using Rock.Blocks.Plugins.ViewModels;
 using Rock.Data;
 using Rock.Model;
+using Rock.Web.Cache;
 
 namespace Rock.Blocks.Plugins.EventForm
 {
@@ -544,7 +545,7 @@ namespace Rock.Blocks.Plugins.EventForm
             return message;
         }
 
-        public RequestAuthorization CheckRequestPermissions( ContentChannelItem request, Person p, bool isEventAdmin, bool isRoomAdmin, Guid? sharedRequestGroupTypeGuid )
+        public RequestAuthorization CheckRequestPermissions( ContentChannelItem request, Person p, bool isEventAdmin, bool isRoomAdmin, Guid? sharedRequestGroupTypeGuid, string sharedWithAttributeKey )
         {
             RequestAuthorization auth = new RequestAuthorization() { RequestId = request.Id, CanEdit = false, CanView = false };
 
@@ -611,6 +612,17 @@ namespace Rock.Blocks.Plugins.EventForm
                                     auth.CanEdit = membershipHasEdit;
                                 }
                             }
+                        }
+                    }
+                    if ( !auth.CanEdit && !auth.CanView )
+                    {
+                        //If this request wasn't shared via group sharing, check it it was shared directly
+                        var sharedWith = request.GetAttributeValue( sharedWithAttributeKey );
+
+                        if ( !String.IsNullOrEmpty( sharedWith ) && sharedWith.Split( ',' ).Contains( p.Id.ToString() ) )
+                        {
+                            auth.CanView = true;
+                            auth.CanEdit = true;
                         }
                     }
                 }
