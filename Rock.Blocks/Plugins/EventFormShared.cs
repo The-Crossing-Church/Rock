@@ -11,6 +11,7 @@ namespace Rock.Blocks.Plugins.EventForm
 {
     public class EventFormShared
     {
+        #region Properties
         private int EventContentChannelId { get; set; }
         private int EventDetailsContentChannelId { get; set; }
         private int EventChangesContentChannelId { get; set; }
@@ -20,7 +21,7 @@ namespace Rock.Blocks.Plugins.EventForm
         private string DiscountCodeKey { get; set; }
         private string AdditionalRegQuestionsKey { get; set; }
         private string OpsInventoryKey { get; set; }
-
+        #endregion
 
         public void InitializeEventFormHelper( int eventCCId, int eventDetailCCId, int eventChangesCCId, int eventDetailChangesCCId, string roomSetUpKey, string discountCodeKey, string opsInvKey, string addRegQuestionsKey )
         {
@@ -616,6 +617,8 @@ namespace Rock.Blocks.Plugins.EventForm
             return auth;
         }
     }
+
+    #region Helper Classes
     public class TableSetUp
     {
         public string Room { get; set; }
@@ -667,4 +670,5 @@ namespace Rock.Blocks.Plugins.EventForm
         public string lowerValue { get; set; }
         public string upperValue { get; set; }
     }
+    #endregion
 }
