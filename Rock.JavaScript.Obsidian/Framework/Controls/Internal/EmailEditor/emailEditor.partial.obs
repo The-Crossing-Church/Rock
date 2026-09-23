@@ -111,7 +111,7 @@
     import { ListItemBag } from "@Obsidian/ViewModels/Utility/listItemBag";
     import { useSecurityGrantToken } from "@Obsidian/Utility/block";
     import { EmailEditorApi, provideApi } from "./api";
-    import { createButtonComponentAdapter } from "./utils.partial";
+    import { createButtonComponentAdapter, createRsvpComponentAdapter } from "./utils.partial";
     import { Enumerable } from "@Obsidian/Utility/linq";
     import { isHTMLElement } from "@Obsidian/Utility/dom";
 
@@ -199,6 +199,7 @@
     provideApi(api);
 
     const buttonAdapter = createButtonComponentAdapter();
+    const rsvpAdapter = createRsvpComponentAdapter();
 
     // #region Values
 
@@ -266,6 +267,14 @@
                 buttonAdapter.migrateComponent(emailDoc, componentElement);
             });
 
+        // Migrate all RSVP components in the document.
+        Enumerable
+            .from(emailDoc.querySelectorAll(".component-rsvp"))
+            .ofType<HTMLElement>((el): el is HTMLElement => isHTMLElement(el))
+            .forEach((componentElement) => {
+                rsvpAdapter.migrateComponent(emailDoc, componentElement);
+            });
+
         // Initialize global button props or migrate existing ones.
         if (areGlobalDefaultsRequired || buttonAdapter.areGlobalDefaultsNeeded(emailDoc)) {
             // This occurs for a new document
@@ -288,9 +297,11 @@
     }
 
     function onComponentAdded(event: { componentTypeName: ComponentTypeName; componentElement: HTMLElement }): void {
-        if (event.componentTypeName === "button" && emailDocument.value) {
-            // Apply global props.
-            buttonAdapter.writeGlobalProps(emailDocument.value, buttonGlobalProps.value);
+        // Apply global props.
+        if (emailDocument.value) {
+            if (event.componentTypeName === "button") {
+                buttonAdapter.writeGlobalProps(emailDocument.value, buttonGlobalProps.value);
+            }
         }
     }
 
