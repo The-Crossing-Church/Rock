@@ -196,7 +196,7 @@ namespace RockWeb.Blocks.Finance
 
     [BooleanField(
         "Disable Captcha Support",
-        Description = "If set to 'Yes' the CAPTCHA verification step will not be performed.",
+        Description = "If set to 'Yes' the CAPTCHA verification will be skipped. \n\nNote: If the CAPTCHA site key and/or secret key are not configured in the system settings, this option will be forced as 'Yes', even if 'No' is visually selected.",
         Key = AttributeKey.DisableCaptchaSupport,
         DefaultBooleanValue = false,
         Order = 29
@@ -848,6 +848,8 @@ mission. We are so grateful for your commitment.</p>
             public const string CustomerTokenEncrypted = "CustomerTokenEncrypted";
             public const string TargetPersonGuid = "TargetPersonGuid";
             public const string ScheduledTransactionIdToBeTransferred = "ScheduledTransactionIdToBeTransferred";
+            public const string CreatedScheduledTransactionId = "CreatedScheduledTransactionId";
+            public const string IsTargetPersonVerified = "IsTargetPersonVerified";
         }
 
         #endregion ViewState Keys
@@ -981,6 +983,16 @@ mission. We are so grateful for your commitment.</p>
             set { ViewState[ViewStateKey.SelectedCampusId] = value; }
         }
 
+        /// <summary>
+        /// Gets or sets the identifier of the scheduled transaction created on this page, which
+        /// an anonymous giver is allowed to manage.
+        /// </summary>
+        protected int? CreatedScheduledTransactionId
+        {
+            get { return ViewState[ViewStateKey.CreatedScheduledTransactionId] as int?; }
+            set { ViewState[ViewStateKey.CreatedScheduledTransactionId] = value; }
+        }
+
         #endregion Properties
 
         #region Base Control Methods
@@ -998,9 +1010,11 @@ mission. We are so grateful for your commitment.</p>
             this.AddConfigurationUpdateTrigger( upnlContent );
 
             // Don't use captcha if the block is set to disable (DisableCaptchaSupport==true) it or if is not configured (IsAvailable==false)
-            var disableCaptchaSupport = GetAttributeValue( AttributeKey.DisableCaptchaSupport ).AsBoolean() || !cpCaptcha.IsAvailable;
-            cpCaptcha.Visible = !disableCaptchaSupport;
+            var disableCaptchaSupport = Captcha.CaptchaService.ShouldDisableCaptcha( GetAttributeValue( AttributeKey.DisableCaptchaSupport ).AsBoolean() );
+            cpCaptcha.Visible = !( disableCaptchaSupport || !cpCaptcha.IsAvailable );
             cpCaptcha.TokenReceived += CpCaptcha_TokenReceived;
+
+            btnGiveNow.Visible = !cpCaptcha.Visible;
 
             var enableACH = this.GetAttributeValue( AttributeKey.EnableACH ).AsBoolean();
             var enableCreditCard = this.GetAttributeValue( AttributeKey.EnableCreditCard ).AsBoolean();
@@ -1009,7 +1023,7 @@ mission. We are so grateful for your commitment.</p>
                 _hostedPaymentInfoControl = this.FinancialGatewayComponent.GetHostedPaymentInfoControl( this.FinancialGateway, $"_hostedPaymentInfoControl_{this.FinancialGateway.Id}", new HostedPaymentInfoControlOptions { EnableACH = enableACH, EnableCreditCard = enableCreditCard } );
                 phHostedPaymentControl.Controls.Add( _hostedPaymentInfoControl );
 
-                if ( disableCaptchaSupport )
+                if ( !cpCaptcha.Visible )
                 {
                     hfHostPaymentInfoSubmitScript.Value = this.FinancialGatewayComponent.GetHostPaymentInfoSubmitScript( this.FinancialGateway, _hostedPaymentInfoControl );
                 }
@@ -1103,6 +1117,15 @@ mission. We are so grateful for your commitment.</p>
             {
                 hfHostPaymentInfoSubmitScript.Value = this.FinancialGatewayComponent.GetHostPaymentInfoSubmitScript( this.FinancialGateway, _hostedPaymentInfoControl );
                 cpCaptcha.Visible = false;
+                
+                btnGiveNow.Visible = true;
+            }
+            else
+            {
+                cpCaptcha.Visible = true;
+                btnGiveNow.Visible = false;
+                nbPromptForAmountsWarning.Visible = true;
+                nbPromptForAmountsWarning.Text = "There was an issue processing your request. Please try again. If the issue persists please contact us.";
             }
         }
 
@@ -1525,9 +1548,17 @@ mission. We are so grateful for your commitment.</p>
 
             var targetPersonGivingId = targetPerson.GivingId;
             givingIdList.Add( targetPersonGivingId );
-            var scheduledTransactionList = financialScheduledTransactionService.Queryable()
-                .Where( a => givingIdList.Contains( a.AuthorizedPersonAlias.Person.GivingId ) && a.FinancialGatewayId.HasValue && a.IsActive == true && hostedGatewayIdList.Contains( a.FinancialGatewayId.Value ) )
-                .ToList();
+            var scheduledTransactionQuery = financialScheduledTransactionService.Queryable()
+                .Where( a => givingIdList.Contains( a.AuthorizedPersonAlias.Person.GivingId ) && a.FinancialGatewayId.HasValue && a.IsActive == true && hostedGatewayIdList.Contains( a.FinancialGatewayId.Value ) );
+
+            // An anonymous giver only sees the schedule they created on this page, not the matched person's other schedules.
+            if ( !IsTargetPersonVerified() )
+            {
+                var createdScheduledTransactionId = CreatedScheduledTransactionId ?? 0;
+                scheduledTransactionQuery = scheduledTransactionQuery.Where( a => a.Id == createdScheduledTransactionId );
+            }
+
+            var scheduledTransactionList = scheduledTransactionQuery.ToList();
 
             // Refresh the active transactions
             financialScheduledTransactionService.GetStatus( scheduledTransactionList, true );
@@ -1564,7 +1595,7 @@ mission. We are so grateful for your commitment.</p>
             {
                 FinancialScheduledTransactionService financialScheduledTransactionService = new FinancialScheduledTransactionService( rockContext );
                 var scheduledTransaction = financialScheduledTransactionService.Get( scheduledTransactionId );
-                if ( scheduledTransaction == null )
+                if ( scheduledTransaction == null || !CanManageScheduledTransaction( scheduledTransaction, rockContext ) )
                 {
                     return;
                 }
@@ -1596,6 +1627,43 @@ mission. We are so grateful for your commitment.</p>
             }
 
             BindScheduledTransactions();
+        }
+
+        /// <summary>
+        /// Determines whether the target person has been identified by login or person token,
+        /// rather than by person matching on an anonymous gift.
+        /// </summary>
+        /// <returns><c>true</c> if the target person is verified; otherwise <c>false</c>.</returns>
+        private bool IsTargetPersonVerified()
+        {
+            return ViewState[ViewStateKey.IsTargetPersonVerified] as bool? ?? false;
+        }
+
+        /// <summary>
+        /// Determines whether the scheduled transaction can be managed from this block. A verified
+        /// target person can manage their own and their businesses' schedules, while an anonymous
+        /// giver can only manage the schedule they created on this page.
+        /// </summary>
+        /// <param name="scheduledTransaction">The scheduled transaction.</param>
+        /// <param name="rockContext">The rock context.</param>
+        /// <returns><c>true</c> if the scheduled transaction can be managed; otherwise <c>false</c>.</returns>
+        private bool CanManageScheduledTransaction( FinancialScheduledTransaction scheduledTransaction, RockContext rockContext )
+        {
+            if ( !IsTargetPersonVerified() )
+            {
+                return CreatedScheduledTransactionId.HasValue && CreatedScheduledTransactionId.Value == scheduledTransaction.Id;
+            }
+
+            var targetPerson = GetTargetPerson( rockContext );
+            if ( targetPerson == null || scheduledTransaction.AuthorizedPersonAlias?.Person == null )
+            {
+                return false;
+            }
+
+            var givingIdList = targetPerson.GetBusinesses( rockContext ).Select( g => g.GivingId ).ToList();
+            givingIdList.Add( targetPerson.GivingId );
+
+            return givingIdList.Contains( scheduledTransaction.AuthorizedPersonAlias.Person.GivingId );
         }
 
         #endregion Scheduled Gifts
@@ -2177,6 +2245,9 @@ mission. We are so grateful for your commitment.</p>
             {
                 ViewState[ViewStateKey.TargetPersonGuid] = string.Empty;
             }
+
+            // The target person here came from a login or a validated person token, not from person matching.
+            ViewState[ViewStateKey.IsTargetPersonVerified] = targetPerson != null;
 
             SetCampus( targetPerson );
 
@@ -3216,7 +3287,7 @@ mission. We are so grateful for your commitment.</p>
             since it is the gateway that collects the payment info. But just in case paymentInfo has information the the gateway hasn't set,
             we'll fill in any missing details.
 
-            But then we'll want to use FinancialPaymentDetail as the most accurate values for the payment info. 
+            But then we'll want to use FinancialPaymentDetail as the most accurate values for the payment info.
             */
 
             transaction.FinancialPaymentDetail.SetFromPaymentInfo( paymentInfo, gateway as GatewayComponent, rockContext );
@@ -3298,35 +3369,21 @@ mission. We are so grateful for your commitment.</p>
         {
             var transactionEntity = this.GetTransactionEntity();
             var selectedAccountAmounts = caapPromptForAccountAmounts.AccountAmounts.Where( a => a.Amount.HasValue && a.Amount != 0 ).ToArray();
-
+            var allocations = selectedAccountAmounts
+                .Select( a => new FinancialTransactionService.AccountAllocation( a.AccountId, a.Amount.Value ) )
+                .ToList();
             var totalFeeCoverageAmount = GetSelectedFeeCoverageAmount();
-            var totalSelectedAmounts = selectedAccountAmounts.Sum( a => a.Amount.Value );
 
-            foreach ( var selectedAccountAmount in selectedAccountAmounts )
-            {
-                var transactionDetail = new T();
-
-                transactionDetail.AccountId = selectedAccountAmount.AccountId;
-                if ( totalFeeCoverageAmount > 0 )
-                {
-                    decimal portionOfTotalAmount = decimal.Divide( selectedAccountAmount.Amount.Value, totalSelectedAmounts );
-                    decimal feeCoverageAmountForAccount = decimal.Round( portionOfTotalAmount * totalFeeCoverageAmount, 2 );
-                    transactionDetail.Amount = selectedAccountAmount.Amount.Value + feeCoverageAmountForAccount;
-                    transactionDetail.FeeCoverageAmount = feeCoverageAmountForAccount;
-                }
-                else
-                {
-                    transactionDetail.Amount = selectedAccountAmount.Amount.Value;
-                }
-
-                if ( transactionEntity != null )
-                {
-                    transactionDetail.EntityTypeId = transactionEntity.TypeId;
-                    transactionDetail.EntityId = transactionEntity.Id;
-                }
-
-                transactionDetails.Add( transactionDetail );
-            }
+            // The FinancialTransactionService.PopulateTransactionDetails method will handle the distribution of fee
+            // coverage amounts across the accounts, so we can just pass in the total fee coverage amount and
+            // let it handle the rest. It will update this in the transactionDetails collection.
+            FinancialTransactionService.PopulateTransactionDetails<T>(
+                transactionDetails,
+                allocations,
+                enableCoverTheFees: totalFeeCoverageAmount > 0m,
+                totalFeeCoverageAmount: totalFeeCoverageAmount,
+                entityTypeId: transactionEntity?.TypeId,
+                entityId: transactionEntity?.Id );
         }
 
         /// <summary>
@@ -3440,6 +3497,8 @@ mission. We are so grateful for your commitment.</p>
             var financialScheduledTransactionService = new FinancialScheduledTransactionService( rockContext );
             financialScheduledTransactionService.Add( scheduledTransaction );
             rockContext.SaveChanges();
+
+            CreatedScheduledTransactionId = scheduledTransaction.Id;
 
             // If this is a transfer, now we can delete the old transaction
             if ( _scheduledTransactionIdToBeTransferred.HasValue )

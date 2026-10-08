@@ -1318,7 +1318,7 @@ namespace Rock.Rest.v2
                 return BadRequest();
             }
 
-            var root = Rock.Security.Encryption.DecryptString( options.EncryptedRoot );
+            var root = Rock.Security.Encryption.DecryptString( options.EncryptedRoot, false );
             var fullPath = Path.Combine( root, options.FileName );
             var physicalZipFile = System.Web.HttpContext.Current.Server.MapPath( fullPath );
             var directoryPath = Path.GetDirectoryName( physicalZipFile );
@@ -1396,7 +1396,7 @@ namespace Rock.Rest.v2
 
             try
             {
-                var root = Rock.Security.Encryption.DecryptString( options.EncryptedRoot );
+                var root = Rock.Security.Encryption.DecryptString( options.EncryptedRoot, false );
 
                 if ( options.UserSpecificRoot )
                 {
@@ -1455,7 +1455,7 @@ namespace Rock.Rest.v2
                 {
                     assetStorageProviderId = assetParts[0].AsInteger();
                     var encryptedRoot = assetParts[1].Trim();
-                    var root = Rock.Security.Encryption.DecryptString( encryptedRoot );
+                    var root = Rock.Security.Encryption.DecryptString( encryptedRoot, false );
 
                     // Verify all local roots start with "~/"
                     if ( assetStorageProviderId == 0 && !root.StartsWith( "~/" ) )
@@ -2077,7 +2077,12 @@ namespace Rock.Rest.v2
                 // If the entity can be secured, ensure the person has access to it.
                 if ( entity is ISecured securedEntity )
                 {
-                    var isAuthorized = securedEntity.IsAuthorized( Security.Authorization.VIEW, RockRequestContext.CurrentPerson )
+                    // Require EDIT access to the entity itself or VIEW access
+                    // to the entity via a security grant token. The EDIT
+                    // requirement helps cover situations where the entity type
+                    // does not have default security applied and is thus open
+                    // to all users. The grant remains at VIEW permissive.
+                    var isAuthorized = securedEntity.IsAuthorized( Security.Authorization.EDIT, RockRequestContext.CurrentPerson )
                         || grant?.IsAccessGranted( entity, Security.Authorization.VIEW ) == true;
 
                     if ( !isAuthorized )

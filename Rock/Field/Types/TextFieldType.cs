@@ -20,10 +20,13 @@ using System.Linq;
 #if WEBFORMS
 using System.Web.UI;
 using System.Web.UI.WebControls;
+
 #endif
 using Rock.Attribute;
+using Rock.Enums.Security;
 using Rock.Model;
 using Rock.Reporting;
+using Rock.Security;
 using Rock.Web.UI.Controls;
 
 namespace Rock.Field.Types
@@ -44,9 +47,6 @@ namespace Rock.Field.Types
         private const string MAX_CHARACTERS = "maxcharacters";
         private const string SHOW_COUNT_DOWN = "showcountdown";
         private const string IS_FIRST_NAME = "isfirstname";
-
-        // CROSSING (not needed after v18.4): per-field opt-in that allows HTML / Lava to be entered through
-        // a workflow entry form. Enforced by Rock.Security.WorkflowFormInputValidator.
         private const string ALLOW_HTML = "allowhtml";
         private const string ALLOW_LAVA = "allowlava";
 
@@ -99,6 +99,34 @@ namespace Rock.Field.Types
 
         #region Edit Control
 
+        /// <inheritdoc/>
+        public override StringValidationRule GetValidationRules( Dictionary<string, string> privateConfigurationValues )
+        {
+            if ( privateConfigurationValues?.TryGetValue( IS_FIRST_NAME, out var isFirstName ) == true && isFirstName.AsBoolean() )
+            {
+                return StringValueValidator.GetEffectiveRules( StringValidationProfile.Name );
+            }
+
+            var allowHtml = privateConfigurationValues.GetValueOrDefault( ALLOW_HTML, string.Empty ).AsBoolean();
+            var allowLava = privateConfigurationValues.GetValueOrDefault( ALLOW_LAVA, string.Empty ).AsBoolean();
+
+            if ( allowHtml && allowLava )
+            {
+                return StringValueValidator.GetEffectiveRules( StringValidationProfile.LavaAndBasicHtml );
+            }
+            else if ( allowHtml )
+            {
+                return StringValueValidator.GetEffectiveRules( StringValidationProfile.BasicHtml );
+            }
+            else if ( allowLava )
+            {
+                return StringValueValidator.GetEffectiveRules( StringValidationProfile.PlainText,
+                    excludedRules: StringValidationRule.LavaFormatting | StringValidationRule.LavaCommands );
+            }
+
+            return StringValueValidator.GetEffectiveRules( StringValidationProfile.PlainText );
+        }
+
         #endregion
 
         #region FilterControl
@@ -142,7 +170,6 @@ namespace Rock.Field.Types
             configKeys.Add( MAX_CHARACTERS );
             configKeys.Add( SHOW_COUNT_DOWN );
             configKeys.Add( IS_FIRST_NAME );
-            // CROSSING (not needed after v18.4): expose the Allow HTML / Allow Lava config keys.
             configKeys.Add( ALLOW_HTML );
             configKeys.Add( ALLOW_LAVA );
             return configKeys;
@@ -189,21 +216,21 @@ namespace Rock.Field.Types
             cbIsFirstNameField.Label = "FirstName Field";
             cbIsFirstNameField.Help = "When set, edit field will be validated as a first name.";
 
-            // CROSSING (not needed after v18.4): Allow HTML
+            // Add checkbox for deciding if the text should allow HTML or not.
             var cbAllowHtml = new RockCheckBox();
             controls.Add( cbAllowHtml );
             cbAllowHtml.AutoPostBack = true;
             cbAllowHtml.CheckedChanged += OnQualifierUpdated;
             cbAllowHtml.Label = "Allow HTML";
-            cbAllowHtml.Help = "When set, basic HTML may be entered in this field through a workflow entry form. Scripts are never allowed. Leave off to reject any HTML.";
+            cbAllowHtml.Help = "Controls whether server should allow HTML in this field or not. This can often be a security risk so use with caution.";
 
-            // CROSSING (not needed after v18.4): Allow Lava
+            // Add checkbox for deciding if the text should allow Lava syntax or not.
             var cbAllowLava = new RockCheckBox();
             controls.Add( cbAllowLava );
             cbAllowLava.AutoPostBack = true;
             cbAllowLava.CheckedChanged += OnQualifierUpdated;
             cbAllowLava.Label = "Allow Lava";
-            cbAllowLava.Help = "When set, Lava may be entered in this field through a workflow entry form. Leave off (the default) to reject Lava. Only enable for trusted, staff-facing forms.";
+            cbAllowLava.Help = "Controls whether server should allow Lava syntax in this field or not. This can often be a security risk so use with caution.";
 
             return controls;
         }
@@ -220,9 +247,8 @@ namespace Rock.Field.Types
             configurationValues.Add( MAX_CHARACTERS, new ConfigurationValue( "Max Characters", "The maximum number of characters to allow. Leave this field empty to allow for an unlimited amount of text.", "" ) );
             configurationValues.Add( SHOW_COUNT_DOWN, new ConfigurationValue( "Show Character Limit Countdown", "When set, displays a countdown showing how many characters remain (for the Max Characters setting).", "" ) );
             configurationValues.Add( IS_FIRST_NAME, new ConfigurationValue( "FirstName Field", "When set, edit field will be validated as a first name.", "" ) );
-            // CROSSING (not needed after v18.4): Allow HTML / Allow Lava config values.
-            configurationValues.Add( ALLOW_HTML, new ConfigurationValue( "Allow HTML", "When set, basic HTML may be entered in this field through a workflow entry form. Scripts are never allowed. Leave off to reject any HTML.", "" ) );
-            configurationValues.Add( ALLOW_LAVA, new ConfigurationValue( "Allow Lava", "When set, Lava may be entered in this field through a workflow entry form. Leave off (the default) to reject Lava. Only enable for trusted, staff-facing forms.", "" ) );
+            configurationValues.Add( ALLOW_HTML, new ConfigurationValue( "Allow HTML", "Controls whether server should prevent HTML from being entered in this field or not.", "" ) );
+            configurationValues.Add( ALLOW_LAVA, new ConfigurationValue( "Allow Lava", "Controls whether server should allow Lava syntax in this field or not.", "" ) );
 
             if ( controls != null )
             {
@@ -262,11 +288,9 @@ namespace Rock.Field.Types
                     }
                 }
 
-                // CROSSING (not needed after v18.4): read the Allow HTML / Allow Lava checkboxes.
                 if ( controls.Count > 4 )
                 {
-                    CheckBox cbAllowHtml = controls[4] as CheckBox;
-                    if ( cbAllowHtml != null )
+                    if ( controls[4] is CheckBox cbAllowHtml )
                     {
                         configurationValues[ALLOW_HTML].Value = cbAllowHtml.Checked.ToString();
                     }
@@ -274,8 +298,7 @@ namespace Rock.Field.Types
 
                 if ( controls.Count > 5 )
                 {
-                    CheckBox cbAllowLava = controls[5] as CheckBox;
-                    if ( cbAllowLava != null )
+                    if ( controls[5] is CheckBox cbAllowLava )
                     {
                         configurationValues[ALLOW_LAVA].Value = cbAllowLava.Checked.ToString();
                     }
@@ -330,11 +353,9 @@ namespace Rock.Field.Types
                     }
                 }
 
-                // CROSSING (not needed after v18.4): restore the Allow HTML / Allow Lava checkboxes.
                 if ( controls.Count > 4 && configurationValues.ContainsKey( ALLOW_HTML ) )
                 {
-                    CheckBox cbAllowHtml = controls[4] as CheckBox;
-                    if ( cbAllowHtml != null )
+                    if ( controls[4] is CheckBox cbAllowHtml )
                     {
                         cbAllowHtml.Checked = configurationValues[ALLOW_HTML].Value.AsBoolean();
                     }
@@ -342,8 +363,7 @@ namespace Rock.Field.Types
 
                 if ( controls.Count > 5 && configurationValues.ContainsKey( ALLOW_LAVA ) )
                 {
-                    CheckBox cbAllowLava = controls[5] as CheckBox;
-                    if ( cbAllowLava != null )
+                    if ( controls[5] is CheckBox cbAllowLava )
                     {
                         cbAllowLava.Checked = configurationValues[ALLOW_LAVA].Value.AsBoolean();
                     }
@@ -422,6 +442,7 @@ namespace Rock.Field.Types
         public override Control EditControl( Dictionary<string, ConfigurationValue> configurationValues, string id )
         {
             RockTextBox tb = base.EditControl( configurationValues, id ) as RockTextBox;
+            var allowHtml = false;
 
             if ( configurationValues != null )
             {
@@ -453,7 +474,15 @@ namespace Rock.Field.Types
                 {
                     tb.ShowCountDown = configurationValues[SHOW_COUNT_DOWN].Value.AsBoolean();
                 }
+
+                if ( configurationValues.ContainsKey( ALLOW_HTML ) )
+                {
+                    allowHtml = configurationValues[ALLOW_HTML].Value.AsBoolean();
+                }
             }
+
+            tb.ValidateRequestMode = allowHtml ? ValidateRequestMode.Disabled : ValidateRequestMode.Enabled;
+
             return tb;
         }
 

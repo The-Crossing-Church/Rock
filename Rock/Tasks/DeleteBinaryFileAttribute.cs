@@ -42,6 +42,16 @@ namespace Rock.Tasks
                 {
                     string guidAsString = binaryFile.Guid.ToString();
 
+                    /*
+                     * 2026-06-22 - DSH
+                     * 
+                     * Do not use the Checksum values to determine if the BinaryFile
+                     * is still being used as an Attribute DefaultValue or AttributeValue.
+                     * The Checksum values are case-sensitive which means a value
+                     * may exist in a different case that will not be found. This
+                     * would cause an accidental deletion that shouldn't happen.
+                     */
+
                     // If any attribute still has this file as a default value, don't delete it
                     if ( new AttributeService( rockContext ).Queryable().Any( a => a.DefaultValue == guidAsString ) )
                     {

@@ -25,9 +25,6 @@ using System.Web;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-using OpenXmlPowerTools;
-
-using Rock.Communication.Chat;
 using Rock.Data;
 using Rock.Model;
 using Rock.Net;
@@ -212,8 +209,6 @@ namespace Rock.Lava
             {
                 mergeFields.Add( "Geolocation", rockPage.RequestContext?.ClientInformation?.Geolocation );
             }
-
-            mergeFields.Add( "IsChatEnabled", ChatHelper.IsChatEnabled );
 
             return mergeFields;
         }

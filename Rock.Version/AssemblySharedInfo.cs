@@ -30,7 +30,7 @@ using System.Reflection;
 [assembly: AssemblyDescription( "Rock RMS Core Assembly. Rock RMS is a community supported open-source Church Management System that provides innovative features to churches of all sizes." )]
 [assembly: AssemblyCompany( "Spark Development Network" )]
 [assembly: AssemblyProduct( "Rock" )]
-[assembly: AssemblyCopyright( "Copyright © Spark Development Network 2011-2024" )]
+[assembly: AssemblyCopyright( "Copyright © Spark Development Network 2011-2026" )]
 [assembly: AssemblyTrademark( "" )]
 [assembly: AssemblyCulture( "" )]
 [assembly: AssemblyConfiguration( "" )]
@@ -42,13 +42,13 @@ using System.Reflection;
 // The AssemblyVersion number should change only when we are
 // making a breaking change and need the runtime binding to fail if it does not
 // match the correct version exactly.
-[assembly: AssemblyVersion( "18.1.0" )]
+[assembly: AssemblyVersion( "18.6.0" )]
 
-[assembly: AssemblyFileVersion( "18.1.0" )]
+[assembly: AssemblyFileVersion( "18.6.0" )]
 
 // This is the "official" product name that will be shown to people. 
 // It's shown in the SystemInfo details and perhaps the RockUpdate page.
-[assembly: AssemblyInformationalVersion( "Rock McKinley 18.1" )]
+[assembly: AssemblyInformationalVersion( "Rock McKinley 18.6" )]
 
   
 

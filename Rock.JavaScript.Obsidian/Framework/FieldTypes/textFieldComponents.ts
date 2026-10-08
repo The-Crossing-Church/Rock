@@ -38,6 +38,12 @@ export const enum ConfigurationValueKey {
 
     /** Contains "True" if the text field is designed for first name entry. */
     IsFirstName = "isfirstname",
+
+    /** Contains "True" if the text field should allow HTML content. */
+    AllowHtml = "allowhtml",
+
+    /** Contains "True" if the text field should allow Lava content. */
+    AllowLava = "allowlava",
 }
 
 export const EditComponent = defineComponent({
@@ -73,6 +79,15 @@ export const EditComponent = defineComponent({
 
                 if (showCountDownValue) {
                     attributes.showCountDown = showCountDownValue;
+                }
+            }
+
+            const allowHtmlConfig = props.configurationValues[ConfigurationValueKey.AllowHtml];
+            if (allowHtmlConfig) {
+                const allowHtmlValue = asBooleanOrNull(allowHtmlConfig) || false;
+
+                if (allowHtmlValue) {
+                    attributes.allowHtml = allowHtmlValue;
                 }
             }
 
@@ -137,6 +152,8 @@ export const ConfigurationComponent = defineComponent({
         const maxCharacters = ref<number | null>(null);
         const showCountdown = ref(false);
         const firstNameField = ref(false);
+        const allowHtml = ref(false);
+        const allowLava = ref(false);
 
         /**
          * Update the modelValue property if any value of the dictionary has
@@ -155,12 +172,16 @@ export const ConfigurationComponent = defineComponent({
             newValue[ConfigurationValueKey.MaxCharacters] = maxCharacters.value?.toString() ?? "";
             newValue[ConfigurationValueKey.ShowCountdown] = asTrueFalseOrNull(showCountdown.value) ?? "False";
             newValue[ConfigurationValueKey.IsFirstName] = asTrueFalseOrNull(firstNameField.value) ?? "False";
+            newValue[ConfigurationValueKey.AllowHtml] = asTrueFalseOrNull(allowHtml.value) ?? "False";
+            newValue[ConfigurationValueKey.AllowLava] = asTrueFalseOrNull(allowLava.value) ?? "False";
 
             // Compare the new value and the old value.
             const anyValueChanged = newValue[ConfigurationValueKey.IsPassword] !== (props.modelValue[ConfigurationValueKey.IsPassword] ?? "False")
                 || newValue[ConfigurationValueKey.MaxCharacters] !== (props.modelValue[ConfigurationValueKey.MaxCharacters] ?? "")
                 || newValue[ConfigurationValueKey.ShowCountdown] !== (props.modelValue[ConfigurationValueKey.ShowCountdown] ?? "False")
-                || newValue[ConfigurationValueKey.IsFirstName] !== (props.modelValue[ConfigurationValueKey.IsFirstName] ?? "False");
+                || newValue[ConfigurationValueKey.IsFirstName] !== (props.modelValue[ConfigurationValueKey.IsFirstName] ?? "False")
+                || newValue[ConfigurationValueKey.AllowHtml] !== (props.modelValue[ConfigurationValueKey.AllowHtml] ?? "False")
+                || newValue[ConfigurationValueKey.AllowLava] !== (props.modelValue[ConfigurationValueKey.AllowLava] ?? "False");
 
             // If any value changed then emit the new model value.
             if (anyValueChanged) {
@@ -191,6 +212,8 @@ export const ConfigurationComponent = defineComponent({
             maxCharacters.value = toNumberOrNull(props.modelValue[ConfigurationValueKey.MaxCharacters]);
             showCountdown.value = asBoolean(props.modelValue[ConfigurationValueKey.ShowCountdown]);
             firstNameField.value = asBoolean(props.modelValue[ConfigurationValueKey.IsFirstName]);
+            allowHtml.value = asBoolean(props.modelValue[ConfigurationValueKey.AllowHtml]);
+            allowLava.value = asBoolean(props.modelValue[ConfigurationValueKey.AllowLava]);
         }, {
             immediate: true
         });
@@ -210,12 +233,16 @@ export const ConfigurationComponent = defineComponent({
         watch(maxCharacters, () => maybeUpdateConfiguration(ConfigurationValueKey.MaxCharacters, maxCharacters.value?.toString() ?? ""));
         watch(showCountdown, () => maybeUpdateConfiguration(ConfigurationValueKey.ShowCountdown, asTrueFalseOrNull(showCountdown.value) ?? "False"));
         watch(firstNameField, () => maybeUpdateConfiguration(ConfigurationValueKey.IsFirstName, asTrueFalseOrNull(firstNameField.value) ?? "False"));
+        watch(allowHtml, () => maybeUpdateConfiguration(ConfigurationValueKey.AllowHtml, asTrueFalseOrNull(allowHtml.value) ?? "False"));
+        watch(allowLava, () => maybeUpdateConfiguration(ConfigurationValueKey.AllowLava, asTrueFalseOrNull(allowLava.value) ?? "False"));
 
         return {
             maxCharacters,
             passwordField,
             showCountdown,
-            firstNameField
+            firstNameField,
+            allowHtml,
+            allowLava,
         };
     },
 
@@ -225,6 +252,8 @@ export const ConfigurationComponent = defineComponent({
     <NumberBox v-model="maxCharacters" label="Max Characters" help="The maximum number of characters to allow. Leave this field empty to allow for an unlimited amount of text." />
     <CheckBox v-model="showCountdown" label="Show Character Limit Countdown" help="When set, displays a countdown showing how many characters remain (for the Max Characters setting)." />
     <CheckBox v-model="firstNameField" label="FirstName Field" help="When set, edit field will be validated as a first name." />
+    <CheckBox v-model="allowHtml" label="Allow HTML" help="Controls whether server should allow HTML in this field or not. This can often be a security risk so use with caution." />
+    <CheckBox v-model="allowLava" label="Allow Lava" help="Controls whether server should allow Lava in this field or not. This can often be a security risk so use with caution." />
 </div>
 `
 });

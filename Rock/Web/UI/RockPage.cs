@@ -2520,7 +2520,7 @@ Obsidian.onReady(() => {{
         {
             var googleAPIKey = GlobalAttributesCache.Get().GetValue( "GoogleAPIKey" );
             string keyParameter = string.IsNullOrWhiteSpace( googleAPIKey ) ? "" : string.Format( "key={0}&", googleAPIKey );
-            string scriptUrl = string.Format( "https://maps.googleapis.com/maps/api/js?{0}libraries=drawing,visualization,geometry,marker", keyParameter );
+            string scriptUrl = string.Format( "https://maps.googleapis.com/maps/api/js?{0}v=3.64&libraries=drawing,visualization,geometry,marker", keyParameter );
 
             // first, add it to the page to handle cases where the api is needed on first page load
             if ( this.Page != null && this.Page.Header != null )
@@ -2727,7 +2727,17 @@ Sys.Application.add_load(function () {
                 return;
             }
 
-            var rockSessionGuid = Session["RockSessionId"]?.ToString().AsGuidOrNull() ?? Guid.Empty;
+            // Session_Start in Global.asax.cs sets RockSessionId for new sessions, so this should
+            // almost always be set. In the rare case it isn't, fall back to RequestContext.SessionGuid
+            // (which itself falls back to a fresh Guid.NewGuid()) rather than Guid.Empty. Using
+            // Guid.Empty would cause every affected session to share the same InteractionSession row
+            // making unrelated people's interactions appear to belong to the same session.
+            var rockSessionGuid = Session["RockSessionId"]?.ToString().AsGuidOrNull();
+            if ( rockSessionGuid == null )
+            {
+                rockSessionGuid = RequestContext.SessionGuid;
+                Session["RockSessionId"] = rockSessionGuid;
+            }
 
             // Construct the page interaction data object that will be returned to the client.
             // This object is serialized into the page script, so we must be sure to sanitize values
@@ -2736,7 +2746,7 @@ Sys.Application.add_load(function () {
             {
                 Guid = RequestContext.RelatedInteractionGuid,
                 ActionName = "View",
-                BrowserSessionGuid = rockSessionGuid,
+                BrowserSessionGuid = rockSessionGuid.Value,
                 PageId = this.PageId,
                 PageRequestUrl = Request.UrlProxySafe().ToString(),
                 PageRequestDateTime = RockDateTime.Now,
@@ -4287,6 +4297,7 @@ Sys.Application.add_load(function () {
         {
             if ( page != null && page.Header != null )
             {
+                page.Header.EnableViewState = false;
                 /*
                      6/26/2021 - SK
 

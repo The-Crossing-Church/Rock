@@ -515,6 +515,11 @@ namespace Rock.SystemGuid
         public const string DATA_MIGRATIONS_173_UPDATE_NAMELESS_SCHEDULES = "4C7CC0FC-12A7-4578-B9B1-FEF2732EB912";
 
         /// <summary>
+        /// The job to run Post v17.10 Data Migrations to fix the mime type of check images uploaded by the Check Scanner.
+        /// </summary>
+        public const string DATA_MIGRATIONS_1710_FIX_TRANSACTION_IMAGE_MIME_TYPES = "B954DAC7-D30C-45CF-9CD4-872E8F9856DE";
+
+        /// <summary>
         /// The job to run Post v18.0 Data Migrations to migrate existing eRA records from the History table to the Steps table.
         /// </summary>
         public const string DATA_MIGRATIONS_180_MIGRATE_ERA_DATA_TO_STEPS = "64CB888D-0F81-473B-B200-8FA38337DAED";
@@ -560,8 +565,18 @@ namespace Rock.SystemGuid
         public const string DATA_MIGRATIONS_180_UPDATE_EMAIL_PREFERENCE_ENTRY_BLOCK_MANAGE_MY_ACCOUNT_PAGE = "7319E385-8068-43FE-9085-6F9A21F5972B";
 
         /// <summary>
+        /// The job to run Post v18.1 Data Migrations to add a new index to the FinancialBatch table.
+        /// </summary>
+        public const string DATA_MIGRATIONS_181_ADD_FINANCIALBATCH_INDEX = "EA5D69D8-8ABB-42CD-A664-48F6BC5E2C7F";
+
+        /// <summary>
         /// The job to run Post v18.1 Data Migrations to add indexes to improve communication prep performance.
         /// </summary>
         public const string DATA_MIGRATIONS_181_ADD_INDEXES_FOR_COMMUNICATION_PREP = "88C42A48-6713-4CB1-BF6B-A12AB2E292E7";
+
+        /// <summary>
+        /// The job to run Post v18.3 Data Migrations to fix any possible broken achievement types.
+        /// </summary>
+        public const string DATA_MIGRATIONS_183_FIX_BROKEN_ACHIEVEMENT_TYPES = "2463AB43-8CB2-400E-BAAF-F96FC3E1A43D";
     }
 }

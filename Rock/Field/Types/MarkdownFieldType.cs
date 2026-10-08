@@ -20,9 +20,12 @@ using System.Linq;
 #if WEBFORMS
 using System.Web.UI;
 using System.Web.UI.WebControls;
+
 #endif
 using Rock.Attribute;
+using Rock.Enums.Security;
 using Rock.Reporting;
+using Rock.Security;
 using Rock.Web.UI.Controls;
 using Rock.Web.Utilities;
 
@@ -114,6 +117,13 @@ namespace Rock.Field.Types
         #endregion
 
         #region Edit Control
+
+        /// <inheritdoc/>
+        public override StringValidationRule GetValidationRules( Dictionary<string, string> privateConfigurationValues )
+        {
+            // It is valid for Markdown to contain basic HTML tags.
+            return StringValueValidator.GetEffectiveRules( StringValidationProfile.LavaAndBasicHtml );
+        }
 
         #endregion
 

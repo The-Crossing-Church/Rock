@@ -544,19 +544,13 @@ namespace Rock.Workflow.Action
                 }
             }
 
-            // Get current marital status or default to Married if this will
-            // be a new person.
-            var maritalStatusGuid = personEntryPerson != null
-                ? personEntryPerson.MaritalStatusValue?.Guid
-                : Rock.SystemGuid.DefinedValue.PERSON_MARITAL_STATUS_MARRIED.AsGuid();
-
             return new PersonEntryValuesBag
             {
                 Address = address,
                 CampusGuid = personEntryPerson?.PrimaryCampusId != null
                     ? CampusCache.Get( personEntryPerson.PrimaryCampusId.Value, rockContext )?.Guid
                     : null,
-                MaritalStatusGuid = maritalStatusGuid,
+                MaritalStatusGuid = personEntryPerson?.MaritalStatusValue?.Guid,
                 Person = GetPersonBag( formSettings, personEntryPerson, rockContext ),
                 Spouse = GetPersonBag( formSettings, personEntrySpouse, rockContext )
             };
@@ -917,6 +911,36 @@ namespace Rock.Workflow.Action
                     }
 
                     item?.SetPublicAttributeValue( attribute.Key, formFieldValue, null, false );
+
+                    var value = item?.GetAttributeValue( attribute.Key );
+
+                    if ( value.IsNotNullOrWhiteSpace() )
+                    {
+                        var field = attribute.FieldType.Field;
+                        var rules = field.GetValidationRules( attribute.ConfigurationValues );
+
+                        try
+                        {
+                            StringValueValidator.Validate( value, rules, typeof( AttributeValue ), nameof( AttributeValue.Value ) );
+                        }
+                        catch ( PropertyValidationException ex )
+                        {
+                            if ( DbContext.EnableStringValidation )
+                            {
+                                throw new AttributeValueValidationException( attribute, item.Id, ex.Reason, null );
+                            }
+                            else
+                            {
+                                // Captures the full current call stack, all callers
+                                // included so that we get more information about
+                                // where this happened in the log.
+                                var stack = new System.Diagnostics.StackTrace( true ).ToString();
+                                var ex2 = new AttributeValueValidationException( attribute, item.Id, ex.Reason, stack );
+
+                                ExceptionLogService.LogException( ex2, System.Web.HttpContext.Current );
+                            }
+                        }
+                    }
                 }
             }
         }

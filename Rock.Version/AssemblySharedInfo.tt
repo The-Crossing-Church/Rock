@@ -4,7 +4,7 @@
 <#@ output extension=".cs" #>
 <#
      int major = 18; 
-     int minor = 1; 
+     int minor = 6; 
      int build = 0; 
   
      try
@@ -17,7 +17,7 @@
      }
      catch
      {
-         build = 0; 
+         build = 0;
      }
  #>
 //<#= build #>
@@ -52,7 +52,7 @@ using System.Reflection;
 [assembly: AssemblyDescription( "Rock RMS Core Assembly. Rock RMS is a community supported open-source Church Management System that provides innovative features to churches of all sizes." )]
 [assembly: AssemblyCompany( "Spark Development Network" )]
 [assembly: AssemblyProduct( "Rock" )]
-[assembly: AssemblyCopyright( "Copyright © Spark Development Network 2011-2024" )]
+[assembly: AssemblyCopyright( "Copyright © Spark Development Network 2011-2026" )]
 [assembly: AssemblyTrademark( "" )]
 [assembly: AssemblyCulture( "" )]
 [assembly: AssemblyConfiguration( "" )]

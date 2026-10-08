@@ -76,7 +76,7 @@ namespace Rock.Blocks.Reporting
 
     #region Shared Settings (shared between grid and Lava results formatting display modes)
 
-    [TextField( "SQL Query",
+    [CodeEditorField( "SQL Query",
         Key = AttributeKey.Query,
         Description = "The SQL query or stored procedure name to execute. If you are providing SQL you can add items from the query string using Lava like this: '{{ QueryParmName }}'. If SQL parameters are included they will also need to be in the Parameters field below.<br><span class='tip tip-lava'></span>",
         Category = "CustomSetting",
@@ -110,7 +110,7 @@ namespace Rock.Blocks.Reporting
         DefaultValue = "Grid",
         IsRequired = true )]
 
-    [TextField( "Page Title Lava",
+    [CodeEditorField( "Page Title Lava",
         Key = AttributeKey.PageTitleLava,
         Description = "Optional Lava for setting the page title. If nothing is provided then the page's title will be used. Example '{{rows[0].FullName}}' or if the query returns multiple result sets '{{table1.rows[0].FullName}}'.<br><span class='tip tip-lava'></span>",
         Category = "CustomSetting",
@@ -124,6 +124,8 @@ namespace Rock.Blocks.Reporting
         Key = AttributeKey.ColumnConfigurations,
         Description = "A JSON object describing how each column of the grid results should be displayed, as well as rules for filtering, exporting, Etc.",
         Category = "CustomSetting",
+        AllowHtml = true,
+        AllowLava = true,
         IsRequired = false )]
 
     [BooleanField( "Show Checkbox Selection Column",
@@ -142,7 +144,7 @@ namespace Rock.Blocks.Reporting
 
     [BooleanField( "Person Report",
         Key = AttributeKey.PersonReport,
-        Description = "Does this query return a list of people? If it does, then additional options will be available from the result grid. (i.e. Communicate, etc). Note: A column named 'Id' that contains the person's Id is required for a person report.",
+        Description = "When enabled, the following actions become available in the result grid: Launch Workflow, Bulk Update, Merge Person Records & Communicate. These options require a 'Person'-type column containing the person's ID. The first matching column will be used.",
         Category = "CustomSetting",
         DefaultBooleanValue = false,
         IsRequired = false )]
@@ -216,7 +218,7 @@ namespace Rock.Blocks.Reporting
 
     [TextField( "Communication Recipient Fields",
         Key = AttributeKey.CommunicationRecipientPersonIdColumns,
-        Description = "The comma-separated column name(s) that contain a person ID field to use as the recipient for a communication. If left blank, it will assume a column named 'Id' contains the recipient's person Id.",
+        Description = "The comma-separated column name(s) that contain a person ID field to use as the recipient for a communication. If left blank, it will assume the first column of type 'Person' contains the recipient's person ID.",
         Category = "CustomSetting",
         IsRequired = false )]
 
@@ -226,13 +228,13 @@ namespace Rock.Blocks.Reporting
         Category = "CustomSetting",
         IsRequired = false )]
 
-    [TextField( "Grid Header Content",
+    [CodeEditorField( "Grid Header Content",
         Key = AttributeKey.GridHeaderContent,
         Description = "This Lava template will be rendered above the grid. It will have access to the same dataset as the grid.<br><span class='tip tip-lava'></span>",
         Category = "CustomSetting",
         IsRequired = false )]
 
-    [TextField( "Grid Footer Content",
+    [CodeEditorField( "Grid Footer Content",
         Key = AttributeKey.GridFooterContent,
         Description = "This Lava template will be rendered below the grid (best used for custom totaling). It will have access to the same dataset as the grid.<br><span class='tip tip-lava'></span>",
         Category = "CustomSetting",
@@ -242,7 +244,7 @@ namespace Rock.Blocks.Reporting
 
     #region Results Formatting - Lava Settings
 
-    [TextField( "Lava Template",
+    [CodeEditorField( "Lava Template",
         Key = AttributeKey.FormattedOutput,
         Description = "Formatting to apply to the returned results. Example: '{% for row in rows %}{{ row.FirstName }}{% endfor %}' or if the query returns multiple result sets: '{% for row in table1.rows %}{{ row.FirstName }}{% endfor %}'. Alternatively, you may iterate over all tables within the returned results. For example: '{% for table in tables %}{% for row in table.rows %}{{ row.FirstName }}{% endfor %}{% endfor %}'.<br><span class='tip tip-lava'></span>",
         Category = "CustomSetting",
@@ -300,6 +302,11 @@ namespace Rock.Blocks.Reporting
 
             // Results Formatting - Lava Settings.
             public const string FormattedOutput = "FormattedOutput";
+        }
+
+        private static class GridFieldName
+        {
+            public const string RowKey = "rowKey";
         }
 
         private static class NavigationUrlKey
@@ -870,74 +877,24 @@ namespace Rock.Blocks.Reporting
                 return;
             }
 
-            string keyField = null;
             string personKeyField = null;
 
             var columnConfigurations = dataResults.ActualColumnConfigurations;
-
-            if ( config.SelectionUrl.IsNotNullOrWhiteSpace() )
-            {
-                /*
-                    5/15/2024: JPH
-
-                    To retain the way the legacy version of this block worked, we need to set the grid's key
-                    field to be the first key parsed from the Selection URL block setting. However, because
-                    the Obsidian grid can only natively work with text or number key fields (and person fields,
-                    with the client's use of `getValueFromPath()` logic), we'll be a little more selective in
-                    our setting of the key field, to ensure the first key parsed is one of these 3 types.
-
-                    The legacy block actually went one step further to gather ALL keys parsed from within the
-                    Selection URL, and set them on the grid's `DataKeyNames` property. However, those combined
-                    values were only used to build the dynamic redirection URL when a given grid row was clicked;
-                    we can mimic this behavior in the Obsidian client code, as we'll have all needed data there,
-                    so we don't need to worry about doing that here.
-
-                    Reason: Retain behavior of legacy Dynamic Data block.
-                    https://github.com/SparkDevNetwork/Rock/blob/7780d2aff7ae2e67d557b77565023bd796ac015c/RockWeb/Blocks/Reporting/DynamicData.ascx.cs#L963-L995
-                    https://github.com/SparkDevNetwork/Rock/blob/7780d2aff7ae2e67d557b77565023bd796ac015c/Rock/Web/UI/Controls/Grid/Grid.cs#L522
-                 */
-                var selectionUrlMatches = config.SelectionUrlMatches;
-                if ( selectionUrlMatches.Count > 0 )
-                {
-                    var columnName = selectionUrlMatches[0].Value.TrimStart( '{' ).TrimEnd( '}' ).Trim();
-                    keyField = GetGridField( columnName, columnConfigurations, isKeyField: true );
-                }
-            }
-
-            // If we didn't already find the key field, look for an [Id] column of the correct type.
-            if ( keyField.IsNullOrWhiteSpace() )
-            {
-                keyField = GetGridField( "Id", columnConfigurations, isKeyField: true );
-            }
-
             var isPersonReport = config.IsPersonReport;
             var communicationRecipientFields = GetGridFields( config.CommunicationRecipientFields, columnConfigurations, areKeyFields: true );
 
             if ( isPersonReport )
             {
-                if ( keyField.IsNotNullOrWhiteSpace() )
+                // If the admin told us this is a person report, we'll use the first "person" column as the person key
+                // field. If no such column exists, we'll disable person report functionality.
+                var personColumn = columnConfigurations.FirstOrDefault( c => c.ColumnType == ColumnType.PersonValue );
+                if ( personColumn == null )
                 {
-                    // Set the person key field to match the key field we already found.
-                    personKeyField = keyField;
+                    isPersonReport = false;
                 }
                 else
                 {
-                    // We're employing some fuzzy logic here:
-                    //      If a key field wasn't found,
-                    //      AND the admin told us this is a person report,
-                    //      AND there is at least one column of type "Person",
-                    //
-                    // we'll defer to using that column as the key field.
-                    var personColumn = columnConfigurations.FirstOrDefault( c => c.ColumnType == ColumnType.PersonValue );
-                    if ( personColumn == null )
-                    {
-                        isPersonReport = false;
-                    }
-                    else
-                    {
-                        keyField = GetPersonKeyField( personColumn, columnConfigurations );
-                        personKeyField = keyField;
-                    }
+                    personKeyField = GetPersonKeyField( personColumn, columnConfigurations );
                 }
 
                 if ( isPersonReport && !communicationRecipientFields.Any() )
@@ -949,12 +906,6 @@ namespace Rock.Blocks.Reporting
             }
 
             var enableMergeTemplate = config.EnableMergeTemplate;
-            if ( enableMergeTemplate && keyField.IsNullOrWhiteSpace() )
-            {
-                // A key field is required for merge templates to work.
-                enableMergeTemplate = false;
-            }
-
             var mergeFields = config.MergeFields;
             var enabledLavaCommands = config.EnabledLavaCommands;
 
@@ -962,7 +913,6 @@ namespace Rock.Blocks.Reporting
             {
                 GridDefinition = GetGridBuilder( dataResults ).BuildDefinition(),
                 Title = config.GridTitle,
-                KeyField = keyField,
                 ShowCheckboxSelectionColumn = config.ShowCheckboxSelectionColumn,
                 DisablePaging = config.DisablePaging,
                 EnableStickyHeader = config.EnableStickyHeader,
@@ -1055,7 +1005,7 @@ namespace Rock.Blocks.Reporting
         }
 
         /// <summary>
-        ///  Gets the person key field from the hidden key column configuration.
+        ///  Gets the person key field for the provided column configuration, from the corresponding hidden key column configuration.
         /// </summary>
         /// <param name="column">The person column configuration for which to get the key field.</param>
         /// <param name="columnConfigurations">The column configurations to search.</param>
@@ -1071,7 +1021,7 @@ namespace Rock.Blocks.Reporting
             {
                 // Try to find the matching, hidden key column configuration.
                 var hiddenKeyColumn = columnConfigurations
-                    .FirstOrDefault( c => c.Name.ToUpper() == GetHiddenKeyColumnName( c.ActualColumnName ).ToUpper() );
+                    .FirstOrDefault( c => c.Name.ToUpper() == GetHiddenKeyColumnName( column.ActualColumnName ).ToUpper() );
 
                 if ( hiddenKeyColumn?.CamelCaseName.IsNotNullOrWhiteSpace() == true )
                 {
@@ -1103,8 +1053,11 @@ namespace Rock.Blocks.Reporting
                 return dataResults.GridBuilder;
             }
 
+            var rowKey = 1;
+
             var gridBuilder = new GridBuilder<DataRow>()
-                .WithBlock( this );
+                .WithBlock( this )
+                .AddField( GridFieldName.RowKey, _ => rowKey++ );
 
             var columnConfigurations = dataResults?.ActualColumnConfigurations.ToList();
             if ( columnConfigurations?.Any() == true )

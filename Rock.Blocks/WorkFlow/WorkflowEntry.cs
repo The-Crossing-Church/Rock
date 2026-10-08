@@ -37,6 +37,7 @@ using Rock.ViewModels.Rest.Controls;
 using Rock.ViewModels.Workflow;
 using Rock.Web;
 using Rock.Web.Cache;
+using Rock.Web.UI.Controls;
 using Rock.Workflow;
 
 namespace Rock.Blocks.Workflow
@@ -119,7 +120,7 @@ namespace Rock.Blocks.Workflow
 
     [BooleanField(
         "Disable Captcha Support",
-        Description = "If set to 'Yes' the CAPTCHA verification step will not be performed.",
+        Description = "If set to 'Yes' the CAPTCHA verification will be skipped. \n\nNote: If the CAPTCHA site key and/or secret key are not configured in the system settings, this option will be forced as 'Yes', even if 'No' is visually selected.",
         DefaultBooleanValue = false,
         SiteTypes = SiteTypeFlags.Web,
         Key = AttributeKey.DisableCaptchaSupport,
@@ -380,7 +381,7 @@ namespace Rock.Blocks.Workflow
 
             return new WorkflowEntryOptionsBag
             {
-                IsCaptchaEnabled = !GetAttributeValue( AttributeKey.DisableCaptchaSupport ).AsBoolean(),
+                IsCaptchaEnabled = !Captcha.CaptchaService.ShouldDisableCaptcha( GetAttributeValue( AttributeKey.DisableCaptchaSupport ).AsBoolean() ),
                 InitialAction = initialAction
             };
         }
@@ -599,7 +600,8 @@ namespace Rock.Blocks.Workflow
             // Set initial values from the page parameters.
             foreach ( var pageParameter in RequestContext.PageParameters )
             {
-                SetInitialWorkflowAttributeValue( workflow, pageParameter.Key, pageParameter.Value );
+                ValidateAttributeValue( workflow, pageParameter.Key, pageParameter.Value );
+                workflow.SetAttributeValue( pageParameter.Key, pageParameter.Value );
             }
 
             // Set/Update initial values from what the shell sent us.
@@ -607,32 +609,50 @@ namespace Rock.Blocks.Workflow
             {
                 foreach ( var field in fields )
                 {
-                    SetInitialWorkflowAttributeValue( workflow, field.Key, field.Value );
+                    ValidateAttributeValue( workflow, field.Key, field.Value );
+                    workflow.SetAttributeValue( field.Key, field.Value );
                 }
             }
         }
 
         /// <summary>
-        /// CROSSING (not needed after v18.4): Seeds a single initial workflow attribute value while enforcing
-        /// the per-attribute Lava/HTML content policy. Page parameters and the values
-        /// a shell sends are attacker-controllable, so a value the target attribute is
-        /// not configured to allow is dropped rather than stored.
+        /// Validates the value of an attribute against the rules defined for the
+        /// field type of the attribute.
         /// </summary>
-        /// <param name="workflow">The workflow being seeded.</param>
-        /// <param name="key">The attribute key to set.</param>
-        /// <param name="value">The value to set.</param>
-        private void SetInitialWorkflowAttributeValue( Model.Workflow workflow, string key, string value )
+        /// <param name="entity">The entity to retrieve the attribute field definition from.</param>
+        /// <param name="key">The key of the attribute</param>
+        /// <param name="value">The value to validate</param>
+        private static void ValidateAttributeValue( IHasAttributes entity, string key, string value )
         {
-            var attributes = workflow.Attributes;
-
-            if ( attributes != null
-                && attributes.ContainsKey( key )
-                && Rock.Security.WorkflowFormInputValidator.Validate( attributes[key], value ) != null )
+            if ( !entity.Attributes.TryGetValue( key, out var attribute ) )
             {
                 return;
             }
 
-            workflow.SetAttributeValue( key, value );
+            var field = attribute.FieldType.Field;
+            var rules = field.GetValidationRules( attribute.ConfigurationValues );
+
+            try
+            {
+                StringValueValidator.Validate( value, rules, typeof( AttributeValue ), nameof( AttributeValue.Value ) );
+            }
+            catch ( PropertyValidationException ex )
+            {
+                if ( DbContext.EnableStringValidation )
+                {
+                    throw new AttributeValueValidationException( attribute, entity.Id, ex.Reason, null );
+                }
+                else
+                {
+                    // Captures the full current call stack, all callers
+                    // included so that we get more information about
+                    // where this happened in the log.
+                    var stack = new System.Diagnostics.StackTrace( true ).ToString();
+                    var ex2 = new AttributeValueValidationException( attribute, entity.Id, ex.Reason, stack );
+
+                    ExceptionLogService.LogException( ex2, System.Web.HttpContext.Current );
+                }
+            }
         }
 
         /// <summary>
@@ -1283,7 +1303,7 @@ namespace Rock.Blocks.Workflow
             }
 
             // Admin doesn't want to use captcha on the site.
-            if ( GetAttributeValue( AttributeKey.DisableCaptchaSupport ).AsBoolean() )
+            if ( Captcha.CaptchaService.ShouldDisableCaptcha( GetAttributeValue( AttributeKey.DisableCaptchaSupport ).AsBoolean() ) )
             {
                 return true;
             }
@@ -1361,18 +1381,6 @@ namespace Rock.Blocks.Workflow
                 mobileAddress = familyLocation != null ? Rock.Mobile.MobileHelper.GetMobileAddress( familyLocation ) : null;
             }
 
-            Guid? maritalStatusGuid;
-
-            if ( personEntryPerson != null )
-            {
-                maritalStatusGuid = personEntryPerson.MaritalStatusValue?.Guid;
-            }
-            else
-            {
-                // default to Married if this is a new person
-                maritalStatusGuid = Rock.SystemGuid.DefinedValue.PERSON_MARITAL_STATUS_MARRIED.AsGuid();
-            }
-
             return new WorkflowFormPersonEntry
             {
                 PreHtml = form.PersonEntryPreHtml.ResolveMergeFields( mergeFields ),
@@ -1391,7 +1399,7 @@ namespace Rock.Blocks.Workflow
                     Person = mobilePerson,
                     Spouse = mobileSpouse,
                     Address = mobileAddress,
-                    MaritalStatusGuid = maritalStatusGuid
+                    MaritalStatusGuid = personEntryPerson?.MaritalStatusValue?.Guid
                 }
             };
         }

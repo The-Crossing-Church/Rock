@@ -30,10 +30,12 @@ using System.Web;
 
 using Microsoft.EntityFrameworkCore;
 
+using Rock.Attribute;
 using Rock.Bus.Message;
 using Rock.Model;
 using Rock.Net;
 using Rock.Observability;
+using Rock.Security;
 using Rock.Tasks;
 using Rock.Transactions;
 using Rock.UniversalSearch;
@@ -51,6 +53,16 @@ namespace Rock.Data
     public abstract class DbContext : System.Data.Entity.DbContext
     {
         #region Properties
+
+        /// <summary>
+        /// Used to enable the validation of string values when it has been
+        /// enabled in the system settings. This should be removed in the
+        /// future, say around Rock v21, and the validation should then no
+        /// longer be optional. It is automatically enabled at the end of Rock
+        /// startup if the security setting is enabled.
+        /// </summary>
+        [RockInternal( "17.8", keepInternalForever: true )]
+        public static bool EnableStringValidation { get; set; }
 
         /// <summary>
         /// Gets or sets the entity save hook provider.
@@ -247,7 +259,7 @@ namespace Rock.Data
         /// the action delegate method. Meaning, create your own context.
         /// </remarks>
         /// <param name="action">The action delegate to execute after the changes have been committed.</param>
-        internal void ExecuteAfterCommit( Action action )
+        public void ExecuteAfterCommit( Action action )
         {
             _commitedActions.Add( action );
         }
@@ -428,51 +440,79 @@ namespace Rock.Data
         }
 
         /// <summary>
-        /// Gets the current person alias.
-        /// </summary>
-        /// <returns>The primary alias</returns>
-        [Obsolete( "Use GetCurrentPersonAliasId() instead." )]
-        [RockObsolete( "18.0" )]
-        internal PersonAlias GetCurrentPersonAlias()
-        {
-            if ( HttpContext.Current != null && HttpContext.Current.Items.Contains( "CurrentPerson" ) )
-            {
-                var currentPerson = HttpContext.Current.Items["CurrentPerson"] as Person;
-                if ( currentPerson != null && currentPerson.PrimaryAlias != null )
-                {
-                    return currentPerson.PrimaryAlias;
-                }
-            }
-
-            if ( Net.RockRequestContextAccessor.Current != null )
-            {
-                return Net.RockRequestContextAccessor.Current.CurrentPerson?.PrimaryAlias;
-            }
-
-            return null;
-        }
-
-        /// <summary>
         /// Gets the current person alias Id.
         /// </summary>
         /// <returns>The Id of the current person's primary alias.</returns>
         internal int? GetCurrentPersonAliasId()
         {
-            if ( HttpContext.Current != null && HttpContext.Current.Items.Contains( "CurrentPerson" ) )
+            /*
+             * 12/18/2025 - DSH
+             * 
+             * Problem: In some background tasks (such as post-save processing),
+             * there is a race condition because they do some of their processing
+             * on a background task/thread. We might be able to obtain the "Person"
+             * object from HttpContext.Current. But since we are on a background
+             * thread, the RockContext associated with that Person object may
+             * have been disposed if the request already completed. If the aliases
+             * have not already loaded, then a lazy-load attempt will be made
+             * against the disposed context, resulting in an ObjectDisposedException.
+             * 
+             * Temporary Fix: So what we now do is try to get the PrimaryAliasId. If
+             * that throws an exception then we fall back to trying to load the
+             * Person object using ourselves as the context. If that still
+             * throws an exception then we give up and return null.
+             * 
+             * Longterm Fix: We should probably store all required information
+             * in a custom POCO inside HttpContext.Current.Items or some other
+             * location that we have more control over so that we can ensure we
+             * don't have to lazy load on a disposed context.
+             */
+            Person currentPerson;
+
+            try
             {
-                var currentPerson = HttpContext.Current.Items["CurrentPerson"] as Person;
-                if ( currentPerson != null && currentPerson.PrimaryAliasId != null )
+                if ( HttpContext.Current != null && HttpContext.Current.Items.Contains( "CurrentPerson" ) )
                 {
-                    return currentPerson.PrimaryAliasId;
+                    currentPerson = HttpContext.Current.Items["CurrentPerson"] as Person;
+                }
+                else if ( RockRequestContextAccessor.Current != null )
+                {
+                    currentPerson = RockRequestContextAccessor.Current.CurrentPerson;
+                }
+                else
+                {
+                    currentPerson = null;
                 }
             }
-
-            if ( Net.RockRequestContextAccessor.Current != null )
+            catch
             {
-                return Net.RockRequestContextAccessor.Current.CurrentPerson?.PrimaryAliasId;
+                currentPerson = null;
             }
 
-            return null;
+            // If we couldn't determine the current Person object from any
+            // request information then we are done.
+            if ( currentPerson == null )
+            {
+                return null;
+            }
+
+            try
+            {
+                return currentPerson.PrimaryAliasId;
+            }
+            catch
+            {
+                if ( !( this is RockContext rockContext ) )
+                {
+                    return null;
+                }
+
+                // Try to load the person using ourselves as the context
+                return new PersonService( rockContext ).Queryable()
+                    .Where( p => p.Id == currentPerson.Id )
+                    .Select( p => p.PrimaryAliasId )
+                    .FirstOrDefault();
+            }
         }
 
         /// <summary>
@@ -645,7 +685,7 @@ namespace Rock.Data
                              Reason: It may look irrelevant to update the ModifiedByPersonAliasId and ModifiedDateTime here but
                              this play vital role in displaying the Who column in history summary.
                         */
-                        if ( entry.Entity is IModel )
+            if ( entry.Entity is IModel )
                         {
                             var model = entry.Entity as IModel;
                             model.ModifiedDateTime = RockDateTime.Now;
@@ -670,6 +710,39 @@ namespace Rock.Data
                         }
                     }
                 }
+
+                var updatedItemValues = updatedItems.Values.ToList();
+
+                // If there are any changed items, validate the new values
+                // before saving. This should be the last step before the save,
+                // so that any changes made by the PreSaveChanges() calls will
+                // be included in the validation.
+                if ( updatedItemValues.Count > 0 )
+                {
+                    try
+                    {
+                        ValidatePropertyValues( updatedItemValues );
+                    }
+                    catch ( PropertyValidationException ex )
+                    {
+                        if ( EnableStringValidation )
+                        {
+                            throw;
+                        }
+                        else
+                        {
+                            // Captures the full current call stack, all callers
+                            // included so that we get more information about
+                            // where this happened in the log.
+                            var stack = new System.Diagnostics.StackTrace( true ).ToString();
+
+                            ex.SetStackTrace( stack );
+                            ExceptionLogService.LogException( ex, HttpContext.Current );
+                        }
+                    }
+                }
+
+                return updatedItemValues;
             }
             catch
             {
@@ -679,8 +752,6 @@ namespace Rock.Data
 
                 throw;
             }
-
-            return updatedItems.Values.ToList();
         }
 
         /// <summary>
@@ -993,6 +1064,30 @@ namespace Rock.Data
                         // rest of the cleanup.
                     }
                 }
+            }
+        }
+
+        /// <summary>
+        /// Validates all the property values for the set of modified entities.
+        /// </summary>
+        /// <param name="contextItems">The context items that represent the entities.</param>
+        private void ValidatePropertyValues( List<ContextItem> contextItems )
+        {
+            // This code was benchmarked on 5/12/2026 by DSH. The timings showed
+            // that adding a new person (creating family, group member, etc.)
+            // caused an additional 0.038ms in this method. Saving an existing
+            // Person generated an additional 0.016ms. This was deemed acceptable
+            // for the gains of having this happen for every save rather than
+            // implementing the logic at a higher level in multiple places.
+
+            foreach ( var contextItem in contextItems )
+            {
+                if ( contextItem.PreSaveState != EntityContextState.Added && contextItem.PreSaveState != EntityContextState.Modified )
+                {
+                    continue;
+                }
+
+                StringValueValidator.ValidateAllStrings( contextItem.Entity );
             }
         }
 
