@@ -32,6 +32,7 @@ import RockButton from "@Obsidian/Controls/rockButton.obs"
 import DropDownList from "@Obsidian/Controls/dropDownList.obs"
 import TabbedBar from "@Obsidian/Controls/tabbedBar.obs"
 import rules from "./Rules/rules"
+import helper from "../EventDashboard/Helpers/helper"
 
 const store = useStore()
 const { Step } = Steps
@@ -146,6 +147,7 @@ export default defineComponent({
       preFillOrCopySelectedTab: 'Prefill',
       copyModal: false,
       rules: rules,
+      helper: helper,
       readonlySections: [] as string[],
       toastMessage: "",
       toastIsError: true
@@ -610,7 +612,7 @@ export default defineComponent({
               event.attributeValues[key] = ""
             } else if(categories.length > 1 && categories.includes(category)) {
               let otherCategories = categories.filter((c: string) => { return c != category })
-              let catAttr = rules.sectionInfo.filter((ca: any) => { return otherCategories.includes(ca.cat) })
+              let catAttr = helper.sectionInfo.filter((ca: any) => { return otherCategories.includes(ca.cat) })
               let allOtherFalse = true
               catAttr.forEach((ca: any) => {
                 if(this.viewModel?.request?.attributeValues && this.viewModel?.request?.attributeValues[ca.attr] == 'True') {
@@ -669,7 +671,7 @@ export default defineComponent({
       let res = this.rules.validate(this.viewModel?.request, events, this.viewModel?.locations, this.viewModel?.ministries, this.viewModel?.isSuperUser ) as any
       this.readonlySections = res.readonlySections
       if(!this.viewModel?.permissions?.includes("Edit")) {
-        this.readonlySections = this.rules.sectionInfo.map(si => si.section)
+        this.readonlySections = this.helper.sectionInfo.map(si => si.section)
       }
       if(this.viewModel?.request.attributeValues) {
         this.viewModel.request.attributeValues.RequestIsValid = res?.isValid ? 'True' : 'False'

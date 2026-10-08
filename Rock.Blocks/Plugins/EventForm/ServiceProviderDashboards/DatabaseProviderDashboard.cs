@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 using Rock.Attribute;
+using Rock.Blocks.Plugins.ViewModels;
 using Rock.Data;
 using Rock.Model;
+using Rock.Blocks.Plugins.EventForm;
 
 namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
 {
@@ -19,7 +19,6 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
     [SupportedSiteTypes( SiteType.Web )]
 
     #region Block Attributes
-
     [DefinedTypeField( "Locations Defined Type", key: AttributeKey.LocationList, category: "Lists", required: true, order: 0 )]
     [DefinedTypeField( "Ministries Defined Type", key: AttributeKey.MinistryList, category: "Lists", required: true, order: 1 )]
     [DefinedTypeField( "Budgets Defined Type", key: AttributeKey.BudgetList, category: "Lists", required: true, order: 2 )]
@@ -30,7 +29,15 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
     public class DatabaseProviderDashboard : ServiceProviderDashboard
     {
         #region Keys
-
+        /// <summary>
+        /// Attribute Key
+        /// </summary>
+        protected partial class AttributeKey : AttributeKeyBase
+        {
+            public const string BudgetList = "BudgetList";
+            public const string DrinksList = "DrinksList";
+            public const string InventoryList = "InventoryList";
+        }
         #endregion
 
         #region Properties
@@ -46,35 +53,18 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
         /// </returns>
         public override object GetObsidianBlockInitialization()
         {
-            ProviderViewModel viewModel = new ProviderViewModel();
             RockContext rockContext = new RockContext();
 
-            viewModel = ( ProviderViewModel ) base.GetObsidianBlockInitialization();
+            ProviderViewModel baseViewModel = ( ProviderViewModel ) base.GetObsidianBlockInitialization();
+            DatabaseProviderViewModel viewModel = new DatabaseProviderViewModel( baseViewModel );
 
             if ( EventContentChannelId > 0 && EventDetailsContentChannelId > 0 && EventChangesContentChannelId > 0 && EventDetailsChangesContentChannelId > 0 )
             {
-                var x = 7;
                 //Lists
-                Guid locationGuid = Guid.Empty;
-                Guid ministryGuid = Guid.Empty;
                 Guid budgetLineGuid = Guid.Empty;
                 Guid drinksGuid = Guid.Empty;
                 Guid inventoryGuid = Guid.Empty;
                 var p = GetCurrentPerson();
-                if ( Guid.TryParse( GetAttributeValue( AttributeKey.LocationList ), out locationGuid ) )
-                {
-                    DefinedType locationDT = new DefinedTypeService( rockContext ).Get( locationGuid );
-                    var locs = new DefinedValueService( rockContext ).Queryable().Where( dv => dv.DefinedTypeId == locationDT.Id ).ToList();
-                    locs.LoadAttributes();
-                    viewModel.locations = locs;
-                }
-                if ( Guid.TryParse( GetAttributeValue( AttributeKey.MinistryList ), out ministryGuid ) )
-                {
-                    DefinedType ministryDT = new DefinedTypeService( rockContext ).Get( ministryGuid );
-                    var min = new DefinedValueService( rockContext ).Queryable().Where( dv => dv.DefinedTypeId == ministryDT.Id ).ToList();
-                    min.LoadAttributes();
-                    viewModel.ministries = min.ToList();
-                }
                 if ( Guid.TryParse( GetAttributeValue( AttributeKey.BudgetList ), out budgetLineGuid ) )
                 {
                     DefinedType budgetDT = new DefinedTypeService( rockContext ).Get( budgetLineGuid );
@@ -96,6 +86,9 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
                     inventory.LoadAttributes();
                     viewModel.inventory = inventory.ToList();
                 }
+                //viewModel.pending = LoadRequestsByStatus( SSPDashboardOption.PendingConfirmation );
+                //viewModel.cancelled = LoadRequestsByStatus( SSPDashboardOption.Cancelled );
+                viewModel.ministryAttr = ministryAttr;
             }
             return viewModel;
         }
@@ -103,12 +96,81 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
         #endregion Obsidian Block Type Overrides
 
         #region Block Actions
+        [BlockAction]
+        public BlockActionResult FilterRequests( string opt, Filters filters )
+        {
+            try
+            {
+                if ( opt == "Pending" )
+                {
+                    return ActionOk( LoadRequestsByStatus( SSPDashboardOption.PendingConfirmation ) );
+                }
+                else if ( opt == "Cancelled" )
+                {
+                    return ActionOk( LoadRequestsByStatus( SSPDashboardOption.Cancelled ) );
+                }
+                else
+                {
+                    return ActionOk( LoadRequests( filters ) );
+                }
+            }
+            catch ( Exception ex )
+            {
+                return ActionBadRequest( ex.Message );
+            }
+        }
         #endregion
 
         #region Helpers
-        private void LoadRequests()
+        private List<ContentChannelItemBag> LoadRequests( Filters filters )
         {
+            List<string> statuses = null;
+            List<string> resources = null;
+            if ( filters.statuses.Any() )
+            {
+                statuses = filters.statuses;
+            }
+            if ( filters.resources.Any() )
+            {
+                resources = filters.resources;
+            }
+            return base.LoadRequests( null, statuses, SSPDashboardOption.All, filters.eventDates, filters.eventModified, resources, filters.submitter, filters.ministry, filters.title );
+        }
 
+        private List<ContentChannelItemBag> LoadRequestsByStatus( SSPDashboardOption option )
+        {
+            List<string> statuses = null;
+            if ( option == SSPDashboardOption.Cancelled )
+            {
+                statuses = new List<string>() { "Denied", "Cancelled", "Cancelled by User" };
+                option = SSPDashboardOption.Confirmed;
+            }
+            else
+            {
+                statuses = new List<string>() { "Approved", "In Progress", "Pending Changes", "Proposed Changes Denied", "Changes Accepted by User" };
+            }
+            DateRangeParts eventDateRange = new DateRangeParts() { lowerValue = RockDateTime.Now.ToISO8601DateString() };
+            return base.LoadRequests( null, statuses, option, eventDateRange, null, null, null, null, null );
+        }
+        #endregion
+
+        #region Classes
+        public partial class DatabaseProviderViewModel : ProviderViewModel
+        {
+            public DatabaseProviderViewModel() { }
+            public DatabaseProviderViewModel( ProviderViewModel baseViewModal )
+            {
+                this.events = baseViewModal.events;
+                this.pending = baseViewModal.pending;
+                this.ministryAttr = baseViewModal.ministryAttr;
+                this.locations = baseViewModal.locations;
+                this.ministries = baseViewModal.ministries;
+                this.editCategories = baseViewModal.editCategories;
+                this.viewCategories = baseViewModal.viewCategories;
+            }
+
+            public List<DefinedValue> drinks { get; set; }
+            public List<DefinedValue> inventory { get; set; }
         }
         #endregion
     }

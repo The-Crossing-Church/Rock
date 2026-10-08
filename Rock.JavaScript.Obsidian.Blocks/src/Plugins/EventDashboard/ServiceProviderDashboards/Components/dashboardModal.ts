@@ -1,0 +1,668 @@
+// import { defineComponent, PropType } from "vue"
+// import RockField from "@Obsidian/Controls/rockField.obs"
+// import RockLabel from "@Obsidian/Controls/rockLabel.obs"
+// import Modal from "@Obsidian/Controls/modal.obs"
+// import RockButton from "@Obsidian/Controls/rockButton.obs"
+// import Panel from "@Obsidian/Controls/panel.obs"
+// import SpaceInfo from "../../Components/spaceInfo"
+// import OffsiteInfo from "../../Components/offsiteInfo"
+// import OnlineInfo from "../../Components/onlineInfo"
+// import CateringInfo from "../../Components/cateringInfo"
+// import ChildcareInfo from "../../Components/childcareInfo"
+// import OpsAccomInfo from "../../Components/opsAccomInfo"
+// import RegistrationInfo from "../../Components/registrationInfo"
+// import WebCalInfo from "../../Components/calendarInfo"
+// import ProdAccomInfo from "../../Components/productionAccomInfo"
+// import WorshipInfo from "../../Components/worshipInfo"
+// import PublicityInfo from "../../Components/publicityInfo"
+// import { DateTime } from "luxon"
+// import DatePicker from "../../../EventForm/Components/calendar"
+// import Chip from "../../../EventForm/Components/chip"
+
+// export default defineComponent({
+//     name: "EventDashboard.Components.Modal",
+//     components: {
+//       "tcc-space": SpaceInfo,
+//       "tcc-offsite": OffsiteInfo,
+//       "tcc-online": OnlineInfo,
+//       "tcc-catering": CateringInfo,
+//       "tcc-childcare": ChildcareInfo,
+//       "tcc-ops": OpsAccomInfo,
+//       "tcc-registration": RegistrationInfo,
+//       "tcc-web-cal": WebCalInfo,
+//       "tcc-production": ProdAccomInfo,
+//       "tcc-worship": WorshipInfo,
+//       "tcc-publicity": PublicityInfo,
+//       "tcc-date": DatePicker,
+//       "tcc-chip": Chip,
+//       "rck-field": RockField,
+//       "rck-lbl": RockLabel,
+//       "rck-btn": RockButton,
+//       "rck-modal": Modal,
+//       "rck-panel": Panel
+//     },
+//     props: {
+//       request: Object,
+//       rooms: Array,
+//       drinks: Array,
+//       inventory: Array,
+//       createdBy: Object,
+//       modifiedBy: Object,
+//       sections: String,
+//       requestValidation: Object,
+//       editCategories: Array,
+//       viewCategories: Array
+//     },
+//     setup() {
+
+//     },
+//     data() {
+//         return {
+//           modal: false,
+//           panels: [true],
+//         };
+//     },
+//     created() {
+      
+//     },
+//     computed: {
+//       statusClass() {
+//         return "status-box text-" + this.request?.attributeValues.RequestStatus.replaceAll(" ", "").toLowerCase() + " border-" + this.request?.attributeValues.RequestStatus.replaceAll(" ", "").toLowerCase()
+//       },
+//       eventDates() {
+//         if(this.request?.attributeValues.EventDates) {
+//           return this.request?.attributeValues.EventDates.split(",").map((d: string) => { 
+//             return DateTime.fromFormat(d.trim(), "yyyy-MM-dd").toFormat("DDDD")
+//           })
+//         }
+//       },
+//       changeDates() {
+//         if(this.request?.attributeValues.EventDates && this.request?.changes?.attributeValues.EventDates) {
+//           let dates = this.request.attributeValues.EventDates.split(",").map((date: string) => date.trim())
+//           let changeDates = this.request.changes.attributeValues.EventDates.split(",").map((date: string) => date.trim())
+//           let changes = [] as any[]
+//           if(dates.join(",") != changeDates.join(",")) {
+//             let combined = [] as string[]
+//             for(let i = 0; i < dates.length; i++) {
+//               let idx = combined.indexOf(dates[i])
+//               if(idx < 0) {
+//                 combined.push(dates[i])
+//               }
+//             }
+//             for(let i = 0; i < changeDates.length; i++) {
+//               let idx = combined.indexOf(changeDates[i])
+//               if(idx < 0) {
+//                 combined.push(changeDates[i])
+//               }
+//             }
+//             combined = combined.sort((a: string, b: string) => {
+//               let aDt = DateTime.fromFormat(a, 'yyyy-MM-dd')
+//               let bDt = DateTime.fromFormat(b, 'yyyy-MM-dd')
+//               if(aDt < bDt) {
+//                 return -1
+//               } else if(aDt > bDt) {
+//                 return 1
+//               }
+//               return 0
+//             })
+//             for(let i = 0; i < combined.length; i++) {
+//               if(dates.includes(combined[i])) {
+//                 if(changeDates.includes(combined[i])) {
+//                   changes.push({date: DateTime.fromFormat(combined[i], 'yyyy-MM-dd').toFormat('DDDD')})
+//                 } else {
+//                   changes.push({date: DateTime.fromFormat(combined[i], 'yyyy-MM-dd').toFormat('DDDD'), class: 'text-red text-strikethrough'})
+//                 }
+//               } else {
+//                 changes.push({date: DateTime.fromFormat(combined[i], 'yyyy-MM-dd').toFormat('DDDD'), class: 'text-primary'})
+//               }
+//             }
+//             return changes
+//           }
+//         }
+//         return null
+//       },
+//       originalResources() {
+//         if(this.request?.attributeValues?.RequestType) {
+//           return this.request.attributeValues.RequestType.split(',')
+//         }
+//         return []
+//       },
+//       changesResources() {
+//         if(this.request?.changes?.attributeValues?.RequestType) {
+//           return this.request.changes.attributeValues.RequestType.split(',')
+//         }
+//         return []
+//       },
+//       needsSpace(): boolean {
+//         if(this.request?.attributeValues) {
+//           return (this.request.attributeValues.NeedsSpace == 'True') || this.request.changes?.attributeValues?.NeedsSpace == 'True'
+//         }
+//         return false
+//       },
+//       needsCatering(): boolean {
+//         if(this.request?.attributeValues) {
+//           return this.request.attributeValues.NeedsCatering == 'True' || this.request.changes?.attributeValues?.NeedsCatering == 'True'
+//         }
+//         return false
+//       },
+//       needsChildcareCatering(): boolean {
+//         if(this.request?.attributeValues) {
+//           return (this.request.attributeValues.NeedsChildCareCatering == 'True') ||  this.request.changes?.attributeValues?.NeedsChildCareCatering == 'True'
+//         }
+//         return false
+//       },
+//     },
+//     methods: {
+//       getCollapseClassName(idx: number) {
+//         if(idx == 0) {
+//           return 'collapse body in'
+//         }
+//         return 'collapse body'
+//       },
+//       getPanelName(date: string, room: string) {
+//         let title = "" 
+//         if(date) {
+//           let dt = DateTime.fromFormat(date, 'yyyy-MM-dd')
+//           if(!dt.isValid) {
+//             dt = DateTime.fromISO(date)
+//           }
+//           title = dt.toFormat('MM/dd/yyyy')
+//         } else {
+//           let dates = this.request?.attributeValues.EventDates.split(",")
+//           dates = dates.map((d: any) => {
+//             return DateTime.fromFormat(d.trim(), 'yyyy-MM-dd').toFormat('MM/dd/yyyy')
+//           })
+//           if(dates.length > 3) {
+//             title = dates[0] + " - " + dates[dates.length - 1]
+//           } else {
+//             title = dates.join(", ")
+//           }
+//         }
+//         let rooms = JSON.parse(room)
+//         let roomList = rooms.text.split(", ")
+//         if(rooms && rooms.text != '' && roomList && roomList.length > 0) {
+//           title += " ("
+//           if(roomList.length > 5) {
+//             title += roomList.slice(0,5).join(", ")
+//             title += "..."
+//           } else {
+//             title += rooms.text
+//           }
+//           title +=")"
+//         }
+//         return title
+//       },
+//       formatDateTime(dt: string) {
+//         let date = DateTime.fromISO(dt)
+//         if(date) {
+//           return date.toFormat("MM/dd/yyyy hh:mm a")
+//         }
+//       },
+//       getConflictingDates(conflict: any) {
+//         if(conflict.attributeValues) {
+//           if(conflict.attributeValues.EventDate != "") {
+//             return DateTime.fromFormat(conflict.attributeValues.EventDate.substring(0, 10).trim(), "yyyy-MM-dd").toFormat("MM/dd/yyyy")
+//           } else if(conflict.attributeValues.EventDates) {
+//             let dates = conflict.attributeValues.EventDates.split(",").map((d: string) => d.trim())
+//             let selectedDates = this.request?.attributeValues.EventDates.split(",").map((d: string) => d.trim())
+//             return selectedDates.filter((d: string) => { return dates.includes(d) }).map((d: string) => {
+//               return DateTime.fromFormat(d, "yyyy-MM-dd").toFormat("MM/dd/yyyy")
+//             }).join(", ")
+//           }
+//         }
+//         return ""
+//       },
+//       getConflictingRooms(conflict: any) {
+//         if(conflict.attributeValues) {
+//           if(conflict.attributeValues.Rooms) {
+//             let obj = JSON.parse(conflict.attributeValues.Rooms)
+//             let conflictRooms = obj.text.split(", ")
+//             let selectedRooms = [] as string[]
+//             this.request?.childItems.forEach((ci: any) => {
+//               if(ci.attributeValues.Rooms) {
+//                 let val = JSON.parse(ci.attributeValues.Rooms)
+//                 let rooms = val.text.split(", ").filter((r: string) => {
+//                   return conflictRooms.includes(r)
+//                 })
+//                 rooms.forEach((r: string) => {
+//                   if(selectedRooms.indexOf(r) < 0) {
+//                     selectedRooms.push(r)
+//                   }
+//                 })
+//               }
+//             })
+//             return selectedRooms.join(", ")
+//           }
+//         }
+//         return ""
+//       },
+//       openRelated(request: any) {
+//         console.log('open related')
+//         console.log(request)
+//         if(request.attributeValues.ParentId && request.attributeValues.ParentId != "") {
+//           request.idKey = request.attributeValues.ParentId
+//         }
+//         this.$emit("openrequest", request)
+//       },
+//       previewStartBuffer(time: string, buffer: any) {
+//         if(time && buffer) {
+//           return DateTime.fromFormat(time, 'HH:mm:ss').minus({minutes: buffer}).toFormat('hh:mm a')
+//         } else if (time) {
+//           return DateTime.fromFormat(time, 'HH:mm:ss').toFormat('hh:mm a')
+//         }
+//       },
+//       previewEndBuffer(time: string, buffer: any) {
+//         if(time && buffer) {
+//           return DateTime.fromFormat(time, 'HH:mm:ss').plus({minutes: buffer}).toFormat('hh:mm a')
+//         } else if (time) {
+//           return DateTime.fromFormat(time, 'HH:mm:ss').toFormat('hh:mm a')
+//         }
+//       },
+//       getChipClassName(resource: string, fromOriginal: Boolean) {
+//         let className = ""
+//         if(fromOriginal) {
+//           if(this.changesResources && this.changesResources.length > 0) {
+//             let idx = this.changesResources.indexOf(resource)
+//             if(idx < 0) {
+//               className += "text-red text-strikethrough "
+//             }
+//           }
+//         } else {
+//           if(this.originalResources && this.originalResources.length > 0) {
+//             let idx = this.originalResources.indexOf(resource)
+//             if(idx >= 0) {
+//               className += "chip-hidden"
+//             }
+//           }
+//         }
+//         return className
+//       }
+//     },
+//     watch: {
+      
+//     },
+//     mounted() {
+      
+//     },
+//     template: `
+// <div>
+//   <div class="row mb-2">
+//     <div class="col col-xs-12">
+//       <h4>
+//         <template v-if="request.changes && request.title != request.changes.title">
+//           <span class="text-red">{{request.title}}</span>: <span class="text-primary">{{request.changes.title}}</span>
+//         </template>
+//         <template v-else>
+//           {{request.title}}
+//         </template>
+//         <i v-if="requestValidation.isValid" class="fa fa-check-circle text-accent ml-2"></i>
+//         <i v-else class="fa fa-exclamation-circle text-inprogress ml-2"></i>
+//       </h4>
+//       <div :class="statusClass">{{request.attributeValues.RequestStatus}}</div>
+//     </div>
+//   </div>
+//   <div class="row mb-4">
+//     <div class="col col-xs-12">
+//       <div class="chip-group">
+//         <tcc-chip v-for="r in originalResources" :class="getChipClassName(r, true)" :disabled="true">{{r}}</tcc-chip>
+//         <tcc-chip v-for="r in changesResources" :class="getChipClassName(r, false)" :disabled="true">{{r}}</tcc-chip>
+//       </div>
+//     </div>
+//   </div>
+//   <div class="row mb-4">
+//     <div class="col col-xs-6">
+//       <div class="row">
+//         <div class="col col-xs-6">
+//           <div class="form-group static-control">
+//             <rck-lbl>Submitted By</rck-lbl><br/>
+//             {{createdBy.nickName}} {{createdBy.lastName}}
+//           </div>
+//         </div>
+//         <div class="col col-xs-6" v-if="createdBy.nickName != modifiedBy.nickName">
+//           <div class="form-group static-control">
+//             <rck-lbl>Modified By</rck-lbl><br/>
+//             {{modifiedBy.nickName}} {{modifiedBy.lastName}}
+//           </div>
+//         </div>
+//       </div>
+//     </div>
+//     <div class="col col-xs-6 text-right">
+//       <div class="form-group static-control">
+//         <rck-lbl>Submitted On</rck-lbl><br/>
+//         {{formatDateTime(request.startDateTime)}}
+//       </div>
+//     </div>
+//   </div>
+//   <div class="row">
+//     <div class="col col-xs-6">
+//       <template v-if="request.changes && request.changes.attributeValues.Ministry != request.attributeValues.Ministry">
+//         <div class="row">
+//           <div class="col col-xs-6">
+//             <rck-field
+//               v-model="request.attributeValues.Ministry"
+//               :attribute="request.attributes.Ministry"
+//               class="text-red"
+//               :showEmptyValue="true"
+//             ></rck-field>
+//           </div>
+//           <div class="col col-xs-6">
+//             <rck-field
+//               v-model="request.changes.attributeValues.Ministry"
+//               :attribute="request.attributes.Ministry"
+//               class="text-primary hidden-label"
+//               :showEmptyValue="true"
+//             ></rck-field>
+//           </div>
+//         </div>
+//       </template>
+//       <template v-else>
+//         <rck-field
+//           v-model="request.attributeValues.Ministry"
+//           :attribute="request.attributes.Ministry"
+//         ></rck-field>
+//       </template>
+//     </div>
+//     <div class="col col-xs-6">
+//       <template v-if="request.changes && request.changes.attributeValues.Contact != request.attributeValues.Contact">
+//         <div class="row">
+//           <div class="col col-xs-6">
+//             <rck-field
+//               v-model="request.attributeValues.Contact"
+//               :attribute="request.attributes.Contact"
+//               class="text-red"
+//               :showEmptyValue="true"
+//             ></rck-field>
+//           </div>
+//           <div class="col col-xs-6">
+//             <rck-field
+//               v-model="request.changes.attributeValues.Contact"
+//               :attribute="request.attributes.Contact"
+//               class="text-primary hidden-label"
+//               :showEmptyValue="true"
+//             ></rck-field>
+//           </div>
+//         </div>
+//       </template>
+//       <template v-else>
+//         <rck-field
+//           v-model="request.attributeValues.Contact"
+//           :attribute="request.attributes.Contact"
+//         ></rck-field>
+//       </template>
+//     </div>
+//   </div>
+//   <div class="row mb-4">
+//     <div class="col col-xs-6 d-flex align-center">
+//       <rck-btn type="button" btnType="primary" class="btn-circle mr-1" @click="modal = true">
+//         <i class="fa fa-calendar"></i> 
+//       </rck-btn>
+//       <span class="d-flex" style="align-items: center">
+//         View All Event Dates
+//       </span>
+//     </div>
+//   </div>
+//   <rck-panel
+//     v-for="(ci, idx) in request.childItems" 
+//     :key="ci.idKey"
+//     v-model="panels[idx]"
+//     hasCollapse
+//     :title="getPanelName(ci.attributeValues.EventDate, ci.attributeValues.Rooms)"
+//   >
+//     <div class="row">
+//       <div class="col col-xs-12 col-md-6">
+//         <template v-if="ci.changes && ci.changes.attributeValues.StartTime != ci.attributeValues.StartTime">
+//           <div class="row">
+//             <div class="col col-xs-6">
+//               <rck-field
+//                 v-model="ci.attributeValues.StartTime"
+//                 :attribute="ci.attributes.StartTime"
+//                 class="text-red"
+//                 :showEmptyValue="true"
+//               ></rck-field>
+//             </div>
+//             <div class="col col-xs-6">
+//               <rck-field
+//                 v-model="ci.changes.attributeValues.StartTime"
+//                 :attribute="ci.attributes.StartTime"
+//                 class="text-primary hidden-label"
+//                 :showEmptyValue="true"
+//               ></rck-field>
+//             </div>
+//           </div>
+//         </template>
+//         <template v-else>
+//           <rck-field
+//             v-model="ci.attributeValues.StartTime"
+//             :attribute="ci.attributes.StartTime"
+//             :showEmptyValue="true"
+//           ></rck-field>
+//         </template>
+//       </div>
+//       <div class="col col-xs-12 col-md-6">
+//         <template v-if="ci.changes && ci.changes.attributeValues.EndTime != ci.attributeValues.EndTime">
+//           <div class="row">
+//             <div class="col col-xs-6">
+//               <rck-field
+//                 v-model="ci.attributeValues.EndTime"
+//                 :attribute="ci.attributes.EndTime"
+//                 class="text-red"
+//                 :showEmptyValue="true"
+//               ></rck-field>
+//             </div>
+//             <div class="col col-xs-6">
+//               <rck-field
+//                 v-model="ci.changes.attributeValues.EndTime"
+//                 :attribute="ci.attributes.EndTime"
+//                 class="text-primary hidden-label"
+//                 :showEmptyValue="true"
+//               ></rck-field>
+//             </div>
+//           </div>
+//         </template>
+//         <template v-else>
+//           <rck-field
+//             v-model="ci.attributeValues.EndTime"
+//             :attribute="ci.attributes.EndTime"
+//             :showEmptyValue="true"
+//           ></rck-field>
+//         </template>
+//       </div>
+//     </div>
+//     <div class="row mb-2">
+//       <div class="col col-xs-6">
+//         <div class="form-group static-control">
+//           <rck-lbl>Start Time Set-up Buffer</rck-lbl> 
+//           <div class="control-wrapper">
+//             <div class="form-control-static">
+//               <template v-if="ci.changes && ci.changes.attributeValues.StartBuffer != ci.attributeValues.StartBuffer">
+//                 <div class="row">
+//                   <div class="col col-xs-6 text-red">
+//                     <template v-if="ci.attributeValues.StartBuffer != ''">
+//                       {{ci.attributeValues.StartBuffer}} minutes: {{previewStartBuffer(ci.attributeValues.StartTime, ci.attributeValues.StartBuffer)}}
+//                     </template>
+//                     <template v-else>
+//                       0 minutes: {{previewStartBuffer(ci.attributeValues.StartTime, 0)}}
+//                     </template>
+//                   </div>
+//                   <div class="col col-xs-6 text-primary">
+//                     <template v-if="ci.changes.attributeValues.StartBuffer != ''">
+//                       {{ci.changes.attributeValues.StartBuffer}} minutes: {{previewStartBuffer(ci.changes.attributeValues.StartTime, ci.changes.attributeValues.StartBuffer)}}
+//                     </template>
+//                     <template v-else>
+//                       0 minutes: {{previewStartBuffer(ci.changes.attributeValues.StartTime, 0)}}
+//                     </template>
+//                   </div>
+//                 </div>
+//               </template>
+//               <template v-else>
+//                 <template v-if="ci.attributeValues.StartBuffer != ''">
+//                   {{ci.attributeValues.StartBuffer}} minutes: {{previewStartBuffer(ci.attributeValues.StartTime, ci.attributeValues.StartBuffer)}}
+//                 </template>
+//               </template>
+//             </div>
+//           </div>
+//         </div>
+//       </div>
+//       <div class="col col-xs-6">
+//         <div class="form-group static-control">
+//           <rck-lbl>End Time Tear-down Buffer</rck-lbl> 
+//           <div class="control-wrapper">
+//             <div class="form-control-static">
+//               <template v-if="ci.changes && ci.changes.attributeValues.EndBuffer != ci.attributeValues.EndBuffer">
+//                 <div class="row">
+//                   <div class="col col-xs-6 text-red">
+//                     <template v-if="ci.attributeValues.EndBuffer != ''">
+//                       {{ci.attributeValues.EndBuffer}} minutes: {{previewEndBuffer(ci.attributeValues.EndTime, ci.attributeValues.EndBuffer)}}
+//                     </template>
+//                     <template v-else>
+//                       0 minutes: {{previewEndBuffer(ci.attributeValues.EndTime, 0)}}
+//                     </template>
+//                   </div>
+//                   <div class="col col-xs-6 text-primary">
+//                     <template v-if="ci.changes.attributeValues.EndBuffer != ''">
+//                       {{ci.changes.attributeValues.EndBuffer}} minutes: {{previewEndBuffer(ci.changes.attributeValues.EndTime, ci.changes.attributeValues.EndBuffer)}}
+//                     </template>
+//                     <template v-else>
+//                       0 minutes: {{previewEndBuffer(ci.changes.attributeValues.EndTime, 0)}}
+//                     </template>
+//                   </div>
+//                 </div>
+//               </template>
+//               <template v-else>
+//                 <template v-if="ci.attributeValues.EndBuffer != ''">
+//                   {{ci.attributeValues.EndBuffer}} minutes: {{previewEndBuffer(ci.attributeValues.EndTime, ci.attributeValues.EndBuffer)}}
+//                 </template>
+//               </template>
+//             </div>
+//           </div>
+//         </div>
+//       </div>
+//     </div>
+//     <tcc-space v-if="(sections == null || sections?.includes('Room')) && (request.attributeValues.NeedsSpace == 'True' || ( request.changes && request.changes.attributeValues.NeedsSpace == 'True' ))" :details="ci" :rooms="rooms" :index="idx" :requestValidation="requestValidation"></tcc-space>
+//     <tcc-offsite v-else :details="ci" :index="idx" :requestValidation="requestValidation"></tcc-offsite>
+//     <tcc-catering v-if="(sections == null || sections?.includes('Catering')) && (request.attributeValues.NeedsCatering == 'True' || ( request.changes && request.changes.attributeValues.NeedsCatering == 'True' ))" :details="ci" :drinks="drinks" :needsSpace="needsSpace" :index="idx" :requestValidation="requestValidation"></tcc-catering>
+//     <tcc-ops v-if="(sections == null || sections?.includes('Extra Resources')) && (request.attributeValues.NeedsOpsAccommodations == 'True' || ( request.changes && request.changes.attributeValues.NeedsOpsAccommodations == 'True' ))" :details="ci" :rooms="rooms" :drinks="drinks" :inventory="inventory" :needsCatering="needsCatering" :index="idx" :requestValidation="requestValidation"></tcc-ops>
+//     <tcc-childcare v-if="(sections == null || sections?.includes('Childcare')) && (request.attributeValues.NeedsChildCare == 'True' || ( request.changes && request.changes.attributeValues.NeedsChildCare == 'True' ))" :details="ci" :needsCatering="needsChildcareCatering" :index="idx" :requestValidation="requestValidation"></tcc-childcare>
+//     <tcc-registration v-if="(sections == null || sections?.includes('Registration')) && (request.attributeValues.NeedsRegistration == 'True' || ( request.changes && request.changes.attributeValues.NeedsRegistration == 'True' ))" :details="ci" :index="idx" :requestValidation="requestValidation"></tcc-registration>
+//     <tcc-online v-if="(sections == null || sections?.includes('Online')) && (request.attributeValues.NeedsOnline == 'True' || ( request.changes && request.changes.attributeValues.NeedsOnline == 'True' ))" :details="ci" :index="idx" :requestValidation="requestValidation"></tcc-online>
+//   </rck-panel>
+//   <tcc-web-cal v-if="(sections == null || sections?.includes('Web Calendar')) && (request.attributeValues.NeedsWebCalendar == 'True' || ( request.changes && request.changes.attributeValues.NeedsWebCalendar == 'True' ))" :request="request" :requestValidation="requestValidation"></tcc-web-cal>
+//   <tcc-production v-if="(sections == null || sections?.includes('Production')) && (request.attributeValues.NeedsProductionAccommodations == 'True' || ( request.changes && request.changes.attributeValues.NeedsProductionAccommodations == 'True' ))" :request="request" :requestValidation="requestValidation"></tcc-production>
+//   <tcc-worship v-if="(sections == null || sections?.includes('Worship')) && (request.attributeValues.NeedsWorship == 'True' || ( request.changes && request.changes.attributeValues.NeedsWorship == 'True' ))" :request="request" :requestValidation="requestValidation"></tcc-worship>
+//   <tcc-publicity v-if="(sections == null || sections?.includes('Publicity')) && (request.attributeValues.NeedsPublicity == 'True' || ( request.changes && request.changes.attributeValues.NeedsPublicity == 'True' ))" :request="request" :requestValidation="requestValidation"></tcc-publicity>
+//   <div class="row" v-if="request.attributeValues.Notes != '' || (request.changes && request.changes.attributeValues.Notes != '')">
+//     <template v-if="request.changes && request.changes.attributeValues.Notes != request.attributeValues.Notes">
+//       <div class="col col-xs-6">
+//         <rck-field
+//           v-model="request.attributeValues.Notes"
+//           :attribute="request.attributes.Notes"
+//           :showEmptyValue="true"
+//           class="text-red"
+//         ></rck-field>
+//       </div>
+//       <div class="col col-xs-6">
+//         <rck-field
+//           v-model="request.changes.attributeValues.Notes"
+//           :attribute="request.attributes.Notes"
+//           class="text-primary hidden-label"
+//           :showEmptyValue="true"
+//         ></rck-field>
+//       </div>
+//     </template>
+//     <template v-else>
+//       <div class="col col-xs-12">
+//         <rck-field
+//           v-model="request.attributeValues.Notes"
+//           :attribute="request.attributes.Notes"
+//           :showEmptyValue="true"
+//         ></rck-field>
+//       </div>
+//     </template>
+//   </div>
+//   <template v-if="request.conflicts && request.conflicts.length > 0">
+//     <h3 class="text-red">Conflicts</h3>
+//     <div class="row">
+//       <div class="col col-xs-4 hover" v-for="c in request.conflicts" :key="c.idKey" @click="openRelated(c)">
+//         {{c.title}}<br/> 
+//         {{getConflictingDates(c)}}: {{getConflictingRooms(c)}}
+//       </div>
+//     </div>
+//   </template>
+//   <template v-if="request.changesConflicts && request.changesConflicts.length > 0">
+//     <h3 class="text-red">Conflicts With Requested Changes</h3>
+//     <div class="row">
+//       <div class="col col-xs-4 hover" v-for="c in request.changesConflicts" :key="c.idKey" @click="openRelated(c)">
+//         {{c.title}}<br/> 
+//         {{getConflictingDates(c)}}: {{getConflictingRooms(c)}}
+//       </div>
+//     </div>
+//   </template>
+// </div>
+// <rck-modal v-model="modal" width="50%" :clickBackdropToClose="true" :isFooterHidden="true" modalWrapperClasses="modal-no-header">
+//   <template v-if="request.changes && request.changes.attributeValues.EventDates.split(',').map(d => d.trim()).join(',') != request.attributeValues.EventDates.split(',').map(d => d.trim()).join(',')">
+//     <div class="row">
+//       <div class="col col-xs-6">
+//         <tcc-date v-model="request.changes.attributeValues.EventDates" :multiple="true" :readonly="true"></tcc-date>
+//       </div>
+//       <div class="col col-xs-6">
+//         <div v-for="d in changeDates">
+//           <span :class="d.class">{{d.date}}</span>
+//         </div>
+//       </div>
+//     </div>
+//   </template>
+//   <template v-else>
+//     <div class="row">
+//       <div class="col col-xs-6">
+//         <tcc-date v-model="request.attributeValues.EventDates" :multiple="true" :readonly="true"></tcc-date>
+//       </div>
+//       <div class="col col-xs-6">
+//         <div v-for="d in eventDates">
+//           {{d}}
+//         </div>
+//       </div>
+//     </div>
+//   </template>
+// </rck-modal>
+// <v-style>
+//   .status-box {
+//     padding: 4px 8px;
+//     border: 2px solid;
+//     border-radius: 8px;
+//     position: absolute;
+//     top: 0px;
+//     right: 8px;
+//     font-weight: 500;
+//     font-size: 1.1em;
+//   }
+//   .panel.no-border {
+//     box-shadow: none !important;
+//   }
+//   .panel.no-border a h5 {
+//     border-bottom: 1px solid #e2e2e2;
+//   }
+//   a[aria-expanded="true"] h5 i.expand-icon:before {
+//     content: "\\f0d8";
+//   }
+//   a[aria-expanded="false"] h5 i.expand-icon:before {
+//     content: "\\f0d7";
+//   }
+//   .hidden-label label.control-label {
+//     visibility: hidden;
+//   }
+//   .form-group.static-control .col, .form-group.static-control div {
+//     word-break: break-word;
+//     white-space: pre-wrap;
+//   }
+//   .field-error {
+//     color: var(--color-danger-strong);
+//     font-size: 14px;
+//     font-style: italic;
+//     margin-top: -20px;
+//   }
+//   .row-eq-height {
+//     flex-wrap: wrap;
+//   }
+// </v-style>
+// `
+// });

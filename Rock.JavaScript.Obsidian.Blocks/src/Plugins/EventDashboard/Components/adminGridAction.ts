@@ -13,8 +13,7 @@ export default defineComponent({
       "rck-btn": RockButton
     },
     props: {
-      request: Object as PropType<ContentChannelItemBag>,
-      url: String
+      request: Object as PropType<ContentChannelItemBag>
     },
     setup() {
 

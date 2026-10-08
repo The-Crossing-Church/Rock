@@ -8,25 +8,99 @@ import { DatabaseProviderBlockViewModel } from "./databaseProviderDashboardBlock
 import { useStore } from "@Obsidian/PageState"
 import { DateTime, Duration } from "luxon"
 import rules from "../../EventForm/Rules/rules"
+import helper from "../Helpers/helper"
+import Details from "../Components/dashboardModal"
+import Comments from "../Components/comments"
+import SSPTable from "./Components/sspTable"
+import GridAction from "./Components/sspGridAction"
+import Grid, { Column, TextColumn, DateColumn, textValueFilter, dateValueFilter, pickExistingValueFilter } from "@Obsidian/Controls/grid"
+import Modal from "@Obsidian/Controls/modal.obs"
+import RockButton from "@Obsidian/Controls/rockButton.obs"
+import DropDownList from "@Obsidian/Controls/dropDownList.obs"
+import RockText from "@Obsidian/Controls/textBox.obs"
+import RockLabel from "@Obsidian/Controls/rockLabel.obs"
+import RockField from "@Obsidian/Controls/rockField.obs"
+import DateRangePicker from "@Obsidian/Controls/dateRangePicker.obs"
 
 const store = useStore()
 
 export default defineComponent({
   name: "EventDashboard.DatabaseProviderDashboard",
   components: {
-    
+    "rck-modal": Modal,
+    "rck-btn": RockButton,
+    "rck-ddl": DropDownList,
+    "rck-text": RockText,
+    "rck-lbl": RockLabel,
+    "rck-field": RockField,
+    "rck-date-range": DateRangePicker,
+    "rck-grid": Grid,
+    "rck-col": Column,
+    "rck-col-txt": TextColumn,
+    "rck-col-dt": DateColumn,
+    "tcc-table": SSPTable,
+    "tcc-grid": GridAction,
+    "tcc-details": Details,
+    "tcc-comments": Comments,
   },
   setup() {
     const invokeBlockAction = useInvokeBlockAction();
     const viewModel = useConfigurationValues<DatabaseProviderBlockViewModel | null>();
 
+    const filterRequests: (option: string, filters: any) => Promise<any> = async (option, filters) => {
+      const response = await invokeBlockAction("FilterRequests", { opt: option, filters: filters });
+      return response
+    }
+    provide("filterRequests", filterRequests);
+
+    /** A method to load a specific request's details */
+    const loadDetails: (id: string | null | undefined) => Promise<any> = async (id) => {
+        const response = await invokeBlockAction("GetRequestDetails", {
+            id: id
+        });
+        return response
+    };
+    provide("loadDetails", loadDetails);
+
+    let defaultFilters = {
+      title: "",
+      statuses: [ "Approved" ],
+      resources: [] as string[],
+      ministry: "",
+      submitter: "",
+      serviceStatus: 1,
+      eventDates:  { lowerValue: "", upperValue: "" },
+      eventModified: { lowerValue: "", upperValue: "" }
+    }
+    defaultFilters.eventDates.lowerValue = DateTime.now().toFormat("yyyy-MM-dd")
+    let twoWeeks = Duration.fromObject({weeks: 2})
+    defaultFilters.eventDates.upperValue = DateTime.now().plus(twoWeeks).toFormat("yyyy-MM-dd")
+
     return {
       viewModel,
+      filterRequests,
+      loadDetails,
+      defaultFilters
     }
   },
   data() {
     return {
-      rules: rules
+      rules: rules,
+      helper: helper,
+      loading: false,
+      filters: {} as any,
+      textValueFilter: textValueFilter,
+      dateValueFilter: dateValueFilter,
+      pickExistingValueFilter: pickExistingValueFilter,
+      selected: {} as ContentChannelItemBag,
+      sections: [] as any,
+      createdBy: {},
+      modifiedBy: {},
+      modal: false,
+      comment: "",
+      commentModal: false,
+      toastMessage: "",
+      requestValidation: {} as any
     }
   },
   computed: {
@@ -34,17 +108,326 @@ export default defineComponent({
     currentPerson(): CurrentPersonBag | null {
       return store.state.currentPerson
     },
+    resources() {
+      if(this.helper.sectionInfo) {
+        if(this.viewModel?.editCategories) {
+          let cats = this.viewModel.editCategories.map(c => c.name)
+          let relevantSections = this.helper.sectionInfo.filter(si => {
+            return cats.includes(si.cat) && si.type
+          })
+          return relevantSections.map(si => {
+            return { text: si.type, value: si.type }
+          })
+        }
+      }
+      return []
+    },
+    requestStatusOptions(): any {
+      if(this.helper?.requestStatuses) {
+        return this.helper.requestStatuses.filter(s => s.text != 'Draft')
+      }
+      return []
+    },
+    ministryAttr(): PublicAttributeBag | undefined {
+      if(this.viewModel) {
+        let event
+        if(this.viewModel.events) {
+          event = this.viewModel?.events[0]
+        }
+        if(!event && this.viewModel?.pending) {
+          event = this.viewModel?.pending[0]
+        }
+        if(!event && this.viewModel?.cancelled) {
+          event = this.viewModel?.cancelled[0]
+        }
+        if(this.viewModel && event) {
+          let attr = event.attributes?.Ministry
+          let ministryValues = this.viewModel.ministries.map(dv => {
+            return { text: dv.value, description: dv.description, value: dv.guid }
+          }).sort((a, b) => {
+            let textA = a.text ?? ""
+            let textB = b.text ?? ""
+            if (textA < textB) {
+              return -1
+            } else if(textA > textB) {
+              return 1
+            }
+            return 0
+          })
+          if(attr?.configurationValues?.values) {
+            attr.configurationValues.values = JSON.stringify(ministryValues)
+          }
+          return attr
+        }
+      }
+      return undefined
+    }
   },
   methods: {
+    filter(opt: string) {
+      this.loading = true
+      this.filterRequests(opt, this.filters).then((response: any) => {
+        if(this.viewModel) {
+          console.log(response)
+          if(opt == "Upcoming") {
+            this.viewModel.events = response.data
+          } else if (opt == "Pending") {
+            this.viewModel.pending = response.data
+          } else {
+            this.viewModel.cancelled = response.data
+          }
+          this.loading = false
+        }
+      }).catch((ex: any) => {
+        console.error(ex)
+        this.loading = false
+      })
+    },
+    resetFilters() {
+      this.filters = this.defaultFilters
+    },
+    getIsValid(r: any) {
+      return r?.attributeValues?.RequestIsValid == 'True'
+    },
+    btnColor(row) {
+      // return "status-box text-" + row.attributeValues.RequestStatus.replaceAll(" ", "").toLowerCase() + " border-" + row.attributeValues.RequestStatus.replaceAll(" ", "").toLowerCase()
+      return row.attributeValues?.RequestStatus.replace(" ", "").replace(" ", "").toLowerCase().replace("legacyrequest", "default")
+    },
+    selectItem(item: any) { 
+      let el = document.getElementById('updateProgress')
+      if(el) {
+        el.style.display = 'block'
+      }
+      this.loadDetails(item.idKey).then((response: any) => {
+        if(response.data) {
+          if(response.data.isError) {
+            // this.toastMessage = response.data.errorMessage
+            // let el = document.getElementById('toast')
+            // el?.classList.add("show")
+            // return
+          }
+          response.data.details?.forEach((detail: any) => {
+            detail.detail.changes = detail.detailChanges
+          })
+          response.data.request.childItems = response.data.details.map((detail: any) => { return detail.detail }).sort((a: any, b: any) => {
+            let aDate = DateTime.fromFormat(a.attributeValues.EventDate, 'yyyy-MM-dd')
+            let bDate = DateTime.fromFormat(b.attributeValues.EventDate, 'yyyy-MM-dd')
+            if(aDate < bDate) {
+              return -1
+            } else if (aDate > bDate) {
+              return 1
+            }
+            return 0
+          })
+          response.data.request.changes = response.data.requestChanges
+          // response.data.request.comments = response.data.comments
+          // response.data.request.conflicts = response.data.conflicts
+          // response.data.request.changesConflicts = response.data.changesConflicts
+          this.selected = response.data.request
+          let editCategories = this.viewModel?.editCategories.map(c => c.name)
+          let viewCategories = this.viewModel?.viewCategories.map(c => c.name)
+          this.sections = helper.sectionInfo.filter(si => {
+            return editCategories?.includes(si.cat) || viewCategories?.includes(si.cat)
+          }).map(si => si.type )
+          this.createdBy = response.data.createdBy
+          this.modifiedBy = response.data.modifiedBy
+          this.modal = true
+          this.requestValidation = this.rules.validate(this.selected, response.data.request?.childItems, this.viewModel?.locations, this.viewModel?.ministries, true)
+          if(this.selected?.attributeValues?.RequestErrors) {
+            this.requestValidation.errors = JSON.parse(this.selected?.attributeValues?.RequestErrors as string)
+          }
+        }
+      }).finally(() => {
+        if(el) {
+          el.style.display = 'none'
+        }
+      })
+    },
+    newComment() {
+      this.comment = ""
+      this.commentModal = true
+    },
   },
   watch: {
     
   },
   mounted() {
+    this.resetFilters()
+    this.filter("Upcoming")
+    this.filter("Pending")
+    this.filter("Cancelled")
   },
   template: `
+<div class="card mb-2">
+  <tcc-table :openByDefault="true" option="Pending Confirmation" :events="viewModel.pending" :ministryAttr="ministryAttr" :resources="resources" v-on:updatestatus="updateFromGridAction" v-on:selectitem="selectItem"></tcc-table>
+</div>
+<div class="card mb-2">
+  <tcc-table :openByDefault="false" option="Cancelled" :events="viewModel.cancelled" :ministryAttr="ministryAttr" :resources="resources" v-on:updatestatus="updateFromGridAction" v-on:selectitem="selectItem"></tcc-table>
+</div>
+<div class="card">
+  <div style="display: flex; align-items: center;">
+    <i class="fa fa-filter mr-2 mb-2 hover fa-lg" data-toggle="collapse" data-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse"></i>
+    <h4 style="width: 90%;" class="text-primary hover" data-toggle="collapse" data-target="#allCollapse" aria-expanded="false" aria-controls="allCollapse">Everything Else</h4>
+  </div>
+  <div class="collapse" id="allCollapse">
+    <div class="collapse" id="filterCollapse">
+      <div class="row">
+        <div class="col col-xs-12 col-md-4">
+          <rck-text
+            label="Request Name"
+            v-model="filters.title"
+          ></rck-text>
+        </div>
+        <div class="col col-xs-12 col-md-4">
+          <rck-text
+            label="Submitter/Modifier"
+            v-model="filters.submitter"
+          ></rck-text>
+        </div>
+        <div class="col col-xs-12 col-md-4" v-if="ministryAttr">
+          <rck-field
+            v-model="filters.ministry"
+            :attribute="ministryAttr"
+            :is-edit-mode="true"
+          ></rck-field>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col col-xs-12 col-md-4">
+          <rck-ddl
+            label="Request Status"
+            :items="requestStatusOptions"
+            v-model="filters.statuses"
+            multiple
+          ></rck-ddl>
+        </div>
+        <div class="col col-xs-12 col-md-4">
+          <rck-ddl
+            label="Requested Resources"
+            :items="helper.resources"
+            v-model="filters.resources"
+            multiple
+          ></rck-ddl>
+        </div>
+        <div class="col col-xs-12 col-md-4">
+          <rck-date-range
+            label="Has Event Date in Range"
+            v-model="filters.eventDates"
+          ></rck-date-range>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col col-xs-12 col-md-4">
+          <rck-date-range
+            label="Modified in Range"
+            v-model="filters.eventModified"
+          ></rck-date-range>
+        </div>
+      </div>
+      <div class="row mb-4">
+        <div class="col col-xs-12">
+          <rck-btn class="mr-1" btnType="accent" @click="resetFilters">Reset Defaults</rck-btn>
+          <rck-btn btnType="grey" @click="clearFilters">Clear Filters</rck-btn>
+          <rck-btn class="pull-right" btnType="primary" @click="filter('Upcoming')" :isLoading="loading">Filter</rck-btn>
+        </div>
+      </div>
+    </div>
+    <rck-grid :data="{ rows: this.viewModel.events }" keyField="idKey" :isTitleHidden="true" itemTerm="request" :emptyDataText="loading ? 'Loading Requests...' : 'No Requests to Display'">
+      <rck-col-txt
+        name="title"
+        title="Title"
+        field="title"
+        :filter="textValueFilter"
+      >
+        <template #format="{ row }">
+          <div class="hover w-100" @click="selectItem(row)">
+            <i v-if="getIsValid(row)" class="fa fa-check-circle text-accent mr-2"></i>
+            <i v-else class="fa fa-exclamation-circle text-inprogress mr-2"></i> 
+            {{ row.title }}
+          </div>
+        </template>
+      </rck-col-txt>
+      <rck-col-txt
+        name="createdBy"
+        title="Submitted By"
+        field="createdBy"
+        :filter="pickExistingValueFilter"
+        visiblePriority="md"
+      ></rck-col-txt>
+      <rck-col
+        name="attributeValues.EventDates"
+        title="Event Dates"
+        field="attributeValues.EventDates"
+        :filter="dateValueFilter"
+        :filterValues="helper.getDatesFilterValues"
+      >
+        <template #format="{ row }">
+          {{ helper.formatDates(row.attributeValues.EventDates) }}
+        </template>
+      </rck-col>
+      <rck-col
+        name="attributeValues.RequestType"
+        title="Requested Resources"
+        field="attributeValues.RequestType"
+        :filter="pickExistingValueFilter"
+        :filterValues="helper.getRequestTypeFilterValues"
+        visiblePriority="md"
+      >
+        <template #format="{ row }">
+          {{ row.attributeValues.RequestType.replaceAll(',', ', ') }}
+        </template>
+      </rck-col>
+      <rck-col
+        name="attributeValues.RequestStatus"
+        title="Status"
+        field="attributeValues.RequestStatus"
+        itemClass="overflow-visible"
+        :filter="pickExistingValueFilter"
+        :filterValue="helper.getRequestStatusFilterValue"
+        :quickFilterValue="helper.getRequestStatusFilterValue"
+        :sortValue="helper.getRequestStatusSortValue"
+      >
+        <template #format="{ row }">
+          <tcc-grid :request="row" v-on:updatestatus="updateFromGridAction"></tcc-grid>
+        </template>
+      </rck-col>
+    </rck-grid>
+  </div>
+</div>
+
+<rck-modal v-model="modal" width="80%" isCloseButtonHidden cancelText="" clickBackdropToClose modalWrapperClasses="modal-no-header">
+  <tcc-details 
+    :request="selected" 
+    :rooms="viewModel.locations" 
+    :drinks="viewModel.drinks" 
+    :inventory="viewModel.inventory" 
+    :createdBy="createdBy" 
+    :modifiedBy="modifiedBy" 
+    :requestValidation="requestValidation" 
+    :sections="sections"
+    v-on:openrequest="selectItem"
+  ></tcc-details>
+  <template v-if="commentModal || (selected.comments && selected.comments.length > 0)">
+    <tcc-comments :comments="selected.comments" v-model="commentModal" v-on:createComment="createComment"></tcc-comments>
+  </template>
+  <template #customButtons>
+    <rck-btn btnType="accent" @click="newComment">
+      <i class="mr-1 fa fa-comment-alt"></i>
+      Add Comment
+    </rck-btn>
+  </template>
+</rck-modal>
+
 <v-style>
-@import "/Styles/Blocks/Plugins/eventForm.css";
+  @import "/Styles/Blocks/Plugins/eventForm.css";
+
+  .status-box {
+    padding: 4px 8px;
+    border: 2px solid;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 1.1em;
+  }
 </v-style>
 `
 })

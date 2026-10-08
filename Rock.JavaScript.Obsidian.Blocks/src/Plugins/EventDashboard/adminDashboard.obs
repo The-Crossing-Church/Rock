@@ -8,7 +8,6 @@ import { AdminDashboardBlockViewModel } from "./adminDashboardBlockViewModel"
 import { useStore } from "@Obsidian/PageState"
 import { DateTime, Duration } from "luxon"
 import GridAction from "./Components/adminGridAction"
-import TCCModal from "./Components/dashboardModal"
 import Details from "./Components/dashboardModal"
 import RockText from "@Obsidian/Controls/textBox.obs"
 import RockLabel from "@Obsidian/Controls/rockLabel.obs"
@@ -31,7 +30,6 @@ export default defineComponent({
   name: "EventDashboard.AdminDashboard",
   components: {
     "tcc-grid": GridAction,
-    "tcc-model": TCCModal,
     "tcc-details": Details,
     "tcc-table": TCCTable,
     "tcc-comments": Comments,
@@ -229,19 +227,19 @@ export default defineComponent({
       }
   },
   methods: {
-    formatDateTime(date: any): string {
-      if(date) {
-        return DateTime.fromISO(date).toFormat("MM/dd/yyyy hh:mm a");
-      }
-      return ""
-    },
-    formatDates(dates: string): string {
-      if(dates) {
-        let dateArray = dates.split(",").map((d: string) => DateTime.fromFormat(d.trim(), "yyyy-MM-dd").toFormat("MM/dd/yyyy"))
-        return dateArray.join(", ")
-      }
-      return ""
-    },
+    // formatDateTime(date: any): string {
+    //   if(date) {
+    //     return DateTime.fromISO(date).toFormat("MM/dd/yyyy hh:mm a");
+    //   }
+    //   return ""
+    // },
+    // formatDates(dates: string): string {
+    //   if(dates) {
+    //     let dateArray = dates.split(",").map((d: string) => DateTime.fromFormat(d.trim(), "yyyy-MM-dd").toFormat("MM/dd/yyyy"))
+    //     return dateArray.join(", ")
+    //   }
+    //   return ""
+    // },
     selectItem(item: any) { 
       let el = document.getElementById('updateProgress')
       if(el) {
@@ -695,7 +693,7 @@ export default defineComponent({
         :filter="dateValueFilter"
       >
         <template #format="{ row }">
-          {{ formatDateTime(row.startDateTime) }}
+          {{ helper.formatDateTime(row.startDateTime) }}
         </template>
       </rck-col-dt>
       <rck-col
@@ -704,7 +702,7 @@ export default defineComponent({
         field="attributeValues.EventDates"
       >
         <template #format="{ row }">
-          {{ formatDates(row.attributeValues.EventDates) }}
+          {{ helper.formatDates(row.attributeValues.EventDates) }}
         </template>
       </rck-col>
       <rck-col
@@ -723,7 +721,7 @@ export default defineComponent({
         itemClass="overflow-visible"
       >
         <template #format="{ row }">
-          <tcc-grid :request="row" :url="viewModel.workflowURL" v-on:updatestatus="updateFromGridAction" v-on:addbuffer="addBuffer"></tcc-grid>
+          <tcc-grid :request="row" v-on:updatestatus="updateFromGridAction" v-on:addbuffer="addBuffer"></tcc-grid>
         </template>
       </rck-col>
     </rck-grid>

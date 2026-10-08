@@ -623,6 +623,16 @@ export default defineComponent({
   </template>
 </rck-modal>
 <v-style>
+  .status-box {
+    padding: 4px 8px;
+    border: 2px solid;
+    border-radius: 8px;
+    position: absolute;
+    top: 0px;
+    right: 8px;
+    font-weight: 500;
+    font-size: 1.1em;
+  }
   .panel.no-border {
     box-shadow: none !important;
   }
@@ -634,16 +644,6 @@ export default defineComponent({
   }
   a[aria-expanded="false"] h5 i.expand-icon:before {
     content: "\\f0d7";
-  }
-  .status-box {
-    padding: 4px 8px;
-    border: 2px solid;
-    border-radius: 8px;
-    position: absolute;
-    top: 0px;
-    right: 8px;
-    font-weight: 500;
-    font-size: 1.1em;
   }
   .hidden-label label.control-label {
     visibility: hidden;

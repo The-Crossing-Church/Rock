@@ -2,9 +2,11 @@ import { defineComponent, Prop, PropType } from "vue"
 import { PublicAttributeBag } from "@Obsidian/ViewModels/Utility/publicAttributeBag"
 import { ContentChannelItemBag } from "../../ViewModels/contentChannelItemBag"
 import { DateTime, Interval } from "luxon"
+import rules from "../../../EventForm/Rules/rules"
+import helper from "../../Helpers/helper"
 import RockField from "@Obsidian/Controls/rockField.obs"
-import TCCDropDownList from "../Components/dropDownList"
-import GridAction from "../Components/adminGridAction"
+import TCCDropDownList from "../../Components/dropDownList"
+import GridAction from "./sspGridAction"
 import RockText from "@Obsidian/Controls/textBox.obs"
 import RockLabel from "@Obsidian/Controls/rockLabel.obs"
 import RockButton from "@Obsidian/Controls/rockButton.obs"
@@ -12,10 +14,10 @@ import DateRangePicker from "@Obsidian/Controls/dateRangePicker.obs"
 import PersonPicker from "@Obsidian/Controls/personPicker.obs"
 import DropDownList from "@Obsidian/Controls/dropDownList.obs"
 import Grid, { Column, TextColumn, DateColumn, PersonColumn, textValueFilter, dateValueFilter, pickExistingValueFilter } from "@Obsidian/Controls/grid"
-import event from "../../EventCalendar/Components/event"
+import event from "../../../EventCalendar/Components/event"
 
 export default defineComponent({
-    name: "EventDashboard.Components.RequestTable",
+    name: "EventDashboard.Components.SSP.RequestTable",
     components: {
       "rck-text": RockText,
       "rck-lbl": RockLabel,
@@ -46,6 +48,8 @@ export default defineComponent({
     },
     data() {
         return {
+          rules: rules,
+          helper: helper,
           filters: {
             title: "",
             statuses: [] as string[],
@@ -60,18 +64,6 @@ export default defineComponent({
           pickExistingValueFilter: pickExistingValueFilter,
           loading: true,
           defaultClass: "",
-          resources: [
-            { text: "Room",  value: "Room" },
-            { text: "Online Event", value: "Online Event" },
-            { text: "Catering", value: "Catering" },
-            { text: "Childcare", value: "Childcare" },
-            { text: "Extra Resources", value: "Extra Resources" },
-            { text: "Registration", value: "Registration" },
-            { text: "Web Calendar", value: "Web Calendar" },
-            { text: "Production", value: "Production" },
-            { text: "Worship", value: "Worship" },
-            { text: "Publicity", value: "Publicity" }
-          ]
         };
     },
     computed: {
@@ -173,10 +165,10 @@ export default defineComponent({
       selectItem(item: any) {
         this.$emit("selectitem", item)
       },
-      filter() {
-        this.loading = true
-        this.$emit("filter", this.option?.replace(" ", ""), this.filters)
-      },
+    //   filter() {
+    //     this.loading = true
+    //     this.$emit("filter", this.option?.replace(" ", ""), this.filters)
+    //   },
       getIsValid(r: any) {
         return r?.attributeValues?.RequestIsValid == 'True'
       },
@@ -238,7 +230,7 @@ export default defineComponent({
       <div class="col col-xs-12 col-md-6">
         <rck-ddl
           label="Requested Resources"
-          :items="resources"
+          :items="helper.resources"
           v-model="filters.resources"
           multiple
         ></rck-ddl>
@@ -253,7 +245,6 @@ export default defineComponent({
     <div class="row">
       <div class="col col-xs-12 mb-4">
         <rck-btn btnType="grey" @click="clearFilters">Clear Filters</rck-btn>
-        <!--<rck-btn class="pull-right" btnType="primary" @click="filter" :isLoading="loading">Filter</rck-btn>-->
       </div>
     </div>
   </div>
@@ -263,6 +254,7 @@ export default defineComponent({
       title="Title"
       field="title"
       visiblePriority="xs"
+      :filter="textValueFilter"
     >
       <template #format="{ row }">
         <div class="hover w-100" @click="selectItem(row)">
@@ -276,23 +268,16 @@ export default defineComponent({
       name="createdBy"
       title="Submitted By"
       field="createdBy"
+      :filter="pickExistingValueFilter"
       visiblePriority="md"
     ></rck-col-txt>
-    <rck-col-dt
-      name="startDateTime"
-      title="Submitted On"
-      field="startDateTime"
-      :filter="dateValueFilter"
-      visiblePriority="md"
-    >
-      <template #format="{ row }">
-        {{ formatDateTime(row.startDateTime) }}
-      </template>
-    </rck-col-dt>
     <rck-col
       name="attributeValues.EventDates"
       title="Event Dates"
       field="attributeValues.EventDates"
+      :filter="dateValueFilter"
+      :filterValues="helper.getDatesFilterValues"
+      :sortValue="helper.getDatesSortValue"
       visiblePriority="xs"
     >
       <template #format="{ row }">
@@ -314,10 +299,14 @@ export default defineComponent({
       title="Status"
       field="attributeValues.RequestStatus"
       itemClass="overflow-visible"
+      :filter="pickExistingValueFilter"
+      :filterValue="helper.getRequestStatusFilterValue"
+      :quickFilterValue="helper.getRequestStatusFilterValue"
+      :sortValue="helper.getRequestStatusSortValue"
       visiblePriority="xs"
     >
       <template #format="{ row }">
-        <tcc-grid :request="row" v-on:updatestatus="updateFromGridAction" v-on:addbuffer="addBuffer"></tcc-grid>
+        <tcc-grid :request="row" v-on:updatestatus="updateFromGridAction"></tcc-grid>
       </template>
     </rck-col>
   </rck-grid>
