@@ -593,10 +593,6 @@ namespace Rock.Blocks.Workflow
         /// <param name="fields">The fields.</param>
         private void SetInitialWorkflowAttributes( Model.Workflow workflow, Dictionary<string, string> fields )
         {
-            // CROSSING (not needed after v18.4): seed each value through
-            // SetInitialWorkflowAttributeValue so the Lava/HTML content policy is enforced
-            // (was a direct workflow.SetAttributeValue call for each value).
-
             // Set initial values from the page parameters.
             foreach ( var pageParameter in RequestContext.PageParameters )
             {

@@ -269,7 +269,7 @@ namespace Rock.Workflow.Action
                 throw new Exception( "Invalid action state, could not find workflow or form details." );
             }
 
-            // CROSSING (not needed after v18.4): enforce the per-field Lava/HTML content policy on the
+            // CROSSING (see WorkflowFormInputValidator): enforce the per-field Lava/HTML content policy on the
             // user-entered form and person-entry values before anything is
             // persisted. If a value contains content it is not configured to
             // allow, reject the whole submission and re-display an error instead
@@ -818,7 +818,7 @@ namespace Rock.Workflow.Action
         }
 
         /// <summary>
-        /// CROSSING (not needed after v18.4): Checks the user-entered form field values against the per-field
+        /// CROSSING (see WorkflowFormInputValidator): Checks the user-entered form field values against the per-field
         /// Lava/HTML content policy (see <see cref="WorkflowFormInputValidator"/>).
         /// Mirrors the field iteration used by <see cref="SetFormFieldValues"/>.
         /// </summary>
@@ -896,7 +896,7 @@ namespace Rock.Workflow.Action
                         item = activity;
                     }
 
-                    // CROSSING (not needed after v18.4): backstop enforcement of the per-field Lava/HTML
+                    // CROSSING (see WorkflowFormInputValidator): backstop enforcement of the per-field Lava/HTML
                     // content policy for any caller that reaches this method
                     // directly (e.g. the legacy mobile shell's GetNextForm path).
                     // The primary web/mobile path validates earlier in

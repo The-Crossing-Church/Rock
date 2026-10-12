@@ -408,7 +408,7 @@ namespace RockWeb.Blocks.WorkFlow
                 return;
             }
 
-            // CROSSING (not needed after v18.4): enforce the per-field Lava/HTML content policy on all
+            // CROSSING (see WorkflowFormInputValidator): enforce the per-field Lava/HTML content policy on all
             // user-entered values (person entry + form fields) before anything is
             // created or saved. If a value is not allowed, show a validation message
             // and stop without creating a person, saving values, or completing the form.
@@ -2184,7 +2184,7 @@ namespace RockWeb.Blocks.WorkFlow
         }
 
         /// <summary>
-        /// CROSSING (not needed after v18.4): Validates the Person Entry inputs (person, spouse, and address)
+        /// CROSSING (see WorkflowFormInputValidator): Validates the Person Entry inputs (person, spouse, and address)
         /// against the plain-text content policy before a Person record is created or
         /// updated. Shows a validation message and returns <c>false</c> on the first
         /// disallowed value.
@@ -2236,7 +2236,7 @@ namespace RockWeb.Blocks.WorkFlow
         }
 
         /// <summary>
-        /// CROSSING (not needed after v18.4): Validates a single person editor's free-text fields against the
+        /// CROSSING (see WorkflowFormInputValidator): Validates a single person editor's free-text fields against the
         /// plain-text content policy.
         /// </summary>
         /// <param name="personEditor">The person editor to validate.</param>
@@ -2255,7 +2255,7 @@ namespace RockWeb.Blocks.WorkFlow
         }
 
         /// <summary>
-        /// CROSSING (not needed after v18.4): Runs the plain-text content policy against a single entered value
+        /// CROSSING (see WorkflowFormInputValidator): Runs the plain-text content policy against a single entered value
         /// and, on a violation, shows a validation message and returns <c>false</c>.
         /// </summary>
         /// <param name="fieldLabel">The user-facing label of the field.</param>
@@ -2275,7 +2275,7 @@ namespace RockWeb.Blocks.WorkFlow
         }
 
         /// <summary>
-        /// CROSSING (not needed after v18.4): Validates the user-entered workflow form values against the
+        /// CROSSING (see WorkflowFormInputValidator): Validates the user-entered workflow form values against the
         /// per-field Lava/HTML content policy (see
         /// <see cref="Rock.Security.WorkflowFormInputValidator"/>). Shows a
         /// validation message and returns <c>false</c> on the first disallowed value.

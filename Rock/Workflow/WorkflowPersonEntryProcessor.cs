@@ -379,7 +379,7 @@ namespace Rock.Workflow
                 return;
             }
 
-            // CROSSING (not needed after v18.4): backstop enforcement — reject Lava/HTML in person-entry
+            // CROSSING (see WorkflowFormInputValidator): backstop enforcement — reject Lava/HTML in person-entry
             // free-text before any Person record is created or updated. The web
             // path validates earlier (UserEntryForm.UpdateActionInternal) and returns
             // a friendly message; this guards direct callers (e.g. the legacy mobile
