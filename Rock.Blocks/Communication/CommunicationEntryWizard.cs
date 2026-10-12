@@ -4081,31 +4081,6 @@ namespace Rock.Blocks.Communication
                         rockContext.BulkUpdate( recipientsQry, cr => new CommunicationRecipient { MediumEntityTypeId = mediumEntityTypeId } );
                     }
                 }
-                else
-                {
-                    var mediumEntityTypeId = emailMediumEntityTypeId;
-                    if ( communication.CommunicationType == CommunicationType.SMS )
-                    {
-                        mediumEntityTypeId = smsMediumEntityTypeId;
-                    }
-                    else if ( communication.CommunicationType == CommunicationType.PushNotification )
-                    {
-                        mediumEntityTypeId = pushMediumEntityTypeId;
-                    }
-
-                    if ( communication.Recipients.Any( cr => cr.MediumEntityTypeId != mediumEntityTypeId ) )
-                    {
-                        var recipientsQry = new CommunicationRecipientService( rockContext )
-                            .Queryable()
-                            .Where( cr => cr.CommunicationId == communication.Id );
-
-                        // We are purposely NOT updating the in-memory communication.Recipients collection here, so we
-                        // don't trigger an unnecessarily-long save operation. This means that the recipients will not
-                        // have the updated MediumEntityTypeId value until they are reloaded from the database. This is
-                        // OK, as nothing downstream from this method currently references the recipients after this point.
-                        rockContext.BulkUpdate( recipientsQry, cr => new CommunicationRecipient { MediumEntityTypeId = mediumEntityTypeId } );
-                    }
-                }
 
                 return communication;
             }

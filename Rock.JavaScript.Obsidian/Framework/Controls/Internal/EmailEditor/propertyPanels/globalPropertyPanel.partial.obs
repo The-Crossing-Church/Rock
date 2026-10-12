@@ -315,13 +315,8 @@
     import { isNullish } from "@Obsidian/Utility/util";
 
     const props = defineProps({
-    document: {
-    type: Object as PropType<Document>,
-            required: true
-        },
-
-        buttonGlobalProps: {
-            type: Object as PropType<ButtonGlobalProps>,
+        document: {
+            type: Object as PropType<Document>,
             required: true
         },
 

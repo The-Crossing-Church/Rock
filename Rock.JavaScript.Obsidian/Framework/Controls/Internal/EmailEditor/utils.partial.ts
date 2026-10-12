@@ -1781,14 +1781,6 @@ function createVideoComponentAdapter(): VideoComponentAdapter {
                 setAttributePropertyValue(componentElement, attributeNames.dataImageFilename, localProps.previewImageFile?.text);
             }
         },
-        "v2-alpha": (componentElement: HTMLElement): RsvpLocalProps => {
-            const rsvpInnerwrap = componentElement.querySelector(".rsvp-innerwrap") as HTMLElement | null;
-            const rsvpAcceptLink = componentElement.querySelector(".rsvp-accept-link") as HTMLElement | null;
-            const rsvpDeclineLink = componentElement.querySelector(".rsvp-decline-link") as HTMLElement | null;
-            const rsvpGroupIdEl = componentElement.querySelector(".rsvp-group-id") as HTMLInputElement | null;
-            const rsvpOccurrenceValueEl = componentElement.querySelector(".rsvp-occurrence-value") as HTMLInputElement | null;
-            const acceptButtonShell = componentElement.querySelector(".accept-button-shell") as HTMLElement | null;
-            const declineButtonShell = componentElement.querySelector(".decline-button-shell") as HTMLElement | null;
 
         /**
          * Version v17.3-alpha is identical to v2-alpha in structure and local props; just a version bump.
