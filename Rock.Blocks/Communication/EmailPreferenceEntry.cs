@@ -20,7 +20,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data.Entity;
 using System.Linq;
-using System.Net;
 
 using Rock.Attribute;
 using Rock.Data;
@@ -1426,7 +1425,7 @@ namespace Rock.Blocks.Communication
 
             // HTML-encode the anonymous free-text reason note before it is persisted to the
             // Person record and later rendered to staff in the Person Profile / record-status UI.
-            bag.InactiveReasonNote = WebUtility.HtmlEncode( bag.InactiveReasonNote );
+            bag.InactiveReasonNote = System.Net.WebUtility.HtmlEncode( bag.InactiveReasonNote );
 
             // If the inactive reason note is the same as the current review reason note, update it also.
             string inactiveReasonNote = ( trackedPerson.InactiveReasonNote ?? string.Empty ) == ( trackedPerson.ReviewReasonNote ?? string.Empty )
@@ -1772,7 +1771,7 @@ namespace Rock.Blocks.Communication
             else
             {
                 visibleCommunicationListItems = communicationListItems
-                    .Where( i => i.ListGroup.IsAuthorized( Rock.Security.Authorization.VIEW, person ) )
+                    .Where( i => i.ListGroup.IsAuthorized( Authorization.VIEW, person ) )
                     .ToList();
             }
 
@@ -2062,7 +2061,7 @@ namespace Rock.Blocks.Communication
             else
             {
                 visibleListGroups = listGroups
-                    .Where( g => g.IsAuthorized( Rock.Security.Authorization.VIEW, person ) )
+                    .Where( g => g.IsAuthorized( Authorization.VIEW, person ) )
                     .ToList();
             }
 
