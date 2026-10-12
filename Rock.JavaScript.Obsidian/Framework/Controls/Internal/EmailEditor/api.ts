@@ -43,7 +43,6 @@ import {
     titleComponentAdapter
 } from "./utils.partial";
 import { inject, provide, Ref } from "vue";
-import { isNullish } from "@Obsidian/Utility/util";
 
 type ElementBinaryFileInfo = {
     binaryFile: ListItemBag | null | undefined;

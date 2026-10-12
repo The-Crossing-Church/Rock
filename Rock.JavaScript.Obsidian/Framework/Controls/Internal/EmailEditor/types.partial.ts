@@ -15,7 +15,7 @@
 // </copyright>
 //
 
-import { inject, provide, Ref } from "vue";
+import { Ref } from "vue";
 import { Enumerable } from "@Obsidian/Utility/linq";
 import { Guid } from "@Obsidian/Types";
 import { ListItemBag } from "@Obsidian/ViewModels/Utility/listItemBag";
