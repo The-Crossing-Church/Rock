@@ -269,7 +269,7 @@ namespace Rock.Workflow.Action
                 throw new Exception( "Invalid action state, could not find workflow or form details." );
             }
 
-            // CROSSING (not needed after v18.4): enforce the per-field Lava/HTML content policy on the
+            // CROSSING (see WorkflowFormInputValidator): enforce the per-field Lava/HTML content policy on the
             // user-entered form and person-entry values before anything is
             // persisted. If a value contains content it is not configured to
             // allow, reject the whole submission and re-display an error instead
@@ -544,19 +544,13 @@ namespace Rock.Workflow.Action
                 }
             }
 
-            // Get current marital status or default to Married if this will
-            // be a new person.
-            var maritalStatusGuid = personEntryPerson != null
-                ? personEntryPerson.MaritalStatusValue?.Guid
-                : Rock.SystemGuid.DefinedValue.PERSON_MARITAL_STATUS_MARRIED.AsGuid();
-
             return new PersonEntryValuesBag
             {
                 Address = address,
                 CampusGuid = personEntryPerson?.PrimaryCampusId != null
                     ? CampusCache.Get( personEntryPerson.PrimaryCampusId.Value, rockContext )?.Guid
                     : null,
-                MaritalStatusGuid = maritalStatusGuid,
+                MaritalStatusGuid = personEntryPerson?.MaritalStatusValue?.Guid,
                 Person = GetPersonBag( formSettings, personEntryPerson, rockContext ),
                 Spouse = GetPersonBag( formSettings, personEntrySpouse, rockContext )
             };
@@ -824,7 +818,7 @@ namespace Rock.Workflow.Action
         }
 
         /// <summary>
-        /// CROSSING (not needed after v18.4): Checks the user-entered form field values against the per-field
+        /// CROSSING (see WorkflowFormInputValidator): Checks the user-entered form field values against the per-field
         /// Lava/HTML content policy (see <see cref="WorkflowFormInputValidator"/>).
         /// Mirrors the field iteration used by <see cref="SetFormFieldValues"/>.
         /// </summary>
@@ -902,7 +896,7 @@ namespace Rock.Workflow.Action
                         item = activity;
                     }
 
-                    // CROSSING (not needed after v18.4): backstop enforcement of the per-field Lava/HTML
+                    // CROSSING (see WorkflowFormInputValidator): backstop enforcement of the per-field Lava/HTML
                     // content policy for any caller that reaches this method
                     // directly (e.g. the legacy mobile shell's GetNextForm path).
                     // The primary web/mobile path validates earlier in
@@ -917,6 +911,36 @@ namespace Rock.Workflow.Action
                     }
 
                     item?.SetPublicAttributeValue( attribute.Key, formFieldValue, null, false );
+
+                    var value = item?.GetAttributeValue( attribute.Key );
+
+                    if ( value.IsNotNullOrWhiteSpace() )
+                    {
+                        var field = attribute.FieldType.Field;
+                        var rules = field.GetValidationRules( attribute.ConfigurationValues );
+
+                        try
+                        {
+                            StringValueValidator.Validate( value, rules, typeof( AttributeValue ), nameof( AttributeValue.Value ) );
+                        }
+                        catch ( PropertyValidationException ex )
+                        {
+                            if ( DbContext.EnableStringValidation )
+                            {
+                                throw new AttributeValueValidationException( attribute, item.Id, ex.Reason, null );
+                            }
+                            else
+                            {
+                                // Captures the full current call stack, all callers
+                                // included so that we get more information about
+                                // where this happened in the log.
+                                var stack = new System.Diagnostics.StackTrace( true ).ToString();
+                                var ex2 = new AttributeValueValidationException( attribute, item.Id, ex.Reason, stack );
+
+                                ExceptionLogService.LogException( ex2, System.Web.HttpContext.Current );
+                            }
+                        }
+                    }
                 }
             }
         }

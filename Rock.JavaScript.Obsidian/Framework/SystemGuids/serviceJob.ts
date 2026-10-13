@@ -171,6 +171,8 @@ export const ServiceJob = {
     DataMigrations171PopulateAttendanceRootGroupType: "e6755275-02ca-4159-af16-1e4cdcfa22d0",
     /** The job to run Post v17.1 Data Migrations to update an existing index on the CommunicationRecipient table. */
     DataMigrations171UpdateCommunicationrecipientIndex: "EB00BD84-D89C-44B4-8C0C-56322074C9C4",
+    /** The job to run Post v17.10 Data Migrations to fix the mime type of check images uploaded by the Check Scanner. */
+    DataMigrations1710FixTransactionImageMimeTypes: "B954DAC7-D30C-45CF-9CD4-872E8F9856DE",
     /** The job to run Post v17.3 Data Migrations to remove a redundant index on the AttendanceOccurrence table. */
     DataMigrations173UpdateAttendanceoccurrenceIndex: "FFF8E02C-9FAA-4E23-99EE-4B008549F088",
     /** The job to run Post v17.3 Data Migrations to update the Nameless Schedules. */
@@ -187,12 +189,16 @@ export const ServiceJob = {
     DataMigrations180PopulateCommunicationrecipientDelivereddatetime: "EF2CF0AC-7A83-4BEB-8824-41D3B5B8B832",
     /** The Job to run Post v18.0 Data Migrations to swap Block. */
     DataMigrations180SwapObsidianBlocks: "B3663D0F-6426-44BB-9C43-D9921A0974D3",
-    /** The job to run Post v18.0 Data Migrations to update an existing index on the CommunicationRecipient table. */
-    DataMigrations180UpdateCommunicationrecipientIndex: "FE519BCE-CCB8-42B7-A14C-1620859F23E8",
     /** The job to run Post v18.0 Data Migrations to update the Manage My Account Page block setting for the recently-chopped Email Preference Entry block. */
     DataMigrations180UpdateEmailPreferenceEntryBlockManageMyAccountPage: "7319E385-8068-43FE-9085-6F9A21F5972B",
     /** The job to run Post v18.0 Data Migrations to update the Nameless Locations. */
     DataMigrations180UpdateNamelessLocations: "6C3EE640-A442-4F9C-92ED-23E353BA8509",
+    /** The job to run Post v18.1 Data Migrations to add a new index to the FinancialBatch table. */
+    DataMigrations181AddFinancialbatchIndex: "EA5D69D8-8ABB-42CD-A664-48F6BC5E2C7F",
+    /** The job to run Post v18.1 Data Migrations to add indexes to improve communication prep performance. */
+    DataMigrations181AddIndexesForCommunicationPrep: "88C42A48-6713-4CB1-BF6B-A12AB2E292E7",
+    /** The job to run Post v18.3 Data Migrations to fix any possible broken achievement types. */
+    DataMigrations183FixBrokenAchievementTypes: "2463AB43-8CB2-400E-BAAF-F96FC3E1A43D",
     /**
      * The Post Update Data Migration Job to chop the Schedule Detail, Asset Storage Provider Detail, Page Short Link Detail, Streak Type Detail,
      * Following Event Type Detail, Financial Batch Detail

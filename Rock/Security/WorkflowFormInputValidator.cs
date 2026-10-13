@@ -26,7 +26,7 @@ using Rock.Web.Cache;
 namespace Rock.Security
 {
     /// <summary>
-    /// CROSSING (not needed after v18.4): validates free-text values entered through workflow
+    /// CROSSING: validates free-text values entered through workflow
     /// entry forms to prevent Lava and/or HTML injection. A user-entered value is
     /// stored raw in a workflow/activity attribute and can later be re-resolved as
     /// Lava by downstream actions (which can run the <c>sql</c> command), so entry
@@ -35,8 +35,13 @@ namespace Rock.Security
     ///
     /// This is a backport of the shape of core's <c>StringValueValidator</c>
     /// (added upstream after 18.1) narrowed to what the workflow entry blocks need.
-    /// When this instance is upgraded to a Rock version that ships the core
-    /// framework, this file and its call sites should be removed in favor of it.
+    ///
+    /// Still needed on 18.6 (re-evaluate on each upgrade, v19+): core's workflow
+    /// form validation (18.4+) does not fully replace this. Core's MemoFieldType
+    /// rules still allow Lava, and core only rejects a value when the "Enable
+    /// Server Model Validation" security setting is on (otherwise it only logs).
+    /// Remove this file and its "CROSSING (see WorkflowFormInputValidator)" call
+    /// sites once core covers both of those.
     /// </summary>
     public static class WorkflowFormInputValidator
     {

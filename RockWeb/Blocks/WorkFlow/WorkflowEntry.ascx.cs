@@ -109,7 +109,7 @@ namespace RockWeb.Blocks.WorkFlow
 
     [BooleanField(
         "Disable Captcha Support",
-        Description = "If set to 'Yes' the CAPTCHA verification step will not be performed.",
+        Description = "If set to 'Yes' the CAPTCHA verification will be skipped. \n\nNote: If the CAPTCHA site key and/or secret key are not configured in the system settings, this option will be forced as 'Yes', even if 'No' is visually selected.",
         Key = AttributeKey.DisableCaptchaSupport,
         DefaultBooleanValue = false,
         Order = 8
@@ -401,14 +401,14 @@ namespace RockWeb.Blocks.WorkFlow
         /// <param name="eventArgument">A <see cref="T:System.String" /> that represents an optional event argument to be passed to the event handler.</param>
         public void RaisePostBackEvent( string eventArgument )
         {
-            var disableCaptchaSupport = GetAttributeValue( AttributeKey.DisableCaptchaSupport ).AsBoolean();
+            var disableCaptchaSupport = Captcha.CaptchaService.ShouldDisableCaptcha( GetAttributeValue( AttributeKey.DisableCaptchaSupport ).AsBoolean() );
             if ( !disableCaptchaSupport && cpCaptcha.IsAvailable && !IsCaptchaValid )
             {
                 ShowMessage( NotificationBoxType.Validation, string.Empty, "There was an issue processing your request. Please try again. If the issue persists please contact us." );
                 return;
             }
 
-            // CROSSING (not needed after v18.4): enforce the per-field Lava/HTML content policy on all
+            // CROSSING (see WorkflowFormInputValidator): enforce the per-field Lava/HTML content policy on all
             // user-entered values (person entry + form fields) before anything is
             // created or saved. If a value is not allowed, show a validation message
             // and stop without creating a person, saving values, or completing the form.
@@ -492,8 +492,8 @@ namespace RockWeb.Blocks.WorkFlow
             // Get the block setting to disable passing WorkflowTypeID set.
             bool allowPassingWorkflowTypeId = !this.GetAttributeValue( AttributeKey.DisablePassingWorkflowTypeId ).AsBoolean();
 
-            var disableCaptchaSupport = GetAttributeValue( AttributeKey.DisableCaptchaSupport ).AsBoolean() || !cpCaptcha.IsAvailable;
-            pnlCaptcha.Visible = !disableCaptchaSupport;
+            var disableCaptchaSupport = Captcha.CaptchaService.ShouldDisableCaptcha( GetAttributeValue( AttributeKey.DisableCaptchaSupport ).AsBoolean() );
+            pnlCaptcha.Visible = !( disableCaptchaSupport || !cpCaptcha.IsAvailable );
 
             if ( workflowType == null )
             {
@@ -639,23 +639,38 @@ namespace RockWeb.Blocks.WorkFlow
 
                 foreach ( var param in RockPage.PageParameters() )
                 {
-                    if ( param.Value != null && param.Value.ToString().IsNotNullOrWhiteSpace() )
+                    if ( _workflow.Attributes.TryGetValue( param.Key, out var attribute ) )
                     {
-                        var paramValue = param.Value.ToString();
+                        var field = attribute.FieldType.Field;
+                        var rules = field.GetValidationRules( attribute.ConfigurationValues );
+                        var value = param.Value.ToString();
 
-                        // CROSSING (not needed after v18.4): never seed a workflow attribute from a query-string
-                        // value that contains Lava/HTML the target attribute is not
-                        // configured to allow. Query-string values are attacker-controllable,
-                        // so an offending value is dropped rather than stored.
-                        var seedAttributes = _workflow.Attributes;
-                        if ( seedAttributes != null
-                            && seedAttributes.ContainsKey( param.Key )
-                            && Rock.Security.WorkflowFormInputValidator.Validate( seedAttributes[param.Key], paramValue ) != null )
+                        if ( param.Value != null && param.Value.ToString().IsNotNullOrWhiteSpace() )
                         {
-                            continue;
-                        }
+                            try
+                            {
+                                StringValueValidator.Validate( value, rules, typeof( AttributeValue ), nameof( AttributeValue.Value ) );
+                            }
+                            catch ( PropertyValidationException ex )
+                            {
+                                if ( DbContext.EnableStringValidation )
+                                {
+                                    throw new AttributeValueValidationException( attribute, _workflow.Id, ex.Reason, null );
+                                }
+                                else
+                                {
+                                    // Captures the full current call stack, all callers
+                                    // included so that we get more information about
+                                    // where this happened in the log.
+                                    var stack = new System.Diagnostics.StackTrace( true ).ToString();
+                                    var ex2 = new AttributeValueValidationException( attribute, _workflow.Id, ex.Reason, stack );
 
-                        _workflow.SetAttributeValue( param.Key, paramValue );
+                                    ExceptionLogService.LogException( ex2, System.Web.HttpContext.Current );
+                                }
+                            }
+
+                            _workflow.SetAttributeValue( param.Key, value );
+                        }
                     }
                 }
 
@@ -1320,9 +1335,9 @@ namespace RockWeb.Blocks.WorkFlow
                 ShowNotes( false );
             }
 
-            var disableCaptcha = GetAttributeValue( AttributeKey.DisableCaptchaSupport ).AsBoolean() || !cpCaptcha.IsAvailable;
+            var disableCaptcha = Captcha.CaptchaService.ShouldDisableCaptcha( GetAttributeValue( AttributeKey.DisableCaptchaSupport ).AsBoolean() );
 
-            if ( disableCaptcha || IsCaptchaValid )
+            if ( disableCaptcha || !cpCaptcha.IsAvailable || IsCaptchaValid )
             {
                 AddSubmitButtons( form );
             }
@@ -2136,14 +2151,40 @@ namespace RockWeb.Blocks.WorkFlow
 
                     if ( item != null )
                     {
-                        item.SetAttributeValue( attribute.Key, attribute.FieldType.Field.GetEditValue( attribute.GetControl( control ), attribute.QualifierValues ) );
+                        var field = attribute.FieldType.Field;
+                        var rules = field.GetValidationRules( attribute.ConfigurationValues );
+                        var value = field.GetEditValue( attribute.GetControl( control ), attribute.QualifierValues );
+
+                        try
+                        {
+                            StringValueValidator.Validate( value, rules, typeof( AttributeValue ), nameof( AttributeValue.Value ) );
+                        }
+                        catch ( PropertyValidationException ex )
+                        {
+                            if ( DbContext.EnableStringValidation )
+                            {
+                                throw new AttributeValueValidationException( attribute, item.Id, ex.Reason, null );
+                            }
+                            else
+                            {
+                                // Captures the full current call stack, all callers
+                                // included so that we get more information about
+                                // where this happened in the log.
+                                var stack = new System.Diagnostics.StackTrace( true ).ToString();
+                                var ex2 = new AttributeValueValidationException( attribute, item.Id, ex.Reason, stack );
+
+                                ExceptionLogService.LogException( ex2, System.Web.HttpContext.Current );
+                            }
+                        }
+
+                        item.SetAttributeValue( attribute.Key, value );
                     }
                 }
             }
         }
 
         /// <summary>
-        /// CROSSING (not needed after v18.4): Validates the Person Entry inputs (person, spouse, and address)
+        /// CROSSING (see WorkflowFormInputValidator): Validates the Person Entry inputs (person, spouse, and address)
         /// against the plain-text content policy before a Person record is created or
         /// updated. Shows a validation message and returns <c>false</c> on the first
         /// disallowed value.
@@ -2195,7 +2236,7 @@ namespace RockWeb.Blocks.WorkFlow
         }
 
         /// <summary>
-        /// CROSSING (not needed after v18.4): Validates a single person editor's free-text fields against the
+        /// CROSSING (see WorkflowFormInputValidator): Validates a single person editor's free-text fields against the
         /// plain-text content policy.
         /// </summary>
         /// <param name="personEditor">The person editor to validate.</param>
@@ -2214,7 +2255,7 @@ namespace RockWeb.Blocks.WorkFlow
         }
 
         /// <summary>
-        /// CROSSING (not needed after v18.4): Runs the plain-text content policy against a single entered value
+        /// CROSSING (see WorkflowFormInputValidator): Runs the plain-text content policy against a single entered value
         /// and, on a violation, shows a validation message and returns <c>false</c>.
         /// </summary>
         /// <param name="fieldLabel">The user-facing label of the field.</param>
@@ -2234,7 +2275,7 @@ namespace RockWeb.Blocks.WorkFlow
         }
 
         /// <summary>
-        /// CROSSING (not needed after v18.4): Validates the user-entered workflow form values against the
+        /// CROSSING (see WorkflowFormInputValidator): Validates the user-entered workflow form values against the
         /// per-field Lava/HTML content policy (see
         /// <see cref="Rock.Security.WorkflowFormInputValidator"/>). Shows a
         /// validation message and returns <c>false</c> on the first disallowed value.

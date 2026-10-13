@@ -134,8 +134,9 @@ namespace Rock.CheckIn.v2
                     var groupCache = GroupCache.Get( glc.GroupId, rockContext );
 
                     // If the group itself is not active then it is not a valid
-                    // option for check-in.
-                    if ( groupCache == null || !groupCache.IsActive )
+                    // option for check-in. If the group is archived then it is
+                    // not a valid option either.
+                    if ( groupCache == null || !groupCache.IsActive || groupCache.IsArchived )
                     {
                         return false;
                     }
@@ -414,24 +415,7 @@ namespace Rock.CheckIn.v2
 
             var attendances = CheckInDirector.GetCurrentAttendance( now, locationIds, rockContext );
 
-            // We now have all the attendance records for these locations that
-            // have check-in today but not yet checked out. Now we need to
-            // filter out any that have schedules where check-in is no longer
-            // active.
-
-            var activeAttendances = attendances
-                .GroupBy( a => new { a.ScheduleId, a.CampusId } )
-                .SelectMany( grp =>
-                {
-                    // The vast majority of attendance records for a single
-                    // location should have the same schedule and campus.
-                    var scheduleCache = NamedScheduleCache.GetByIdKey( grp.Key.ScheduleId, rockContext );
-                var campusCache = CampusCache.GetByIdKey( grp.Key.CampusId, rockContext );
-
-                    return grp.Where( a => Attendance.CalculateIsCurrentlyCheckedIn( a.StartDateTime, a.EndDateTime, campusCache, scheduleCache ) );
-                } );
-
-            return activeAttendances
+            return attendances
                 .GroupBy( a => a.LocationId )
                 .ToDictionary( grp => grp.Key, grp => new HashSet<string>( grp.Select( a => a.PersonId ) ) );
         }

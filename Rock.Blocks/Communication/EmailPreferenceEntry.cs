@@ -20,7 +20,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data.Entity;
 using System.Linq;
-using System.Net;
 
 using Rock.Attribute;
 using Rock.Data;
@@ -1174,6 +1173,32 @@ namespace Rock.Blocks.Communication
                 return ActionOk();
             }
 
+            // Ensure this group is a Communication List.
+            var group = GroupCache.Get( channelId.Value );
+            var communicationListGroupTypeId = GroupTypeCache.GetId( Rock.SystemGuid.GroupType.GROUPTYPE_COMMUNICATIONLIST.AsGuid() );
+
+            if ( group == null || group.GroupTypeId != communicationListGroupTypeId )
+            {
+                return ActionBadRequest( $"{errorMessagePrefix}, as the channel cannot be found." );
+            }
+
+            // Ensure the person is authorized to subscribe to this list.
+            var isAuthorized = false;
+            if ( AllowedCommunicationListCategoryGuids.Any() )
+            {
+                var categoryGuid = group.GetAttributeValue( AttributeKey.Category ).AsGuidOrNull();
+                isAuthorized = categoryGuid.HasValue && AllowedCommunicationListCategoryGuids.Contains( categoryGuid.Value );
+            }
+            else
+            {
+                isAuthorized = group.IsAuthorized( Authorization.VIEW, person );
+            }
+
+            if ( !isAuthorized )
+            {
+                return ActionUnauthorized( $"{errorMessagePrefix}." );
+            }
+
             // Get any existing list group members for this person.
             var groupMemberService = new GroupMemberService( RockContext );
             var listGroupMembers = groupMemberService
@@ -1200,13 +1225,7 @@ namespace Rock.Blocks.Communication
             else
             {
                 // Otherwise, add a new member record.
-                var groupTypeId = GroupCache.Get( channelId.Value )?.GroupTypeId;
-                if ( !groupTypeId.HasValue )
-                {
-                    return ActionBadRequest( $"{errorMessagePrefix}." );
-                }
-
-                var defaultGroupRoleId = GroupTypeCache.Get( groupTypeId.Value ).DefaultGroupRoleId;
+                var defaultGroupRoleId = group.GroupType?.DefaultGroupRoleId;
                 if ( !defaultGroupRoleId.HasValue )
                 {
                     return ActionBadRequest( $"{errorMessagePrefix}." );
@@ -1406,7 +1425,7 @@ namespace Rock.Blocks.Communication
 
             // HTML-encode the anonymous free-text reason note before it is persisted to the
             // Person record and later rendered to staff in the Person Profile / record-status UI.
-            bag.InactiveReasonNote = WebUtility.HtmlEncode( bag.InactiveReasonNote );
+            bag.InactiveReasonNote = System.Net.WebUtility.HtmlEncode( bag.InactiveReasonNote );
 
             // If the inactive reason note is the same as the current review reason note, update it also.
             string inactiveReasonNote = ( trackedPerson.InactiveReasonNote ?? string.Empty ) == ( trackedPerson.ReviewReasonNote ?? string.Empty )
@@ -1752,7 +1771,7 @@ namespace Rock.Blocks.Communication
             else
             {
                 visibleCommunicationListItems = communicationListItems
-                    .Where( i => i.ListGroup.IsAuthorized( Rock.Security.Authorization.VIEW, person ) )
+                    .Where( i => i.ListGroup.IsAuthorized( Authorization.VIEW, person ) )
                     .ToList();
             }
 
@@ -2042,7 +2061,7 @@ namespace Rock.Blocks.Communication
             else
             {
                 visibleListGroups = listGroups
-                    .Where( g => g.IsAuthorized( Rock.Security.Authorization.VIEW, person ) )
+                    .Where( g => g.IsAuthorized( Authorization.VIEW, person ) )
                     .ToList();
             }
 

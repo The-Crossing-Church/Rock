@@ -48,6 +48,7 @@ using Rock.ViewModels.Reporting;
 using Rock.ViewModels.Utility;
 using Rock.Web;
 using Rock.Web.Cache;
+using Rock.Web.UI.Controls;
 
 namespace Rock.Blocks.Event
 {
@@ -152,9 +153,16 @@ namespace Rock.Blocks.Event
     [BooleanField(
         "Disable Captcha Support",
         Key = AttributeKey.DisableCaptchaSupport,
-        Description = "If set to 'Yes' the CAPTCHA verification step will not be performed.",
+        Description = "If set to 'Yes' the CAPTCHA verification will be skipped. \n\nNote: If the CAPTCHA site key and/or secret key are not configured in the system settings, this option will be forced as 'Yes', even if 'No' is visually selected.",
         DefaultBooleanValue = false,
         Order = 17 )]
+
+    [BooleanField(
+        "Enable Missing Field Diagnostics",
+        Description = "When enabled, special checks will be performed during registration to identify missing required form fields and logged to the exception log. This should only be enabled at the request of the core team.",
+        Category = "Advanced",
+        Key = AttributeKey.EnableMissingFieldDiagnostics,
+        Order = 0 )]
 
     #endregion Block Attributes
 
@@ -182,6 +190,8 @@ namespace Rock.Blocks.Event
             public const string EnableACH = "EnableACH";
             public const string EnableCreditCard = "EnableCreditCard";
             public const string DisableCaptchaSupport = "DisableCaptchaSupport";
+
+            public const string EnableMissingFieldDiagnostics = "EnableMissingFieldDiagnostics";
         }
 
         /// <summary>
@@ -212,7 +222,7 @@ namespace Rock.Blocks.Event
         /// <summary>
         /// A diagnostic collection of missing fields, grouped by form ID.
         /// </summary>
-        public Dictionary<int, Dictionary<int, string>> MissingFieldsByFormId { get; set; }
+        public Dictionary<int, Dictionary<Guid, string>> MissingFieldsByFormId { get; set; }
 
         /// <summary>
         /// Gets the registration identifier page parameter.
@@ -283,6 +293,20 @@ namespace Rock.Blocks.Event
 
                 if ( isAutoApply && code.IsNullOrWhiteSpace() && ( registration == null || registration.DiscountCode.IsNullOrWhiteSpace() ) )
                 {
+                    // If a manual discount amount or percentage has already been applied to the registration
+                    // (without a discount code), return that manual discount instead of overriding it with an auto-applied one.
+                    if ( registration != null && ( registration.DiscountAmount > 0 || registration.DiscountPercentage > 0 ) )
+                    {
+                        return ActionOk( new
+                        {
+                            DiscountCode = registration.DiscountCode,
+                            RegistrationUsagesRemaining = ( int? ) null,
+                            DiscountAmount = registration.DiscountAmount,
+                            DiscountPercentage = registration.DiscountPercentage,
+                            DiscountMaxRegistrants = ( int? ) null
+                        } );
+                    }
+
                     // if no code is provided and there is no code already saved in the registration check for an auto apply discount, if there are none discount will be null which returns ActionNotFound
                     var registrationTemplateDiscountCodes = registrationTemplateDiscountService
                         .GetDiscountsForRegistrationInstance( registrationInstanceId )
@@ -531,7 +555,7 @@ namespace Rock.Blocks.Event
         [BlockAction]
         public BlockActionResult SubmitRegistration( RegistrationEntryArgsBag args )
         {
-            var disableCaptcha = GetAttributeValue( AttributeKey.DisableCaptchaSupport ).AsBoolean();
+            var disableCaptcha = Captcha.CaptchaService.ShouldDisableCaptcha( GetAttributeValue( AttributeKey.DisableCaptchaSupport ).AsBoolean() );
 
             if ( !disableCaptcha && !RequestContext.IsCaptchaValid )
             {
@@ -669,27 +693,14 @@ namespace Rock.Blocks.Event
                 // If the person happens to have a valid signature document of the required template, we may skip this step.
                 if ( documentTemplate.IsValidInFuture && documentTemplate.ValidityDurationInDays.HasValue )
                 {
-                    // When thinking about date comparisons, think in terms of extremes:
-                    //  - If they signed a document today, and it's only valid for 1 day, it's still valid (at any point) today.
-                    //  - If they signed a document (at any point) yesterday or before, and it's only valid for 1 day, it's no longer valid today.
-                    // With this in mind, add one day to the specified ValidityDurationInDays before comparing.
-                    var earliestSignatureDate = RockDateTime.Today.AddDays( -documentTemplate.ValidityDurationInDays.ToIntSafe() + 1 );
-                    var existingSignatureDocument = new RegistrationRegistrantService( rockContext )
-                        .Queryable()
-                        .Where( r =>
-                            r.PersonAlias.PersonId == person.Id &&
-                            r.SignatureDocument.SignatureDocumentTemplateId == documentTemplate.Id &&
-                            r.SignatureDocument.SignedDateTime >= earliestSignatureDate )
-                        .OrderByDescending( r => r.SignatureDocument.SignedDateTime )
-                        .Select( r => new
-                        {
-                            r.SignatureDocument.Guid
-                        } )
+                    var existingSignatureDocumentGuid = new RegistrationRegistrantService( rockContext )
+                        .GetValidSignatureDocument( person.Id, documentTemplate )
+                        .Select( d => ( Guid? ) d.Guid )
                         .FirstOrDefault();
 
-                    if ( existingSignatureDocument != null )
+                    if ( existingSignatureDocumentGuid != null )
                     {
-                        response.ExistingSignatureDocumentGuid = existingSignatureDocument.Guid;
+                        response.ExistingSignatureDocumentGuid = existingSignatureDocumentGuid;
 
                         return ActionOk( response );
                     }
@@ -1226,16 +1237,20 @@ namespace Rock.Blocks.Event
                 Reason: Registration entries are sometimes missing registration form data.
                 https://github.com/SparkDevNetwork/Rock/issues/5091
              */
+            var enableMissingFieldDiagnostics = GetAttributeValue( AttributeKey.EnableMissingFieldDiagnostics ).AsBoolean();
             var logInstanceOrTemplateName = context?.RegistrationSettings?.Name;
             var logCurrentPersonDetails = $"Current Person Name: {this.RequestContext.CurrentPerson?.FullName} (Person ID: {this.RequestContext.CurrentPerson?.Id});";
             var logMsgPrefix = $"Obsidian{( logInstanceOrTemplateName.IsNotNullOrWhiteSpace() ? $@" ""{logInstanceOrTemplateName}""" : string.Empty )} Registration; {logCurrentPersonDetails}{Environment.NewLine}";
 
-            var (wereFieldsMissing, missingFieldsDetails) = new RegistrationTemplateFormService( rockContext ).TryLoadMissingFields( context?.RegistrationSettings?.Forms );
-            if ( wereFieldsMissing )
+            if ( enableMissingFieldDiagnostics )
             {
-                var logMissingFieldsMsg = $"{logMsgPrefix}RegistrationTemplateForm(s) missing Fields data when trying to save Registration.{Environment.NewLine}{missingFieldsDetails}";
+                var (wereFieldsMissing, missingFieldsDetails) = new RegistrationTemplateFormService( rockContext ).TryLoadMissingFields( context?.RegistrationSettings?.Forms );
+                if ( wereFieldsMissing )
+                {
+                    var logMissingFieldsMsg = $"{logMsgPrefix}RegistrationTemplateForm(s) missing Fields data when trying to save Registration.{Environment.NewLine}{missingFieldsDetails}";
 
-                ExceptionLogService.LogException( new RegistrationTemplateFormFieldException( logMissingFieldsMsg ) );
+                    ExceptionLogService.LogException( new RegistrationTemplateFormFieldException( logMissingFieldsMsg ) );
+                }
             }
 
             errorMessage = string.Empty;
@@ -1646,7 +1661,9 @@ namespace Rock.Blocks.Event
 
                     bool isCreatedAsRegistrant = context.RegistrationSettings.RegistrarOption == RegistrarOption.UseFirstRegistrant && registrantInfo == args.Registrants.FirstOrDefault();
 
-                    MissingFieldsByFormId = new Dictionary<int, Dictionary<int, string>>();
+                    MissingFieldsByFormId = enableMissingFieldDiagnostics && isNewRegistrant
+                        ? new Dictionary<int, Dictionary<Guid, string>>()
+                        : null;
 
                     UpsertRegistrant(
                         rockContext,
@@ -1680,20 +1697,85 @@ namespace Rock.Blocks.Event
 
                             Reason: Registration entries are sometimes missing registration form data.
                             https://github.com/SparkDevNetwork/Rock/issues/5091
+
+                            1/26/2026 - DSH
+
+                            We believe this was caused by an issue in RockForm on Obsidian that
+                            caused the errors to be cleared when resetting the form. This allowed
+                            an individual to move to a previous form and then back to the next
+                            form. From there they could proceed without filling out any data.
+                            This has been fixed, but we are leaving the logging information here
+                            for now in case there are still issues causing blank data. This is
+                            controlled by an advanced block setting.
+
+                            The remaining known issues are caused by things like people being on
+                            wait list and the form fields marked as not shown on wait list. As well
+                            as cases where a staff member manually adds a registrant with can bypass
+                            some required fields (such as person birth date).
+
+                            This logging code should be removed in Rock v22 if no further issues
+                            are reported.
                          */
                         var logAllMissingFieldsSb = new StringBuilder();
-                        logAllMissingFieldsSb.AppendLine( $"{logMsgPrefix}Registrant {i + 1} of {args.Registrants.Count}: The following required (non-conditional) Field values were missing:" );
 
-                        foreach ( var missingFormFields in MissingFieldsByFormId )
+                        try
                         {
-                            var logMissingFormFieldsSb = new StringBuilder( $"[Form ID: {missingFormFields.Key} -" );
+                            // Serialize and log the missing and expected form fields as well as this registrant's field
+                            // values so a more thorough investigation can be performed.
+                            var missingFields = MissingFieldsByFormId
+                                .SelectMany( mf => mf.Value.Select( f => new LogMissingField
+                                {
+                                    TemplateFormId = mf.Key,
+                                    TemplateFormFieldGuid = f.Key,
+                                    TemplateFormFieldName = f.Value,
+                                } ) )
+                                .ToList();
 
-                            foreach ( var missingField in missingFormFields.Value )
+                            var logMissingFields = new LogMissingFields
                             {
-                                logMissingFormFieldsSb.Append( $" {missingField.Value} (Field ID: {missingField.Key});" );
-                            }
+                                RegistrationTemplateId = context.RegistrationSettings.RegistrationTemplateId,
+                                RegistrationInstanceId = context.RegistrationSettings.RegistrationInstanceId,
+                                InstanceOrTemplateName = context.RegistrationSettings.Name,
+                                RegistrationId = context.Registration?.Id,
+                                MaxRegistrants = context.RegistrationSettings.MaxRegistrants,
+                                MaxAttendees = context.RegistrationSettings.MaxAttendees,
+                                SpotsRemaining = context.SpotsRemaining,
+                                IsTimeoutEnabled = context.RegistrationSettings.IsTimeoutEnabled,
+                                TimeoutMinutes = context.RegistrationSettings.TimeoutMinutes,
+                                TimeoutThreshold = context.RegistrationSettings.TimeoutThreshold,
+                                IsWaitlistEnabled = context.RegistrationSettings.IsWaitListEnabled,
+                                AreCurrentFamilyMembersShown = context.RegistrationSettings.AreCurrentFamilyMembersShown,
+                                CurrentPersonId = RequestContext.CurrentPerson?.Id,
+                                CurrentPersonName = RequestContext.CurrentPerson?.FullName,
+                                Registrar = args.Registrar,
+                                RegistrantIndexPosition = $"{i} of {args.Registrants.Count}",
+                                Registrant = registrantInfo,
+                                MissingFields = missingFields,
+                                ExpectedForms = context.RegistrationSettings.Forms
+                                    .Select( f => new LogTemplateForm( f ) )
+                                    .OrderBy( f => f.Order )
+                                    .ToList()
+                            };
 
-                            logAllMissingFieldsSb.AppendLine( $"{logMissingFormFieldsSb}]" );
+                            logAllMissingFieldsSb.Append( logMissingFields.ToJson() );
+                        }
+                        catch
+                        {
+                            // Go back to the old version of logging so we're sure to capture this failure.
+                            logAllMissingFieldsSb.Clear();
+                            logAllMissingFieldsSb.AppendLine( $"{logMsgPrefix}Registrant {i} of {args.Registrants.Count}: The following required (non-conditional) Field values were missing:" );
+
+                            foreach ( var missingFormFields in MissingFieldsByFormId )
+                            {
+                                var logMissingFormFieldsSb = new StringBuilder( $"[Form ID: {missingFormFields.Key} -" );
+
+                                foreach ( var missingField in missingFormFields.Value )
+                                {
+                                    logMissingFormFieldsSb.Append( $" {missingField.Value} (Field Guid: {missingField.Key});" );
+                                }
+
+                                logAllMissingFieldsSb.AppendLine( $"{logMissingFormFieldsSb}]" );
+                            }
                         }
 
                         ExceptionLogService.LogException( new RegistrationTemplateFormFieldException( logAllMissingFieldsSb.ToString() ) );
@@ -2176,27 +2258,26 @@ namespace Rock.Blocks.Event
         }
 
         /// <summary>
-        /// Gets the registration instance query.
+        /// Gets a person field.
         /// </summary>
-        /// <param name="rockContext">The rock context.</param>
-        /// <param name="includes">The includes.</param>
+        /// <param name="settings">The settings.</param>
+        /// <param name="personFieldType">Type of the person field.</param>
         /// <returns></returns>
-        private IQueryable<RegistrationInstance> GetRegistrationInstanceQuery( RockContext rockContext, string includes )
+        private RegistrationTemplateFormField GetPersonField( RegistrationSettings settings, RegistrationPersonFieldType personFieldType )
         {
-            var registrationInstanceId = GetRegistrationInstanceId( rockContext );
-            var now = RockDateTime.Now;
+            if ( settings == null || settings.Forms == null )
+            {
+                return null;
+            }
 
-            var query = new RegistrationInstanceService( rockContext )
-                .Queryable( includes )
-                .Where( r =>
-                    r.Id == registrationInstanceId &&
-                    r.IsActive &&
-                    r.RegistrationTemplate != null &&
-                    r.RegistrationTemplate.IsActive &&
-                    ( !r.StartDateTime.HasValue || r.StartDateTime <= now ) &&
-                    ( !r.EndDateTime.HasValue || r.EndDateTime > now ) );
-
-            return query;
+            return settings.Forms
+                .SelectMany( t => t.Fields
+                    .Where( f =>
+                        f.FieldSource == RegistrationFieldSource.PersonField &&
+                        f.PersonFieldType == personFieldType
+                    )
+                )
+                .FirstOrDefault();
         }
 
         /// <summary>
@@ -2749,6 +2830,8 @@ namespace Rock.Blocks.Event
             var birthday = GetPersonFieldValue( context.RegistrationSettings, RegistrationPersonFieldType.Birthdate, registrantInfo.FieldValues ).ToStringSafe().FromJsonOrNull<BirthdayPickerBag>().ToDateTime();
             var mobilePhone = GetPersonFieldValue( context.RegistrationSettings, RegistrationPersonFieldType.MobilePhone, registrantInfo.FieldValues ).ToStringSafe();
 
+            var emailField = GetPersonField( context.RegistrationSettings, RegistrationPersonFieldType.Email );
+
             /*
                 8/15/2023 - JPH
 
@@ -2828,7 +2911,7 @@ namespace Rock.Blocks.Event
             {
                 // Try to find a matching person based on name, email address, mobile phone, and birthday. If these were not provided they are not considered.
                 var personQuery = new PersonService.PersonMatchQuery( firstName, lastName, email, mobilePhone, gender: null, birthDate: birthday );
-                person = personService.FindPerson( personQuery, true );
+                person = personService.FindPerson( personQuery, updatePrimaryEmail: false ); // primary email updates are done below when applicable.
 
                 if ( person != null && context.PersonIdsRegisteredWithinThisSession.Contains( person.Id ) )
                 {
@@ -2860,7 +2943,7 @@ namespace Rock.Blocks.Event
                     if ( familyMembers.Count() == 1 )
                     {
                         person = familyMembers.First();
-                        if ( !string.IsNullOrWhiteSpace( email ) )
+                        if ( email.IsNotNullOrWhiteSpace() && IsFieldUnlockedForEditing( emailField, person.Email ) )
                         {
                             person.Email = email;
                         }
@@ -2902,7 +2985,7 @@ namespace Rock.Blocks.Event
                 if ( familyMembers.Count() == 1 )
                 {
                     person = familyMembers.First();
-                    if ( !string.IsNullOrWhiteSpace( email ) )
+                    if ( email.IsNotNullOrWhiteSpace() && IsFieldUnlockedForEditing( emailField,  person.Email ) )
                     {
                         person.Email = email;
                     }
@@ -2971,7 +3054,7 @@ namespace Rock.Blocks.Event
         private bool IsFieldUnlockedForEditing( RegistrationTemplateFormField field, string currentFieldValue )
         {
             // The field can be updated if it is not "locked" or if it doesn't have a value.
-            return !field.IsLockedIfValuesExist || currentFieldValue.IsNullOrWhiteSpace();
+            return field != null && ( !field.IsLockedIfValuesExist || currentFieldValue.IsNullOrWhiteSpace() );
         }
 
         /// <summary>
@@ -3250,7 +3333,10 @@ namespace Rock.Blocks.Event
                     }
                 }
 
-                field.NoteFieldDetailsIfRequiredAndMissing( MissingFieldsByFormId, fieldValue );
+                if ( MissingFieldsByFormId != null )
+                {
+                    field.NoteFieldDetailsIfRequiredAndMissing( MissingFieldsByFormId, fieldValue );
+                }
             }
 
             return (campusId, location, updateExistingCampus);
@@ -3313,7 +3399,10 @@ namespace Rock.Blocks.Event
                             }
                         }
                     }
+                }
 
+                if ( MissingFieldsByFormId != null && ( !registrantInfo.IsOnWaitList || field.ShowOnWaitlist ) )
+                {
                     field.NoteFieldDetailsIfRequiredAndMissing( MissingFieldsByFormId, fieldValue );
                 }
             }
@@ -3549,7 +3638,8 @@ namespace Rock.Blocks.Event
                         registrantFee.Cost = feeItemModel.Cost;
                     }
 
-                    if ( feeModel.IsRequired && !hasRequiredFeeItem )
+                    // Only check if a required fee is missing if the fee is currently active. Inactive fees are not required.
+                    if ( feeModel.IsActive && feeModel.IsRequired && !hasRequiredFeeItem )
                     {
                         var cannotAccommodateQuantitySuffix = isFeeUsageAutoReduced
                                 ? $", but is no longer available{( feeModel.AllowMultiple ? " in the selected quantity" : string.Empty )}"
@@ -3733,14 +3823,23 @@ namespace Rock.Blocks.Event
 
                 if ( attribute is null )
                 {
+                    if ( MissingFieldsByFormId != null && ( !registrantInfo.IsOnWaitList || field.ShowOnWaitlist ) )
+                    {
+                        field.NoteFieldDetailsIfRequiredAndMissing( MissingFieldsByFormId, null );
+                    }
+
                     continue;
                 }
 
+                var originalValue = registrant.GetAttributeValue( attribute.Key );
+                var finalValue = originalValue;
+
                 if ( IsFieldUnlockedForEditing( field, registrant, attribute.Key ) )
                 {
-                    var originalValue = registrant.GetAttributeValue( attribute.Key );
                     var newValue = registrantInfo.FieldValues.GetValueOrNull( field.Guid ).ToStringSafe();
                     newValue = PublicAttributeHelper.GetPrivateValue( attribute, newValue );
+
+                    finalValue = newValue;
 
                     registrant.SetAttributeValue( attribute.Key, newValue );
 
@@ -3761,8 +3860,11 @@ namespace Rock.Blocks.Event
                         isChanged = true;
                         History.EvaluateChange( registrantChanges, attribute.Name, formattedOriginalValue, formattedNewValue );
                     }
+                }
 
-                    field.NoteFieldDetailsIfRequiredAndMissing( MissingFieldsByFormId, newValue );
+                if ( MissingFieldsByFormId != null && ( !registrantInfo.IsOnWaitList || field.ShowOnWaitlist ) )
+                {
+                    field.NoteFieldDetailsIfRequiredAndMissing( MissingFieldsByFormId, finalValue );
                 }
             }
 
@@ -4417,7 +4519,7 @@ namespace Rock.Blocks.Event
 
                 EnableSaveAccount = enableSavedAccount,
                 SavedAccounts = savedAccounts,
-                DisableCaptchaSupport = GetAttributeValue( AttributeKey.DisableCaptchaSupport ).AsBoolean(),
+                DisableCaptchaSupport = Captcha.CaptchaService.ShouldDisableCaptcha( GetAttributeValue( AttributeKey.DisableCaptchaSupport ).AsBoolean() ),
 
                 // Payment plan
                 IsPaymentPlanAllowed = isPaymentPlanAllowed,
@@ -5463,7 +5565,7 @@ namespace Rock.Blocks.Event
             var currentPerson = GetCurrentPerson();
             var registrationInstanceId = GetRegistrationInstanceId( rockContext );
             var registrationService = new RegistrationService( rockContext );
-            var disableCaptcha = GetAttributeValue( AttributeKey.DisableCaptchaSupport ).AsBoolean() || string.IsNullOrWhiteSpace( SystemSettings.GetValue( SystemKey.SystemSetting.CAPTCHA_SITE_KEY ) );
+            var disableCaptcha = Captcha.CaptchaService.ShouldDisableCaptcha( GetAttributeValue( AttributeKey.DisableCaptchaSupport ).AsBoolean() );
 
             // Basic check on the args to see that they appear valid
             if ( args == null )
@@ -5531,7 +5633,8 @@ namespace Rock.Blocks.Event
             var registrationInstanceService = new RegistrationInstanceService( rockContext );
 
             var costs = registrationInstanceService.GetRegistrationCostSummaryInfo( context, args.AsArgsOrNull() );
-            var totalDiscountedCost = costs.Sum( c => c.DiscountedCost );
+
+            var totalDiscountedCost = costs.Sum( c => c.DiscountedCost ).AsCurrency();
 
             if ( context.Registration != null )
             {
@@ -6142,6 +6245,124 @@ namespace Rock.Blocks.Event
             public string UserAgent { get; set; }
 
             public DateTime SignedDateTime { get; set; }
+        }
+
+        /// <summary>
+        /// A POCO used to hold information about a registrant that is missing required fields for logging purposes.
+        /// </summary>
+        private class LogMissingFields
+        {
+            public DateTime CurrentRockDateTime { get; set; } = RockDateTime.Now;
+            public int RegistrationTemplateId { get; set; }
+            public int RegistrationInstanceId { get; set; }
+            public string InstanceOrTemplateName { get; set; }
+            public int? RegistrationId { get; set; }
+            public int? MaxRegistrants { get; set; }
+            public int? MaxAttendees { get; set; }
+            public int? SpotsRemaining { get; set; }
+            public bool IsTimeoutEnabled { get; set; }
+            public int? TimeoutMinutes { get; set; }
+            public int? TimeoutThreshold { get; set; }
+            public bool IsWaitlistEnabled { get; set; }
+            public bool AreCurrentFamilyMembersShown { get; set; }
+            public int? CurrentPersonId { get; set; }
+            public string CurrentPersonName { get; set; }
+            public RegistrarBag Registrar { get; set; }
+            public string RegistrantIndexPosition { get; set; }
+            public RegistrantBag Registrant { get; set; }
+            public List<LogMissingField> MissingFields { get; set; }
+            public List<LogTemplateForm> ExpectedForms { get; set; }
+        }
+
+        /// <summary>
+        /// A POCO used to hold information about a missing field for logging purposes.
+        /// </summary>
+        private class LogMissingField
+        {
+            public int TemplateFormId { get; set; }
+            public Guid TemplateFormFieldGuid { get; set; }
+            public string TemplateFormFieldName { get; set; }
+        }
+
+        /// <summary>
+        /// A POCO used to hold a simplified version of a <see cref="RegistrationTemplateForm"/> for logging purposes.
+        /// </summary>
+        private class LogTemplateForm
+        {
+            public int Id { get; set; }
+            public Guid Guid { get; set; }
+            public DateTime? CreatedDateTime { get; set; }
+            public DateTime? ModifiedDateTime { get; set; }
+            public string Name { get; set; }
+            public int Order { get; set; }
+            public List<LogTemplateFormField> Fields { get; set; }
+
+            public LogTemplateForm( RegistrationTemplateForm model )
+            {
+                Id = model.Id;
+                Guid = model.Guid;
+                CreatedDateTime = model.CreatedDateTime;
+                ModifiedDateTime = model.ModifiedDateTime;
+                Name = model.Name;
+                Order = model.Order;
+                Fields = model.Fields
+                    .OrderBy( f => f.Order )
+                    .Select( f => new LogTemplateFormField( f ) )
+                    .ToList();
+            }
+        }
+
+        /// <summary>
+        /// A POCO used to hold a simplified version of a <see cref="RegistrationTemplateFormField"/> for logging purposes.
+        /// </summary>
+        private class LogTemplateFormField
+        {
+            public int Id { get; set; }
+            public Guid Guid { get; set; }
+            public DateTime? CreatedDateTime { get; set; }
+            public DateTime? ModifiedDateTime { get; set; }
+            public string FieldSource { get; set; }
+            public string PersonFieldType { get; set; }
+            public int? AttributeId { get; set; }
+            public string AttributeName { get; set; }
+            public int? AttributeFieldTypeId { get; set; }
+            public string AttributeFieldTypeName { get; set; }
+            public bool IsSharedValue { get; set; }
+            public bool IsInternal { get; set; }
+            public bool ShowCurrentValue { get; set; }
+            public string PreText { get; set; }
+            public string PostText { get; set; }
+            public bool IsGridField { get; set; }
+            public bool IsRequired { get; set; }
+            public int Order { get; set; }
+            public bool ShowOnWaitlist { get; set; }
+            public string FieldVisibilityRulesJSON { get; set; }
+            public bool IsLockedIfValuesExist { get; set; }
+
+            public LogTemplateFormField( RegistrationTemplateFormField model )
+            {
+                Id = model.Id;
+                Guid = model.Guid;
+                CreatedDateTime = model.CreatedDateTime;
+                ModifiedDateTime = model.ModifiedDateTime;
+                FieldSource = model.FieldSource.ConvertToString();
+                PersonFieldType = model.PersonFieldType.ConvertToString();
+                AttributeId = model.AttributeId;
+                AttributeName = model.Attribute?.Name;
+                AttributeFieldTypeId = model.Attribute?.FieldTypeId;
+                AttributeFieldTypeName = model.Attribute?.FieldType.Name;
+                IsSharedValue = model.IsSharedValue;
+                IsInternal = model.IsInternal;
+                ShowCurrentValue = model.ShowCurrentValue;
+                PreText = model.PreText;
+                PostText = model.PostText;
+                IsGridField = model.IsGridField;
+                IsRequired = model.IsRequired;
+                Order = model.Order;
+                ShowOnWaitlist = model.ShowOnWaitlist;
+                FieldVisibilityRulesJSON = model.FieldVisibilityRulesJSON;
+                IsLockedIfValuesExist = model.IsLockedIfValuesExist;
+            }
         }
 
         #endregion

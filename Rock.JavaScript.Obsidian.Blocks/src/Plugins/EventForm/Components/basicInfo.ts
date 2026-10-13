@@ -238,7 +238,7 @@ export default defineComponent({
       <rck-field
         v-else
         v-model="viewModel.request.attributeValues.IsSame"
-        :attribute="viewModel.request.attribute.IsSame"
+        :attribute="viewModel.request.attributes.IsSame"
         :is-edit-mode="false"
         :showEmptyValue="true"
         id="boolIsSame"

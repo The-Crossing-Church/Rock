@@ -23,7 +23,6 @@ using System.Linq;
 using System.Web;
 
 using Rock.Attribute;
-using Rock.Communication.Chat;
 using Rock.Configuration;
 using Rock.Data;
 using Rock.Lava;
@@ -1014,7 +1013,6 @@ namespace Rock.Net
             }
 
             mergeFields.Add( "Geolocation", ClientInformation?.Geolocation );
-            mergeFields.Add( "IsChatEnabled", ChatHelper.IsChatEnabled );
             mergeFields.Add( $"{LavaHelper.InternalMergeFieldPrefix}RockRequestContext", this );
 
             return mergeFields;

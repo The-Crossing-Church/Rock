@@ -2775,17 +2775,7 @@ namespace RockWeb.Blocks.Event
             /*
                 8/15/2023 - JPH
 
-                In order to successfully save the registration form values that were provided by the registrar, we must
-                have each [RegistrationTemplateForm].[Fields] collection loaded into memory below. Several individuals have
-                reported seeing missing registrant data within completed registrations, so it's possible that these Fields
-                collections are somehow empty, as part of a botched ViewState serialization/deserialization process, Etc.
-
-                The TryLoadMissingFields() method is a failsafe to ensure we have the data we need to properly save the
-                registration. This method will:
-                    1) Attempt to load any missing Fields collections;
-                    2) Return a list of any Form IDs that were actually missing Fields so we can log them to prove that
-                       this was a likely culprit for failed, past registration attempts (and so we can know to look into
-                       the issue further from this angle).
+                The following log message prefix will be used when logging any missing form data.
 
                 Reason: Registration entries are sometimes missing registration form data.
                 https://github.com/SparkDevNetwork/Rock/issues/5091
@@ -2796,20 +2786,6 @@ namespace RockWeb.Blocks.Event
 
             var logCurrentPersonDetails = $"Current Person Name: {this.CurrentPerson?.FullName} (Person ID: {this.CurrentPerson?.Id});";
             var logMsgPrefix = $"Legacy{( logInstanceOrTemplateName.IsNotNullOrWhiteSpace() ? $@" ""{logInstanceOrTemplateName}""" : string.Empty )} Registration; {logCurrentPersonDetails}{Environment.NewLine}";
-
-            var (wereFieldsMissing, missingFieldsDetails) = new RegistrationTemplateFormService( rockContext ).TryLoadMissingFields( RegistrationTemplate?.Forms?.ToList() );
-            if ( wereFieldsMissing )
-            {
-                var logMissingFieldsMsg = $"{logMsgPrefix}RegistrationTemplateForm(s) missing Fields data when trying to save Registration.{Environment.NewLine}{missingFieldsDetails}";
-
-                ExceptionLogService.LogException(
-                    new RegistrationTemplateFormFieldException( logMissingFieldsMsg ),
-                    Context,
-                    this.RockPage.PageId,
-                    this.RockPage.Site.Id,
-                    CurrentPersonAlias
-                );
-            }
 
             var registrationService = new RegistrationService( rockContext );
             var registrantService = new RegistrationRegistrantService( rockContext );
@@ -6025,11 +6001,26 @@ namespace RockWeb.Blocks.Event
                         // Check if a discount should be applied to the registrant and set the DiscountedCost
                         if ( registrant.DiscountApplies )
                         {
+                            /*
+                                5/12/2026 - MSE
+
+                                Use raw discount math here (and at the fee equivalent below) and let
+                                the existing .AsCurrency() at line 6145 round once at the boundary.
+                                The previous .AsDiscountedPercentage() call rounded each line item
+                                before summing, so transaction totals came out a cent below what
+                                Lava emails and admin views showed via the entity-level
+                                Registration.DiscountedCost. Every other code path in the codebase
+                                (Obsidian, entity computed cost, emails, admin views) already follows
+                                this boundary-rounding pattern.
+
+                                Reason: https://github.com/SparkDevNetwork/Rock/issues/6822
+                            */
+
                             // Apply the percentage if it exists, and if it doesn't, check if the amount exists and apply it.
                             if ( RegistrationState.DiscountPercentage > 0.0m )
                             {
                                 // If the DiscountPercentage is greater than 100% than set it to 0, otherwise compute the discount and set the DiscountedCost
-                                costSummary.DiscountedCost = RegistrationState.DiscountPercentage >= 1.0m ? 0.0m : costSummary.Cost.AsDiscountedPercentage( RegistrationState.DiscountPercentage );
+                                costSummary.DiscountedCost = RegistrationState.DiscountPercentage >= 1.0m ? 0.0m : costSummary.Cost - ( costSummary.Cost * RegistrationState.DiscountPercentage );
                             }
                             else if ( RegistrationState.DiscountAmount > 0 )
                             {
@@ -6087,7 +6078,7 @@ namespace RockWeb.Blocks.Event
                                 {
                                     if ( RegistrationState.DiscountPercentage > 0.0m )
                                     {
-                                        feeCostSummary.DiscountedCost = RegistrationState.DiscountPercentage >= 1.0m ? 0.0m : feeCostSummary.Cost.AsDiscountedPercentage( RegistrationState.DiscountPercentage );
+                                        feeCostSummary.DiscountedCost = RegistrationState.DiscountPercentage >= 1.0m ? 0.0m : feeCostSummary.Cost - ( feeCostSummary.Cost * RegistrationState.DiscountPercentage );
                                     }
                                     else if ( RegistrationState.DiscountAmount > 0 && discountAmountRemaining > 0 )
                                     {
@@ -6126,17 +6117,20 @@ namespace RockWeb.Blocks.Event
                     pnlRegistrantsReview.Visible = false;
                     pnlCostAndFees.Visible = true;
 
-                    // Get the total min payment for all costs and fees
-                    minimumPayment = costs.Sum( c => c.MinPayment );
+                    // Get the total min payment for all costs and fees. Round at the
+                    // sum boundary so downstream comparisons (e.g. allowPartialPayment)
+                    // match the rounded balanceDue computed below.
+                    minimumPayment = costs.Sum( c => c.MinPayment ).AsCurrency();
 
                     if ( costs.Any( c => c.DefaultPayment.HasValue ) )
                     {
                         defaultPayment = costs.Where( c => c.DefaultPayment.HasValue ).Sum( c => c.DefaultPayment.Value );
                     }
 
-                    // Get the totals
+                    // Get the totals. DiscountedCost is rounded at the boundary so the
+                    // hidden field and downstream comparisons stay at 2 decimal places.
                     RegistrationState.TotalCost = costs.Sum( c => c.Cost );
-                    RegistrationState.DiscountedCost = costs.Sum( c => c.DiscountedCost );
+                    RegistrationState.DiscountedCost = costs.Sum( c => c.DiscountedCost ).AsCurrency();
 
                     // If minimum payment is greater than total discounted cost ( which is possible with discounts ), adjust the minimum payment
                     minimumPayment = minimumPayment.Value > RegistrationState.DiscountedCost ? RegistrationState.DiscountedCost : minimumPayment;
