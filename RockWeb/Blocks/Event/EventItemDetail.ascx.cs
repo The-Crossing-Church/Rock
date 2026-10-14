@@ -284,6 +284,13 @@ namespace RockWeb.Blocks.Event
             var rockContext = new RockContext();
             var eventItem = new EventItemService( rockContext ).Get( hfEventItemId.Value.AsInteger() );
 
+            // The event item id comes from a hidden field, so re-check edit rights before showing the edit form.
+            if ( eventItem == null || !CanEditEventItem( eventItem ) )
+            {
+                nbEditModeMessage.Text = EditModeMessage.ReadOnlyEditActionNotAllowed( EventItem.FriendlyTypeName );
+                return;
+            }
+
             ShowEditDetails( eventItem );
         }
 
@@ -301,6 +308,13 @@ namespace RockWeb.Blocks.Event
 
                 if ( eventItem != null )
                 {
+                    // The event item id comes from a hidden field, so re-check edit rights before deleting.
+                    if ( !CanEditEventItem( eventItem ) )
+                    {
+                        mdDeleteWarning.Show( EditModeMessage.ReadOnlyEditActionNotAllowed( EventItem.FriendlyTypeName ), ModalAlertType.Information );
+                        return;
+                    }
+
                     string errorMessage;
                     if ( !eventItemService.CanDelete( eventItem, out errorMessage ) )
                     {
@@ -349,6 +363,14 @@ namespace RockWeb.Blocks.Event
                         .FirstOrDefault();
                 }
 
+                // The event item id comes from a hidden field, so re-check edit rights on the
+                // existing item (or on the calendar for a new item) before applying any changes.
+                if ( ( eventItem == null && !_canEdit ) || ( eventItem != null && !CanEditEventItem( eventItem ) ) )
+                {
+                    nbEditModeMessage.Text = EditModeMessage.ReadOnlyEditActionNotAllowed( EventItem.FriendlyTypeName );
+                    return;
+                }
+
                 if ( eventItem == null )
                 {
                     eventItem = new EventItem();
@@ -377,10 +399,18 @@ namespace RockWeb.Blocks.Event
                 eventItem.DetailsUrl = tbDetailUrl.Text;
 
                 int? orphanedImageId = null;
-                if ( eventItem.PhotoId != imgupPhoto.BinaryFileId )
+                var photoId = imgupPhoto.BinaryFileId;
+
+                // Only accept the event item's current photo or a new upload, otherwise keep the current photo.
+                if ( !new BinaryFileService( rockContext ).IsUploadedBinaryFileAllowedForPerson( photoId, eventItem.PhotoId, CurrentPerson ) )
+                {
+                    photoId = eventItem.PhotoId;
+                }
+
+                if ( eventItem.PhotoId != photoId )
                 {
                     orphanedImageId = eventItem.PhotoId;
-                    eventItem.PhotoId = imgupPhoto.BinaryFileId;
+                    eventItem.PhotoId = photoId;
                 }
 
                 // Remove any audiences that were removed in the UI
@@ -639,6 +669,24 @@ namespace RockWeb.Blocks.Event
         #endregion
 
         #region Methods
+
+        /// <summary>
+        /// Determines whether the current person can edit the event item. This mirrors the
+        /// check in <see cref="ShowDetail(int)"/> that decides whether the edit button is shown.
+        /// </summary>
+        /// <param name="eventItem">The event item.</param>
+        /// <returns><c>true</c> if the current person can edit the event item; otherwise, <c>false</c>.</returns>
+        private bool CanEditEventItem( EventItem eventItem )
+        {
+            if ( !_canEdit )
+            {
+                return false;
+            }
+
+            var calendarId = _calendarId ?? 0;
+
+            return eventItem.Id == 0 || eventItem.EventCalendarItems.Any( i => i.EventCalendarId == calendarId );
+        }
 
         /// <summary>
         /// Shows the detail.

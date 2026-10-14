@@ -183,6 +183,15 @@ namespace RockWeb.Blocks.Communication
             else
             {
                 emailTemplate = emailTemplateService.Get( emailTemplateId );
+
+                // The identifier comes from a hidden field, so make sure the
+                // person is allowed to edit this system communication.
+                if ( emailTemplate == null || !emailTemplate.IsAuthorized( Authorization.EDIT, CurrentPerson ) )
+                {
+                    nbEditModeMessage.Text = EditModeMessage.NotAuthorizedToEdit( SystemCommunication.FriendlyTypeName );
+                    nbEditModeMessage.Visible = true;
+                    return;
+                }
             }
 
             emailTemplate.IsActive = cbIsActive.Checked;
@@ -209,7 +218,11 @@ namespace RockWeb.Blocks.Communication
             }
 
             emailTemplate.PushData = pushCommunication.PushData;
-            emailTemplate.PushImageBinaryFileId = pushCommunication.PushImageBinaryFileId;
+            // Only accept the current push image or a new upload, otherwise keep the current push image.
+            if ( new BinaryFileService( rockContext ).IsUploadedBinaryFileAllowedForPerson( pushCommunication.PushImageBinaryFileId, emailTemplate.PushImageBinaryFileId, CurrentPerson ) )
+            {
+                emailTemplate.PushImageBinaryFileId = pushCommunication.PushImageBinaryFileId;
+            }
             emailTemplate.PushMessage = pushCommunication.PushMessage;
             emailTemplate.PushOpenAction = pushCommunication.PushOpenAction;
             emailTemplate.PushOpenMessage = pushCommunication.PushOpenMessage;
@@ -237,6 +250,30 @@ namespace RockWeb.Blocks.Communication
 
                 // Controls will render the error messages
                 return;
+            }
+
+            /*
+                10/13/2026 - MSE
+
+                The logo is only referenced from the message body, so nothing
+                else marks the uploaded file permanent. Keep a new upload by
+                the current person so the cleanup job does not delete it.
+
+                Reason: The logo disappeared from the message a day after it
+                was uploaded.
+            */
+            var logoBinaryFileId = imgTemplateLogo.BinaryFileId;
+            if ( logoBinaryFileId.HasValue )
+            {
+                var binaryFileService = new BinaryFileService( rockContext );
+                var logoBinaryFile = binaryFileService.Get( logoBinaryFileId.Value );
+
+                if ( logoBinaryFile != null
+                    && logoBinaryFile.IsTemporary
+                    && binaryFileService.IsUploadedBinaryFileAllowedForPerson( logoBinaryFile.Id, null, CurrentPerson ) )
+                {
+                    logoBinaryFile.IsTemporary = false;
+                }
             }
 
             rockContext.SaveChanges();

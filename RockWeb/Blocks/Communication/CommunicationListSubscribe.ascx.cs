@@ -258,6 +258,16 @@ namespace RockWeb.Blocks.Communication
                 }
 
                 var groupMemberRecordsForPerson = groupMemberService.Queryable().Where( a => a.GroupId == groupId && a.PersonId == personId ).ToList();
+
+                // Apply the same filters that BindRepeater uses to decide which lists are shown.
+                if ( !IsCommunicationListOffered( group, groupMemberRecordsForPerson.Any(), rockContext ) )
+                {
+                    nbGroupNotification.Text = "Communication list not found.";
+                    nbGroupNotification.NotificationBoxType = NotificationBoxType.Danger;
+                    nbGroupNotification.Visible = true;
+                    return;
+                }
+
                 if ( groupMemberRecordsForPerson.Any() )
                 {
                     // normally there would be at most 1 group member record for the person, but just in case, mark them all
@@ -430,6 +440,47 @@ namespace RockWeb.Blocks.Communication
             pnlCommunicationPreferences.Visible = viewableCommunicationLists.Any();
         }
 
+        /// <summary>
+        /// Determines whether the communication list passes the sync and campus
+        /// filters that <see cref="BindRepeater"/> applies when listing the
+        /// communication lists.
+        /// </summary>
+        /// <param name="group">The communication list group.</param>
+        /// <param name="hasMemberRecord"><c>true</c> if the person already has a group member record in the list.</param>
+        /// <param name="rockContext">The rock context.</param>
+        /// <returns><c>true</c> if the communication list would be offered to the person; otherwise, <c>false</c>.</returns>
+        private bool IsCommunicationListOffered( Group group, bool hasMemberRecord, RockContext rockContext )
+        {
+            // Lists whose default role is synced are hidden unless the person is already a member.
+            if ( !hasMemberRecord )
+            {
+                int? communicationListGroupTypeDefaultRoleId = GroupTypeCache.Get( group.GroupTypeId )?.DefaultGroupRoleId;
+                var isDefaultRoleSynced = new GroupSyncService( rockContext )
+                    .Queryable()
+                    .Any( a => a.GroupId == group.Id && a.GroupTypeRoleId == communicationListGroupTypeDefaultRoleId );
+
+                if ( isDefaultRoleSynced )
+                {
+                    return false;
+                }
+            }
+
+            // When filtering by campus, lists for other campuses are only allowed
+            // if the person already has a membership record in them.
+            var filterByCampus = GetAttributeValue( AttributeKey.FilterGroupsByCampusContext ).AsBoolean();
+            if ( filterByCampus && !hasMemberRecord )
+            {
+                var contextCampus = ContextEntity<Campus>();
+
+                if ( contextCampus != null && group.CampusId != null && group.CampusId != contextCampus.Id )
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         private bool ContainsActivePersonRecord( ICollection<GroupMember> groupMembers, int personId )
         {
             return ( groupMembers?.Any( m => m.PersonId == personId && m.GroupMemberStatus == GroupMemberStatus.Active ) ) ?? false;
@@ -504,6 +555,15 @@ namespace RockWeb.Blocks.Communication
                         // 3.) Current person
                         _person = CurrentPerson;
                     }
+                }
+
+                // Only honor a person other than the current person if the
+                // current person is authorized to edit this block.
+                if ( _person != null
+                    && _person.Id != CurrentPersonId
+                    && !IsUserAuthorized( Rock.Security.Authorization.EDIT ) )
+                {
+                    _person = CurrentPerson;
                 }
             }
 

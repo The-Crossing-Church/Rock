@@ -20,7 +20,9 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
+using Rock.Data;
 using Rock.Field;
+using Rock.Security;
 using Rock.ViewModels.Utility;
 using Rock.Web.Cache;
 
@@ -136,7 +138,7 @@ namespace Rock.Attribute
         {
             var fieldType = _fieldTypes.GetOrAdd( attribute.FieldType.Guid, GetFieldType );
 
-            return new PublicAttributeBag
+            var bag = new PublicAttributeBag
             {
                 FieldTypeGuid = attribute.FieldType.ControlFieldTypeGuid,
                 AttributeGuid = attribute.Guid,
@@ -153,8 +155,30 @@ namespace Rock.Attribute
                 Description = attribute.Description,
                 ConfigurationValues = fieldType.GetPublicConfigurationValues( attribute.ConfigurationValues, ConfigurationValueUsage.Edit, null ),
                 PreHtml = attribute.PreHtml,
-                PostHtml = attribute.PostHtml
+                PostHtml = attribute.PostHtml,
             };
+
+            // Only field types whose rules are safe to give to anyone that can
+            // see the edit control get their own security grant. Other field
+            // types may include rules that allow changes, such as the asset
+            // manager, so they must rely on a security grant from the block.
+            if ( fieldType is IPublicSecurityGrantFieldType securityGrantFieldType )
+            {
+                var securityGrant = new SecurityGrant();
+
+                securityGrantFieldType.AddRulesToSecurityGrant( securityGrant, attribute.ConfigurationValues );
+
+                if ( securityGrant.Rules.Count > 0 )
+                {
+                    // Force attribute security grants to be valid for 1 day.
+                    // This way if we change the default we don't suddenly make
+                    // field types difficult to work with.
+                    securityGrant.SetLifetime( TimeSpan.FromDays( 1 ) );
+                    bag.SecurityGrantToken = securityGrant.ToToken();
+                }
+            }
+
+            return bag;
         }
 
         /// <summary>
@@ -197,6 +221,53 @@ namespace Rock.Attribute
             var fieldType = _fieldTypes.GetOrAdd( attribute.FieldType.Guid, GetFieldType );
 
             return fieldType.GetPublicEditValue( privateValue, attribute.ConfigurationValues );
+        }
+
+        /// <summary>
+        /// Determines whether the attribute edits sent by a client only reference
+        /// attributes that are new or that already belong to the specified entity
+        /// type and qualifier. This prevents an existing attribute that belongs to
+        /// something else from being taken over when the edits are saved with
+        /// <see cref="Helper.SaveAttributeEdits(PublicEditableAttributeBag, int?, string, string, RockContext)"/>.
+        /// </summary>
+        /// <param name="attributes">The attribute bags sent by the client.</param>
+        /// <param name="entityTypeId">The entity type identifier the attributes must belong to.</param>
+        /// <param name="qualifierColumn">The qualifier column the attributes must belong to.</param>
+        /// <param name="qualifierValue">The qualifier value the attributes must belong to, or <c>null</c> if the owning entity is new.</param>
+        /// <param name="rockContext">The rock context to use when loading existing attributes.</param>
+        /// <returns><c>true</c> if every attribute can be saved; otherwise <c>false</c>.</returns>
+        public static bool AreAttributeEditsAllowed( IEnumerable<PublicEditableAttributeBag> attributes, int? entityTypeId, string qualifierColumn, string qualifierValue, RockContext rockContext )
+        {
+            var attributeGuids = attributes?
+                .Where( a => a != null && a.Guid.HasValue )
+                .Select( a => a.Guid.Value )
+                .Distinct()
+                .ToList();
+
+            if ( attributeGuids == null || !attributeGuids.Any() )
+            {
+                return true;
+            }
+
+            var existingAttributes = new Rock.Model.AttributeService( rockContext ).Queryable()
+                .Where( a => attributeGuids.Contains( a.Guid ) )
+                .Select( a => new
+                {
+                    a.EntityTypeId,
+                    a.EntityTypeQualifierColumn,
+                    a.EntityTypeQualifierValue
+                } )
+                .ToList();
+
+            // A new entity can not own any existing attributes yet.
+            if ( qualifierValue == null )
+            {
+                return !existingAttributes.Any();
+            }
+
+            return existingAttributes.All( a => a.EntityTypeId == entityTypeId
+                && string.Equals( a.EntityTypeQualifierColumn ?? string.Empty, qualifierColumn ?? string.Empty, StringComparison.OrdinalIgnoreCase )
+                && string.Equals( a.EntityTypeQualifierValue ?? string.Empty, qualifierValue, StringComparison.Ordinal ) );
         }
 
         /// <summary>
