@@ -88,10 +88,15 @@ namespace Rock.Security
 
         private static readonly Regex ScriptTagPattern = new Regex( @"<script\b", IgnoreCase );
 
+        // Only catches javascript: inside an HTML attribute or CSS url() context,
+        // such as href="javascript:...". A bare value of "javascript:..." is not
+        // matched, so anything that outputs a value as a URL must check the
+        // scheme itself.
         private static readonly Regex JavascriptProtocolPattern = new Regex( @"[=""'(]\s*javascript\s*:", IgnoreCase );
 
         // Build from the HTML Living Standard's enumerated event-handler
-        // attribute names. Adjust as needed.
+        // attribute names, plus handlers from other specifications that
+        // browsers support as attributes. Adjust as needed.
         private static readonly Regex EventHandlerPattern =
             new Regex(
                 @"\bon(?:" +
@@ -110,14 +115,23 @@ namespace Rock.Security
                 @"afterprint|beforeprint|beforeunload|hashchange|" +
                 @"languagechange|message|messageerror|offline|online|" +
                 @"pagehide|pageshow|popstate|rejectionhandled|storage|" +
-                @"unhandledrejection|unload" +
+                @"unhandledrejection|unload|" +
+                // Handlers from other specifications and vendor prefixes.
+                @"animationcancel|animationend|animationiteration|animationstart|" +
+                @"beforecopy|beforecut|beforepaste|command|" +
+                @"pointercancel|pointerdown|pointerenter|pointerleave|" +
+                @"pointermove|pointerout|pointerover|pointerrawupdate|pointerup|" +
+                @"scrollend|search|selectionchange|selectstart|" +
+                @"touchcancel|touchend|touchmove|touchstart|" +
+                @"transitioncancel|transitionend|transitionrun|transitionstart|" +
+                @"webkitanimationend|webkitanimationiteration|webkitanimationstart|" +
+                @"webkittransitionend" +
                 @")\s*=",
                 IgnoreCase );
 
         private static readonly Regex AnyHtmlTagPattern = new Regex( @"<[a-zA-Z!/]", DefaultOptions );
 
         private static readonly Regex ControlCharacterPattern = new Regex( "[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]", DefaultOptions );
-
         private static readonly Regex BidiOverridePattern = new Regex( "[\u202A-\u202E\u2066-\u2069]", DefaultOptions );
 
         #endregion
