@@ -23,6 +23,7 @@ import Comments from "./Components/comments"
 import TCCTable from "./Components/requestTable"
 import PartialApproval from "./Components/partialApproval"
 import rules from "../EventForm/Rules/rules"
+import helper from "./Helpers/helper"
 
 const store = useStore()
 
@@ -174,7 +175,8 @@ export default defineComponent({
         dateValueFilter: dateValueFilter,
         pickExistingValueFilter: pickExistingValueFilter,
         rules: rules,
-        requestValidation: {} as any
+        requestValidation: {} as any,
+        helper: helper
       };
   },
   computed: {
