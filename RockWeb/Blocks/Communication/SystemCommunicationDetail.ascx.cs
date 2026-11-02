@@ -304,6 +304,14 @@ namespace RockWeb.Blocks.Communication
             SystemCommunicationService emailTemplateService = new SystemCommunicationService( new RockContext() );
             SystemCommunication emailTemplate = emailTemplateService.Get( emailTemplateId );
 
+            if ( emailTemplate != null && !emailTemplate.IsAuthorized( Authorization.VIEW, CurrentPerson ) )
+            {
+                nbNotAuthorized.Text = EditModeMessage.NotAuthorizedToView( SystemCommunication.FriendlyTypeName );
+                nbNotAuthorized.Visible = true;
+                pnlDetails.Visible = false;
+                return;
+            }
+
             bool showMessagePreview = false;
 
             var pushCommunication = new CommunicationDetails();
@@ -528,13 +536,44 @@ namespace RockWeb.Blocks.Communication
             btnUpdateTemplatePreview.Visible = lavaFieldsTemplateDictionary.Any();
             CommunicationTemplateHelper.CreateDynamicLavaValueControls( lavaFieldsTemplateDictionary, lavaFieldsDefaultDictionary, phLavaFieldsControls );
 
+            var previewSource = ceEmailTemplate.Text;
+            var emailTemplateId = hfEmailTemplateId.ValueAsInt();
+
+            if ( emailTemplateId != 0 )
+            {
+                var storedTemplate = new SystemCommunicationService( new RockContext() ).Get( emailTemplateId );
+
+                if ( storedTemplate == null || !storedTemplate.IsAuthorized( Authorization.EDIT, CurrentPerson ) )
+                {
+                    previewSource = storedTemplate?.Body ?? string.Empty;
+                }
+            }
+
             var mergeFields = Rock.Lava.LavaHelper.GetCommonMergeFields( RockPage );
-            string resolvedPreviewHtml = ceEmailTemplate.Text.ResolveMergeFields( mergeFields );
+            string resolvedPreviewHtml;
+
+            using ( PersonTokenScope.RestrictTo( CurrentPerson ) )
+            {
+                resolvedPreviewHtml = previewSource.ResolveMergeFields( mergeFields );
+            }
+
             if ( cbCssInliningEnabled.Checked )
             {
                 resolvedPreviewHtml = resolvedPreviewHtml.ConvertHtmlStylesToInlineAttributes();
             }
 
+            /*
+                10/16/2026 - MSE
+
+                The preview holds stored system communication HTML. The ifEmailPreview iframe in the
+                markup has sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox" so
+                script in that HTML cannot run in Rock's origin. allow-same-origin is only there so the
+                page script can read the contentWindow.document height. Never add allow-scripts: a
+                same-origin frame that may run script can remove its own sandbox. The old IE
+                javascript: src fallback was removed because every supported browser uses srcdoc.
+
+                Reason: Stop stored XSS through the system communication preview.
+            */
             ifEmailPreview.Attributes["srcdoc"] = resolvedPreviewHtml;
             pnlEmailPreview.Visible = true;
             upnlEmailPreview.Update();

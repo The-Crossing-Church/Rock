@@ -902,6 +902,25 @@ The logged-in person's information will be used to complete the registrar inform
                 return;
             }
 
+            /*
+                10/14/2026 - MSE
+
+                The template Id comes from a client posted hidden field, so a person who can
+                copy one template could point Copy at a different template's Id and see its
+                full edit configuration (discount codes, fees, forms, emails, gateway) and then
+                save it as their own template. Re-authorize the loaded template here, before
+                any of its state is loaded, using the same rights that show the Copy button and
+                gate btnEdit_Click, btnDelete_Click and btnSave_Click.
+
+                Reason: Copy must not trust the posted Id; it must check rights on the actual template being copied.
+            */
+            if ( !UserCanEdit && !registrationTemplate.IsAuthorized( Authorization.ADMINISTRATE, CurrentPerson ) )
+            {
+                nbValidationError.Visible = true;
+                nbValidationError.Text = "You are not authorized to edit this registration template.";
+                return;
+            }
+
             // Load the state objects for the source registration template.
             LoadStateDetails( registrationTemplate, rockContext );
 
@@ -1070,6 +1089,27 @@ The logged-in person's information will be used to complete the registrar inform
             if ( registrationTemplateId.HasValue )
             {
                 registrationTemplate = registrationTemplateService.Get( registrationTemplateId.Value );
+            }
+
+            /*
+                10/14/2026 - MSE
+
+                The template Id comes from a client posted hidden field, so a person who can
+                only edit one template could point this save at a different template's Id and
+                overwrite it (and delete its forms, fees, discounts and attributes) without any
+                rights to it. Re-authorize the loaded template here, before any posted value is
+                copied onto it, using the same rights that gate opening it for edit
+                ( btnEdit_Click, btnDelete_Click and ShowDetail ).
+
+                Reason: Save must not trust the posted Id; it must check edit rights on the actual template being written.
+            */
+            if ( registrationTemplate != null
+                && !UserCanEdit
+                && !registrationTemplate.IsAuthorized( Authorization.ADMINISTRATE, CurrentPerson ) )
+            {
+                nbValidationError.Visible = true;
+                nbValidationError.Text = "You are not authorized to edit this registration template.";
+                return;
             }
 
             var newTemplate = false;
