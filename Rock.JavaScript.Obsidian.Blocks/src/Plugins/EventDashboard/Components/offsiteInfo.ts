@@ -88,7 +88,7 @@ export default defineComponent({
     <i v-if="sectionIsValid" class="fa fa-check-circle text-accent ml-2"></i>
     <i v-else-if="!sectionIsValid" class="fa fa-exclamation-circle text-inprogress ml-2"></i>
   </h4>
-  <div class="row">
+  <div class="row row-eq-height">
     <div class="col col-xs-12 col-md-6" v-for="av in offSiteAttrs">
       <template v-if="av.changeValue != ''">
         <div class="row">
