@@ -35,7 +35,7 @@ export default defineComponent({
               if(this.details.attributes[key].fieldTypeGuid == '6b6aa175-4758-453f-8d83-fcd8044b5f36') {
                 //Date fields, need to handle the equality check differently
                 if(this.details.changes) {
-                  if(this.details.attributeValues[key].split('T')[0] != this.details.changes.attributeValues[key].split('T')[0]) {
+                  if(this.details.attributeValues[key]?.split('T')[0] != this.details.changes.attributeValues[key]?.split('T')[0]) {
                     item.changeValue = this.details.changes.attributeValues[key]
                     item.class = 'text-red'
                   }
@@ -132,6 +132,34 @@ export default defineComponent({
       },
       toggleConditions(id: string) {
         $(id).collapse('toggle')
+      },
+      copyRegQuestions(value: string) {
+        let questions = JSON.parse(value)
+        let copyValue = ""
+        questions.forEach(q => {
+          let config = JSON.parse(q.QuestionConfigurationValues)
+          let defaultVal = ""
+          if(config?.defaultValue?.includes('{')) {
+            defaultVal = JSON.parse(config.defaultValue) as any
+            defaultVal = defaultVal.text
+          } else if (config?.defaultValue?.includes('[')) {
+            defaultVal = JSON.parse(config.defaultValue) as any
+          } else {
+            defaultVal = config.defaultValue
+          }
+          copyValue += "Question: " + q.QuestionName + "\n"
+          copyValue += "Field Type Name: " + q.QuestionFieldTypeName + "\n"
+          copyValue += "Field Type Guid: " + config.fieldTypeGuid + "\n"
+          copyValue += "Is Required: " + q.QuestionIsRequired + "\n"
+          copyValue += "Default Value: " + defaultVal + "\n"
+          copyValue += "Configuration: \n"
+          for (let [key, val] of Object.entries(config.configurationValues)) {
+            copyValue += "\t" + key + ": " + val + "\n" 
+          }
+          copyValue += "\n"
+        })
+        console.log(copyValue)
+        navigator.clipboard.writeText(copyValue)
       }
     },
     watch: {
@@ -150,10 +178,10 @@ export default defineComponent({
   <div class="row row-eq-height">
     <div class="col col-xs-12 col-md-6" v-for="av in regAttrs">
       <template v-if="av.attr.key == 'DiscountCodes'">
-        <div class="form-group static-control">
-          <template v-if="av.changeValue != ''">
-            <div class="row" style="pading-bottom: 12px;">
-              <div class="col col-xs-6">
+        <template v-if="av.changeValue != ''">
+          <div class="row" style="pading-bottom: 12px;">
+            <div class="col col-xs-6">
+              <div class="form-group static-control">
                 <rck-lbl :class="av.class">{{av.attr.name}}</rck-lbl>
                 <div class="text-red">
                   <div v-for="c in getDiscountCodes(av.value)" :key="c.Code">
@@ -161,7 +189,9 @@ export default defineComponent({
                   </div>
                 </div>
               </div>
-              <div class="col col-xs-6 hidden-label">
+            </div>
+            <div class="col col-xs-6 hidden-label">
+              <div class="form-group static-control">
                 <rck-lbl :class="av.class">{{av.attr.name}}</rck-lbl>
                 <div class="text-primary">
                   <div v-for="c in getDiscountCodes(av.changeValue)" :key="c.Code">
@@ -170,25 +200,27 @@ export default defineComponent({
                 </div>
               </div>
             </div>
-          </template>
-          <template v-else>
+          </div>
+        </template>
+        <template v-else>
+          <div class="form-group static-control">
             <rck-lbl :class="av.class">{{av.attr.name}}</rck-lbl>
             <div style="pading-bottom: 12px;">
               <div v-for="c in getDiscountCodes(av.value)" :key="c.Code">
                 <strong>{{c.Code}}:</strong> {{formatDiscountCodeAmount(c)}} {{formatDiscountCodeDates(c)}} <template v-if="c.AutoApply == 'True'"><i class="fas fa-check-square" style="font-size: 16px;"></i> Auto Apply</template> {{formatDiscountCodeMaxUses(c)}}
               </div>
             </div>
-          </template>
-        </div>
+          </div>
+        </template>
       </template>
       <template v-else-if="av.attr.key == 'AdditionalRegistrationQuestions'">
-        <div class="form-group static-control">
-          <template v-if="av.changeValue != ''">
-            <div class="row" style="pading-bottom: 12px;">
-              <div class="col col-xs-6">
-                <rck-lbl :class="av.class">{{av.attr.name}}</rck-lbl>
+        <template v-if="av.changeValue != ''">
+          <div class="row row-eq-height" style="pading-bottom: 12px;">
+            <div class="col col-xs-6">
+              <div class="form-group static-control h-100">
+                <rck-lbl :class="av.class">{{av.attr.name}}</rck-lbl> 
                 <div class="text-red">
-                  <ul>
+                  <ul class="dashboard-list">
                     <li v-for="(q, qIdx) in getRegistrationQuestions(av.value)" :key="q.QuestionFieldType + '_' + qIdx">
                       {{ q.QuestionName }} ({{ q.QuestionFieldTypeName }}) 
                       <i v-if="q.QuestionIsRequired == 'True'" class="ti ti-exclamation-circle"></i>
@@ -203,11 +235,14 @@ export default defineComponent({
                     </li>
                   </ul>
                 </div>
+                <i v-if="av.value" class="ti ti-copy align-end hover" @click="copyRegQuestions(av.value)"></i>
               </div>
-              <div class="col col-xs-6 hidden-label">
+            </div>
+            <div class="col col-xs-6 hidden-label">
+              <div class="form-group static-control h-100">
                 <rck-lbl :class="av.class">{{av.attr.name}}</rck-lbl>
                 <div class="text-primary">
-                  <ul>
+                  <ul class="dashboard-list">
                     <li v-for="(q, qIdx) in getRegistrationQuestions(av.changeValue)" :key="q.QuestionFieldType + '_' + qIdx">
                       {{ q.QuestionName }} ({{ q.QuestionFieldTypeName }})
                       <i v-if="q.QuestionIsRequired == 'True'" class="ti ti-exclamation-circle"></i>
@@ -222,12 +257,15 @@ export default defineComponent({
                     </li>
                   </ul>
                 </div>
+                <i v-if="av.changeValue" class="ti ti-copy align-end hover" @click="copyRegQuestions(av.changeValue)"></i>
               </div>
             </div>
-          </template>
-          <template v-else>
+          </div>
+        </template>
+        <template v-else>
+          <div class="form-group static-control">
             <rck-lbl :class="av.class">{{av.attr.name}}</rck-lbl>
-            <ul>
+            <ul class="dashboard-list">
               <li v-for="(q, qIdx) in getRegistrationQuestions(av.value)" :key="q.QuestionFieldType + '_' + qIdx">
                 {{ q.QuestionName }} ({{ q.QuestionFieldTypeName }})
                 <i v-if="q.QuestionIsRequired == 'True'" class="ti ti-exclamation-circle"></i>
@@ -241,54 +279,63 @@ export default defineComponent({
                 </div>
               </li>
             </ul>
-          </template>
-        </div>
+            <i v-if="av.value" class="ti ti-copy align-end hover" @click="copyRegQuestions(av.value)"></i>
+          </div>
+        </template>
       </template>
       <template v-else-if="av.attr.key.includes('EmailAdditionalDetails')">
-        <div class="form-group static-control">
-          <template v-if="av.changeValue != ''">
-            <div class="row">
-              <div class="col col-xs-6">
+        <template v-if="av.changeValue != ''">
+          <div class="row">
+            <div class="col col-xs-6">
+              <div class="form-group static-control">
                 <rck-lbl :class="av.class">{{av.attr.name}}</rck-lbl>
                 <div class="mb-2 text-red" v-html="av.value.replaceAll('\\n','<br>')"></div>
               </div>
-              <div class="col col-xs-6 hidden-label">
+            </div>
+            <div class="col col-xs-6 hidden-label">
+              <div class="form-group static-control">
                 <rck-lbl>{{av.attr.name}}</rck-lbl>
                 <div class="mb-2 text-primary" v-html="av.changeValue.replaceAll('\\n','<br>')"></div>
               </div>
             </div>
-          </template>
-          <template v-else>
+          </div>
+        </template>
+        <template v-else>
+          <div class="form-group static-control">
             <rck-lbl :class="av.class">{{av.attr.name}}</rck-lbl>
             <div class="mb-2" v-html="av.value.replaceAll('\\n','<br>')"></div>
-          </template>
-        </div>
+          </div>
+        </template>
       </template>
       <template v-else-if="av.attr.fieldTypeGuid == 'fe95430c-322d-4b67-9c77-dfd1d4408725'">
-        <div class="form-group static-control">
-          <template v-if="av.changeValue != ''">
-            <div class="row">
-              <div class="col col-xs-6">
+        <template v-if="av.changeValue != ''">
+          <div class="row">
+            <div class="col col-xs-6">
+              <div class="form-group static-control">
                 <rck-lbl :class="av.class">{{av.attr.name}}</rck-lbl>
                 <div class="text-red">
                   {{formatDateTime(av.value)}}
                 </div>
               </div>
-              <div class="col col-xs-6 hidden-label">
+            </div>
+            <div class="col col-xs-6 hidden-label">
+              <div class="form-group static-control">
                 <rck-lbl>{{av.attr.name}}</rck-lbl>
                 <div class="mb-2 text-primary">
                   {{formatDateTime(av.changeValue)}}
                 </div>
               </div>
             </div>
-          </template>
-          <template v-else>
+          </div>
+        </template>
+        <template v-else>
+          <div class="form-group static-control">
             <rck-lbl :class="av.class">{{av.attr.name}}</rck-lbl>
             <div class="mb-2">
               {{formatDateTime(av.value)}}
             </div>
-          </template>
-        </div>
+          </div>
+        </template>
       </template>
       <template v-else>
         <template v-if="av.changeValue != ''">
