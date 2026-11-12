@@ -2,19 +2,19 @@ import { DateTime } from "luxon"
 
 const helper = {
   sectionInfo: [
-    {                                        cat: "Event",                         section: "Time",                   type: "Event"              },
-    { attr: "NeedsSpace",                    cat: "Event Space",                   section: "Space",                  type: "Room"               },
-    { attr: "NeedsOnline",                   cat: "Event Online",                  section: "Online",                 type: "Online Event"       },
-    { attr: "NeedsCatering",                 cat: "Event Catering",                section: "Catering",               type: "Catering"           },
-    { attr: "NeedsChildCare",                cat: "Event Childcare",               section: "Childcare",              type: "Childcare"          },
-    { attr: "NeedsChildCareCatering",        cat: "Event Childcare Catering",      section: "Childcare Catering",     type: "Childcare Catering" },
-    {                                        cat: "Event Childcare Registration",  section: "Childcare Registration", type: "Childcare"          },
-    { attr: "NeedsOpsAccommodations",        cat: "Event Ops Requests",            section: "Ops",                    type: "Extra Resources"    },
-    { attr: "NeedsRegistration",             cat: "Event Registration",            section: "Registration",           type: "Registration"       },
-    { attr: "NeedsPublicity",                cat: "Event Publicity",               section: "Publicity",              type: "Publicity"          },
-    { attr: "NeedsProductionAccommodations", cat: "Event Production",              section: "Production",             type: "Production"         },
-    { attr: "NeedsWorship",                  cat: "Event Worship",                 section: "Worship",                type: "Worship"            },
-    { attr: "NeedsWebCalendar",              cat: "Event Calendar",                section: "Calendar",               type: "Web Calendar"       }
+    {                                        cat: "Event",                         section: "Time",                   type: "Event"                                                     },
+    { attr: "NeedsSpace",                    cat: "Event Space",                   section: "Space",                  type: "Room"                                                      },
+    { attr: "NeedsOnline",                   cat: "Event Online",                  section: "Online",                 type: "Online Event"                                              },
+    { attr: "NeedsCatering",                 cat: "Event Catering",                section: "Catering",               type: "Catering",           status: "CateringStatus"              },
+    { attr: "NeedsChildCare",                cat: "Event Childcare",               section: "Childcare",              type: "Childcare",          status: "ChildcareStatus"             },
+    { attr: "NeedsChildCareCatering",        cat: "Event Childcare Catering",      section: "Childcare Catering",     type: "Childcare Catering", status: "ChildcareCateringStatus"     },
+    {                                        cat: "Event Childcare Registration",  section: "Childcare Registration", type: "Childcare",          status: "ChildcareRegistrationStatus" },
+    { attr: "NeedsOpsAccommodations",        cat: "Event Ops Requests",            section: "Ops",                    type: "Extra Resources",    status: "DailyOPSStatus"              },
+    { attr: "NeedsRegistration",             cat: "Event Registration",            section: "Registration",           type: "Registration",       status: "DatabaseStatus"              },
+    { attr: "NeedsPublicity",                cat: "Event Publicity",               section: "Publicity",              type: "Publicity",          status: "PublicityStatus"             },
+    { attr: "NeedsProductionAccommodations", cat: "Event Production",              section: "Production",             type: "Production",         status: "ProductionStatus"            },
+    { attr: "NeedsWorship",                  cat: "Event Worship",                 section: "Worship",                type: "Worship",            status: "WorshipStatus"               },
+    { attr: "NeedsWebCalendar",              cat: "Event Calendar",                section: "Calendar",               type: "Web Calendar",       status: "PublicityStatus"             }
   ],
   requestStatuses: [
     { text: "Draft",                    value: "Draft"                    },
