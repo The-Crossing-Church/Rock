@@ -4,10 +4,10 @@ using System.ComponentModel;
 using System.Linq;
 
 using Rock.Attribute;
-using Rock.Blocks.Plugins.ViewModels;
 using Rock.Data;
 using Rock.Model;
 using Rock.Blocks.Plugins.EventForm;
+using Rock.Blocks.Plugins.ViewModels;
 
 namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
 {

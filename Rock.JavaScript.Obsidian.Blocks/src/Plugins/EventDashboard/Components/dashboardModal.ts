@@ -18,6 +18,7 @@ import PublicityInfo from "./publicityInfo"
 import { DateTime } from "luxon"
 import DatePicker from "../../EventForm/Components/calendar"
 import Chip from "../../EventForm/Components/chip"
+import helper from "../Helpers/helper"
 
 export default defineComponent({
     name: "EventDashboard.Components.Modal",
@@ -48,17 +49,19 @@ export default defineComponent({
       inventory: Array,
       createdBy: Object,
       modifiedBy: Object,
-      sections: String,
+      sections: Array,
+      editSections: Array,
       requestValidation: Object
     },
     setup() {
 
     },
     data() {
-        return {
-          modal: false,
-          panels: [true],
-        };
+      return {
+        modal: false,
+        panels: [true],
+        helper: helper
+      };
     },
     created() {
       
@@ -258,6 +261,7 @@ export default defineComponent({
       },
       getChipClassName(resource: string, fromOriginal: Boolean) {
         let className = ""
+        let section = this.helper.sectionInfo.filter(si => si.type == resource)[0]
         if(fromOriginal) {
           if(this.changesResources && this.changesResources.length > 0) {
             let idx = this.changesResources.indexOf(resource)
@@ -270,8 +274,23 @@ export default defineComponent({
             let idx = this.originalResources.indexOf(resource)
             if(idx >= 0) {
               className += "chip-hidden"
+            } else {
+              className += "text-primary"
             }
           }
+        }
+        let statusKey = section.status as string
+        if(statusKey) {
+          let statusAttr = this.request?.attributes[statusKey]
+          let options = JSON.parse(statusAttr.configurationValues.values)
+          let status = this.request?.attributeValues[statusKey]
+          let currentStatus = options.filter(opt => opt.value == status)
+          if(currentStatus && currentStatus.length > 0) {
+            currentStatus = currentStatus[0]
+          } else {
+            currentStatus = options[0]
+          }
+          className += " chip-background-" + currentStatus.value
         }
         return className
       }
@@ -660,6 +679,29 @@ export default defineComponent({
   }
   .row-eq-height {
     flex-wrap: wrap;
+  }
+  .dashboard-list {
+    padding-left: 14px;
+  }
+  .align-end {
+    position: absolute;
+    bottom: 0px;
+    right: 15px;
+  }
+  /* SSP Chip Indicators */
+  /* 
+    0 = Pending
+    1 = Confirmed/Approved
+    2 = Denied 
+  */
+  .chip-background-0 {
+    background: var(--color-warning-tint);
+  }
+  .chip-background-1 {
+    background: var(--color-accent-tint);
+  }
+  .chip-background-2 {
+    background: var(--color-danger-tint);
   }
 </v-style>
 `

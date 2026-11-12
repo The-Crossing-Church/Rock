@@ -21,6 +21,7 @@ import RockText from "@Obsidian/Controls/textBox.obs"
 import RockLabel from "@Obsidian/Controls/rockLabel.obs"
 import RockField from "@Obsidian/Controls/rockField.obs"
 import DateRangePicker from "@Obsidian/Controls/dateRangePicker.obs"
+import SupportServiceButton from "./Components/supportServiceButton"
 
 const store = useStore()
 
@@ -42,6 +43,7 @@ export default defineComponent({
     "tcc-grid": GridAction,
     "tcc-details": Details,
     "tcc-comments": Comments,
+    "tcc-ssp-btn": SupportServiceButton
   },
   setup() {
     const invokeBlockAction = useInvokeBlockAction();
@@ -62,6 +64,33 @@ export default defineComponent({
     };
     provide("loadDetails", loadDetails);
 
+    /** A method to update a request's support service status */
+    const updateSupportStatus: (id: string | null | undefined, statusKey: string | null | undefined, value: string | null | undefined) => Promise<any> = async (id, statusKey, value) => {
+      const response = await invokeBlockAction("ChangeSectionStatus", {
+        id: id, statusKey: statusKey, value: value
+      });
+      return response
+    };
+    provide("updateSupportStatus", updateSupportStatus);
+
+    /** A method to update a request's registration status to confirmed */
+    const approveRegistration: (id: string | null | undefined) => Promise<any> = async (id) => {
+        const response = await invokeBlockAction("ApproveRegistration", {
+            id: id
+        });
+        return response
+    };
+    provide("approveRegistration", approveRegistration);
+
+    /** A method to update a request's childcare registration status to confirmed */
+    const approveCCRegistration: (id: string | null | undefined) => Promise<any> = async (id) => {
+        const response = await invokeBlockAction("ApproveChildcareRegistration", {
+            id: id
+        });
+        return response
+    };
+    provide("approveCCRegistration", approveCCRegistration);
+
     let defaultFilters = {
       title: "",
       statuses: [ "Approved" ],
@@ -80,7 +109,10 @@ export default defineComponent({
       viewModel,
       filterRequests,
       loadDetails,
-      defaultFilters
+      defaultFilters,
+      updateSupportStatus,
+      approveRegistration,
+      approveCCRegistration
     }
   },
   data() {
@@ -94,12 +126,19 @@ export default defineComponent({
       pickExistingValueFilter: pickExistingValueFilter,
       selected: {} as ContentChannelItemBag,
       sections: [] as any,
+      editSections: [] as any,
       createdBy: {},
       modifiedBy: {},
       modal: false,
       comment: "",
       commentModal: false,
-      toastMessage: "",
+      toast: {
+        message: "",
+        class: "",
+        title: "",
+        titleClass: "",
+        iconClass: ""
+      },
       requestValidation: {} as any
     }
   },
@@ -161,7 +200,31 @@ export default defineComponent({
         }
       }
       return undefined
-    }
+    },
+    sspActions() {
+      let sspActions = [] as any[]
+      if(this.selected?.attributes && this.selected?.attributeValues) {
+        this.editSections.forEach(section => {
+          let info = helper.sectionInfo.filter(si => {
+            return section == si.section
+          })[0]
+          let statusKey = info.status
+          let statusAttr = this.selected?.attributes[statusKey] as any
+          let options = JSON.parse(statusAttr.configurationValues.values)
+          let status = this.selected?.attributeValues[statusKey]
+          let currentStatus = options.filter(opt => opt.value == status)
+          if(currentStatus && currentStatus.length > 0) {
+            currentStatus = currentStatus[0]
+          } else {
+            currentStatus = options[0]
+          }
+          options.filter(opt => opt.value != status).forEach(opt => {
+            sspActions.push({ service: info.section, action: opt.text, value: opt.value, statusKey: statusKey })
+          })
+        })
+      }
+      return sspActions
+    },
   },
   methods: {
     filter(opt: string) {
@@ -190,8 +253,7 @@ export default defineComponent({
       return r?.attributeValues?.RequestIsValid == 'True'
     },
     btnColor(row) {
-      // return "status-box text-" + row.attributeValues.RequestStatus.replaceAll(" ", "").toLowerCase() + " border-" + row.attributeValues.RequestStatus.replaceAll(" ", "").toLowerCase()
-      return row.attributeValues?.RequestStatus.replace(" ", "").replace(" ", "").toLowerCase().replace("legacyrequest", "default")
+      return row.attributeValues?.RequestStatus?.replaceAll(" ", "").toLowerCase().replace("legacyrequest", "default")
     },
     selectItem(item: any) { 
       let el = document.getElementById('updateProgress')
@@ -229,6 +291,9 @@ export default defineComponent({
           this.sections = helper.sectionInfo.filter(si => {
             return editCategories?.includes(si.cat) || viewCategories?.includes(si.cat)
           }).map(si => si.type )
+          this.editSections = helper.sectionInfo.filter(si => {
+            return editCategories?.includes(si.cat)
+          }).map(si => si.section )
           this.createdBy = response.data.createdBy
           this.modifiedBy = response.data.modifiedBy
           this.modal = true
@@ -247,6 +312,40 @@ export default defineComponent({
       this.comment = ""
       this.commentModal = true
     },
+    updateSupportService(statusKey: string, value: string) {
+      if(this.selected) {
+        this.updateSupportStatus(this.selected.idKey, statusKey, value)
+          .then((res) => {
+            console.log('success')
+            console.log(res)
+            if(res.isError) {
+              throw res.errorMessage
+            }
+            this.toast = {
+              message: res.data,
+              class: "toast-success show",
+              title: "Request Updated",
+              titleClass: "toast-header text-success",
+              iconClass: "fas fa-check-circle mr-1" 
+            }
+            if(this.selected.attributeValues) {
+              this.selected.attributeValues[statusKey] = value
+            }
+          }).catch((ex) => {
+            this.toast = {
+              message: ex,
+              class: "show",
+              title: "System Exception",
+              titleClass: "toast-header text-red",
+              iconClass: "fas fa-exclamation-triangle mr-1" 
+            }
+          })
+      }
+    },
+    hideToast() {
+      let el = document.getElementById('toast')
+      el?.classList.remove("show")
+    },
   },
   watch: {
     
@@ -256,6 +355,13 @@ export default defineComponent({
     this.filter("Upcoming")
     this.filter("Pending")
     this.filter("Cancelled")
+
+    // Load item from URL 
+    let params = new URLSearchParams(window.location.search)
+    let id = params.get("Id")
+    if(id) {
+      this.selectItem({idKey: id})
+    }
   },
   template: `
 <div class="card mb-2">
@@ -374,7 +480,7 @@ export default defineComponent({
         visiblePriority="md"
       >
         <template #format="{ row }">
-          {{ row.attributeValues.RequestType.replaceAll(',', ', ') }}
+          {{ row.attributeValues.RequestType?.replaceAll(',', ', ') }}
         </template>
       </rck-col>
       <rck-col
@@ -405,18 +511,46 @@ export default defineComponent({
     :modifiedBy="modifiedBy" 
     :requestValidation="requestValidation" 
     :sections="sections"
+    :editSections="editSections"
     v-on:openrequest="selectItem"
   ></tcc-details>
   <template v-if="commentModal || (selected.comments && selected.comments.length > 0)">
     <tcc-comments :comments="selected.comments" v-model="commentModal" v-on:createComment="createComment"></tcc-comments>
   </template>
   <template #customButtons>
-    <rck-btn btnType="accent" @click="newComment">
-      <i class="mr-1 fa fa-comment-alt"></i>
-      Add Comment
-    </rck-btn>
+    <div class="d-flex modal-button-wrapper w-100">
+      <tcc-ssp-btn
+        v-for="action in sspActions"
+        :service="action.service"
+        :action="action.action"
+        :value="action.value"
+        :statusKey="action.statusKey"
+        emits="updateSupportService"
+        v-on:updateSupportService="updateSupportService"
+      ></tcc-ssp-btn>
+      <rck-btn btnType="accent" @click="newComment">
+        <i class="mr-1 fa fa-comment-alt"></i>
+        Add Comment
+      </rck-btn>
+      <div class="btn-spacer"></div>
+      <rck-btn btnType="default" @click="modal = false;">
+        <i class="mr-1 ti ti-window-minimize"></i>
+        Close
+      </rck-btn>
+    </div>
   </template>
 </rck-modal>
+
+<div id="toast" role="alert" :class="toast.class">
+  <div :class="toast.titleClass">
+    <i :class="toast.iconClass"></i>
+    <strong>{{toast.title}}</strong>
+    <i class="fa fa-times pull-right hover" @click="hideToast"></i>
+  </div>
+  <div class="toast-body">
+    {{toast.message}}
+  </div>
+</div>
 
 <v-style>
   @import "/Styles/Blocks/Plugins/eventForm.css";

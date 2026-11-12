@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 
 using Rock.Attribute;
-using Rock.Blocks.Plugins.EventForm;
-using Rock.Blocks.Plugins.ViewModels;
 using Rock.Data;
 using Rock.Model;
 using Rock.Web.Cache;
+using Rock.Blocks.Plugins.EventForm;
+using Rock.Blocks.Plugins.ViewModels;
 
 namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
 {
@@ -40,6 +40,7 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
             public const string EventDetailsContentChannel = "EventDetailsContentChannel";
             public const string EventDetailsChangesContentChannel = "EventDetailsChangesContentChannel";
             public const string EventCommentsContentChannel = "EventCommentsContentChannel";
+            public const string SupportServiceApprovalAttr = "SupportServiceApprovalAttr";
 
             public const string LocationList = "LocationList";
             public const string MinistryList = "MinistryList";
@@ -189,7 +190,7 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
                     if ( detailChanges != null )
                     {
                         response.details[i].detailChanges = PluginHelper.GetCommonContentChannelItemEntityBag( detailChanges.ChildContentChannelItem );
-                        Rock.Attribute.Helper.LoadAttributes( detailChanges, context, VisibleAttributes );
+                        Rock.Attribute.Helper.LoadAttributes( detailChanges.ChildContentChannelItem, context, VisibleAttributes );
                         response.details[i].detailChanges.LoadAttributesAndValuesForPublicEdit( detailChanges.ChildContentChannelItem, RequestContext.CurrentPerson, false );
                     }
                 }
@@ -232,11 +233,30 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
         /// <param name="section">The service</param>
         /// <returns></returns>
         [BlockAction]
-        public BlockActionResult ChangeSectionStatus( string id, string status, string section )
+        public BlockActionResult ChangeSectionStatus( string id, string statusKey, string value )
         {
             try
             {
-                return ActionOk();
+                GetRequestResponse response = new GetRequestResponse();
+                RockContext context = new RockContext();
+                SetProperties();
+                List<string> categories = EditCategories.Select( c => c.Name ).ToList();
+                var editableStatuses = SectionMappings.Where( si => categories.Contains( si.category ) ).Select( si => si.status ).ToList();
+                if ( !editableStatuses.Contains( statusKey ) )
+                {
+                    throw new UnauthorizedAccessException( "You are not able to make changes to that support service." );
+                }
+                var item = new ContentChannelItemService( context ).Get( id );
+                item.LoadAttributes();
+                item.SetAttributeValue( statusKey, value );
+                item.SaveAttributeValue( statusKey );
+                var section = SectionMappings.FirstOrDefault( si => si.status == statusKey );
+                string message = item.Title + " was updated";
+                if ( section != null )
+                {
+                    message = section.section + " " + item.AttributeValues[statusKey].ValueFormatted + " for " + item.Title;
+                }
+                return ActionOk( message );
             }
             catch ( Exception ex )
             {
@@ -351,8 +371,10 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
             //Only include items that match the desired status of the service
             if ( option == SSPDashboardOption.PendingConfirmation )
             {
-                var notPendingService = av_svc.Queryable().Where( av => serviceStatusAttrIds.Contains( av.AttributeId ) && av.Value != "0" ).Select( av => av.EntityId ).Distinct();
-                items = items.Where( i => !notPendingService.Contains( i.Id ) );
+                //This strategy will only pull up newly edited requests that have the specific attribute values
+                //Doing the opposite pulls things from pending when not all of a SSPs services have been confirmed
+                var pendingService = av_svc.Queryable().Where( av => serviceStatusAttrIds.Contains( av.AttributeId ) && av.Value == "0" ).Select( av => av.EntityId ).Distinct();
+                items = items.Where( i => pendingService.Contains( i.Id ) );
             }
             else if ( option != SSPDashboardOption.All )
             {
@@ -375,7 +397,7 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
             }
 
             //Only include requests that match the event has date in range filter
-            if ( eventDateRange != null && !String.IsNullOrEmpty( eventDateRange.lowerValue ) || !String.IsNullOrEmpty( eventDateRange.upperValue ) )
+            if ( eventDateRange != null && ( !String.IsNullOrEmpty( eventDateRange.lowerValue ) || !String.IsNullOrEmpty( eventDateRange.upperValue ) ) )
             {
                 DateTime? lowerValue = null;
                 DateTime? upperValue = null;
@@ -448,74 +470,74 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
             return events;
         }
 
-        /// <summary>
-        /// Load Event Requests that match the desired status of the Support Service
-        /// </summary>
-        /// <returns></returns>
-        protected List<ContentChannelItemBag> LoadByStatus( List<string> statuses, SSPDashboardOption option )
-        {
-            SetProperties();
-            RockContext context = new RockContext();
-            IEnumerable<ContentChannelItem> items = null;
-            AttributeValueService av_svc = new AttributeValueService( context );
+        ///// <summary>
+        ///// Load Event Requests that match the desired status of the Support Service
+        ///// </summary>
+        ///// <returns></returns>
+        //protected List<ContentChannelItemBag> LoadByStatus( List<string> statuses, SSPDashboardOption option )
+        //{
+        //    SetProperties();
+        //    RockContext context = new RockContext();
+        //    IEnumerable<ContentChannelItem> items = null;
+        //    AttributeValueService av_svc = new AttributeValueService( context );
 
-            // Limit requests only to ones that are requesting the service of relevance to the provider
-            List<string> categories = EditCategories.Select( c => c.Name ).ToList();
-            var map = SectionMappings.Where( sm => categories.Contains( sm.category ) && sm.status != null && sm.attr != null ).ToList();
-            var serviceAttrKeys = map.Select( sm => sm.attr ).ToList();
-            var serviceStatusAttrKeys = map.Select( sm => sm.status ).ToList();
+        //    // Limit requests only to ones that are requesting the service of relevance to the provider
+        //    List<string> categories = EditCategories.Select( c => c.Name ).ToList();
+        //    var map = SectionMappings.Where( sm => categories.Contains( sm.category ) && sm.status != null && sm.attr != null ).ToList();
+        //    var serviceAttrKeys = map.Select( sm => sm.attr ).ToList();
+        //    var serviceStatusAttrKeys = map.Select( sm => sm.status ).ToList();
 
-            //Load all attributes to find specific attributes based on keys
-            items = new ContentChannelItemService( context ).Queryable().Where( cci => cci.ContentChannelId == EventContentChannelId );
-            ContentChannelItem item = items.First();
-            item.LoadAttributes();
+        //    //Load all attributes to find specific attributes based on keys
+        //    items = new ContentChannelItemService( context ).Queryable().Where( cci => cci.ContentChannelId == EventContentChannelId );
+        //    ContentChannelItem item = items.First();
+        //    item.LoadAttributes();
 
-            AttributeCache requestStatusAttr = item.Attributes.FirstOrDefault( attr => attr.Key == "RequestStatus" ).Value;
-            List<AttributeCache> serviceAttrs = item.Attributes.Where( attr => serviceAttrKeys.Contains( attr.Key ) ).Select( kvp => kvp.Value ).ToList();
-            List<AttributeCache> serviceStatusAttrs = item.Attributes.Where( attr => serviceStatusAttrKeys.Contains( attr.Key ) ).Select( kvp => kvp.Value ).ToList();
-            List<int> serviceAttrIds = serviceAttrs.Select( ac => ac.Id ).ToList();
-            List<int> serviceStatusAttrIds = serviceStatusAttrs.Select( ac => ac.Id ).ToList();
+        //    AttributeCache requestStatusAttr = item.Attributes.FirstOrDefault( attr => attr.Key == "RequestStatus" ).Value;
+        //    List<AttributeCache> serviceAttrs = item.Attributes.Where( attr => serviceAttrKeys.Contains( attr.Key ) ).Select( kvp => kvp.Value ).ToList();
+        //    List<AttributeCache> serviceStatusAttrs = item.Attributes.Where( attr => serviceStatusAttrKeys.Contains( attr.Key ) ).Select( kvp => kvp.Value ).ToList();
+        //    List<int> serviceAttrIds = serviceAttrs.Select( ac => ac.Id ).ToList();
+        //    List<int> serviceStatusAttrIds = serviceStatusAttrs.Select( ac => ac.Id ).ToList();
 
 
-            //Only include requests that have been vetted by Event Request Admin
-            items = FilterByStringMatch( context, items, requestStatusAttr, statuses );
+        //    //Only include requests that have been vetted by Event Request Admin
+        //    items = FilterByStringMatch( context, items, requestStatusAttr, statuses );
 
-            //Include items with any of the matching services requested
-            var requestedServices = av_svc.Queryable().Where( av => serviceAttrIds.Contains( av.AttributeId ) && av.ValueAsBoolean == true ).Select( av => av.EntityId ).Distinct();
-            items = items.Join( requestedServices,
-                    i => i.Id,
-                    av => av,
-                    ( i, av ) => i
-                );
+        //    //Include items with any of the matching services requested
+        //    var requestedServices = av_svc.Queryable().Where( av => serviceAttrIds.Contains( av.AttributeId ) && av.ValueAsBoolean == true ).Select( av => av.EntityId ).Distinct();
+        //    items = items.Join( requestedServices,
+        //            i => i.Id,
+        //            av => av,
+        //            ( i, av ) => i
+        //        );
 
-            //Only include items that match the desired statusof the service
-            if ( option == SSPDashboardOption.PendingConfirmation )
-            {
-                var notPendingService = av_svc.Queryable().Where( av => serviceStatusAttrIds.Contains( av.AttributeId ) && av.Value != "0" ).Select( av => av.EntityId ).Distinct();
-                items = items.Where( i => !notPendingService.Contains( i.Id ) );
-            }
-            else
-            {
-                string sspStatusValue = option.ToString();
-                var matchSSPStatus = av_svc.Queryable().Where( av => serviceStatusAttrIds.Contains( av.AttributeId ) && av.Value == sspStatusValue ).Select( av => av.EntityId ).Distinct();
-                items = items.Where( i => matchSSPStatus.Contains( i.Id ) );
-            }
+        //    //Only include items that match the desired statusof the service
+        //    if ( option == SSPDashboardOption.PendingConfirmation )
+        //    {
+        //        var pendingService = av_svc.Queryable().Where( av => serviceStatusAttrIds.Contains( av.AttributeId ) && av.Value == "0" ).Select( av => av.EntityId ).Distinct();
+        //        items = items.Where( i => pendingService.Contains( i.Id ) );
+        //    }
+        //    else
+        //    {
+        //        string sspStatusValue = option.ToString();
+        //        var matchSSPStatus = av_svc.Queryable().Where( av => serviceStatusAttrIds.Contains( av.AttributeId ) && av.Value == sspStatusValue ).Select( av => av.EntityId ).Distinct();
+        //        items = items.Where( i => matchSSPStatus.Contains( i.Id ) );
+        //    }
 
-            var events = items.Distinct().AsEnumerable().OrderByDescending( i => i.ModifiedDateTime ).Select( cci =>
-            {
-                var bag = PluginHelper.GetCommonContentChannelItemEntityBag( cci );
-                bag.CreatedBy = cci.CreatedByPersonName;
-                bag.ModifiedBy = cci.ModifiedByPersonName;
-                bag.Id = cci.Id;
+        //    var events = items.Distinct().AsEnumerable().OrderByDescending( i => i.ModifiedDateTime ).Select( cci =>
+        //    {
+        //        var bag = PluginHelper.GetCommonContentChannelItemEntityBag( cci );
+        //        bag.CreatedBy = cci.CreatedByPersonName;
+        //        bag.ModifiedBy = cci.ModifiedByPersonName;
+        //        bag.Id = cci.Id;
 
-                //Only Load Attributes Visible to the Provider
-                Rock.Attribute.Helper.LoadAttributes( cci, context, VisibleAttributes );
-                bag.LoadAttributesAndValuesForPublicView( cci, RequestContext.CurrentPerson );
-                return bag;
-            } ).ToList();
+        //        //Only Load Attributes Visible to the Provider
+        //        Rock.Attribute.Helper.LoadAttributes( cci, context, VisibleAttributes );
+        //        bag.LoadAttributesAndValuesForPublicView( cci, RequestContext.CurrentPerson );
+        //        return bag;
+        //    } ).ToList();
 
-            return events;
-        }
+        //    return events;
+        //}
 
         private IEnumerable<ContentChannelItem> FilterByStringMatch( RockContext context, IEnumerable<ContentChannelItem> items, AttributeCache attr, List<string> values )
         {
@@ -725,6 +747,10 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
             /// </summary>
             public string category { get; set; }
             /// <summary>
+            /// The friendly name of the section
+            /// </summary>
+            public string section { get; set; }
+            /// <summary>
             /// The Event Request Attribute that indicates the current status (Needs Confirmation/Approval, Confirmed/Approved, or Denied) of that service
             /// </summary>
             public string status { get; set; }
@@ -742,19 +768,89 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
             get
             {
                 var map = new List<SectionMap>();
-                map.Add( new SectionMap() { category = "Event" } );
-                map.Add( new SectionMap() { attr = "NeedsSpace", category = "Event Space", type = "Room" } );
-                map.Add( new SectionMap() { attr = "NeedsOnline", category = "Event Online", type = "Online Event" } );
-                map.Add( new SectionMap() { attr = "NeedsCatering", category = "Event Catering", type = "Catering" } );
-                map.Add( new SectionMap() { attr = "NeedsChildCare", category = "Event Childcare", status = "ChildcareStatus", type = "Childcare" } );
-                map.Add( new SectionMap() { attr = "NeedsChildCareCatering", category = "Event Childcare Catering", status = "ChildcareCateringStatus", type = "Childcare Catering" } );
-                map.Add( new SectionMap() { attr = "NeedsChildCare", category = "Event Childcare Registration", status = "ChildcareRegistrationStatus" } );
-                map.Add( new SectionMap() { attr = "NeedsOpsAccommodations", category = "Event Ops Requests", type = "Extra Resources" } );
-                map.Add( new SectionMap() { attr = "NeedsRegistration", category = "Event Registration", status = "RegistrationStatus", type = "Registration" } );
-                map.Add( new SectionMap() { attr = "NeedsPublicity", category = "Event Publicity", type = "Publicity" } );
-                map.Add( new SectionMap() { attr = "NeedsProductionAccommodations", category = "Event Production", type = "Production" } );
-                map.Add( new SectionMap() { attr = "NeedsWorship", category = "Event Worship", type = "Worship" } );
-                map.Add( new SectionMap() { attr = "NeedsWebCalendar", category = "Event Calendar", type = "Web Calendar" } );
+                map.Add( new SectionMap() { category = "Event", section = "Time" } );
+                map.Add( new SectionMap() { attr = "NeedsSpace", category = "Event Space", section = "Space", type = "Room" } );
+                map.Add( new SectionMap() { attr = "NeedsOnline", category = "Event Online", section = "Online", type = "Online Event" } );
+                map.Add( new SectionMap()
+                {
+                    attr = "NeedsCatering",
+                    category = "Event Catering",
+                    section = "Catering",
+                    type = "Catering",
+                    status = "CateringStatus"
+                } );
+                map.Add( new SectionMap()
+                {
+                    attr = "NeedsChildCare",
+                    category = "Event Childcare",
+                    section = "Childcare",
+                    type = "Childcare",
+                    status = "ChildcareStatus"
+                } );
+                map.Add( new SectionMap()
+                {
+                    attr = "NeedsChildCareCatering",
+                    category = "Event Childcare Catering",
+                    section = "Childcare Catering",
+                    type = "Childcare Catering",
+                    status = "ChildcareCateringStatus"
+                } );
+                map.Add( new SectionMap()
+                {
+                    attr = "NeedsChildCare",
+                    category = "Event Childcare Registration",
+                    section = "Childcare Registration",
+                    type = "Childcare",
+                    status = "ChildcareRegistrationStatus"
+                } );
+                map.Add( new SectionMap()
+                {
+                    attr = "NeedsOpsAccommodations",
+                    category = "Event Ops Requests",
+                    section = "Ops",
+                    type = "Extra Resources",
+                    status = "DailyOPSStatus"
+                } );
+                map.Add( new SectionMap()
+                {
+                    attr = "NeedsRegistration",
+                    category = "Event Registration",
+                    section = "Registration",
+                    type = "Registration",
+                    status = "DatabaseStatus"
+                } );
+                map.Add( new SectionMap()
+                {
+                    attr = "NeedsPublicity",
+                    category = "Event Publicity",
+                    section = "Publicity",
+                    type = "Publicity",
+                    status = "PublicityStatus"
+                } );
+                map.Add( new SectionMap()
+                {
+                    attr = "NeedsProductionAccommodations",
+                    category = "Event Production",
+                    section = "Production",
+                    type = "Production",
+                    status = "ProductionStatus"
+                } );
+                map.Add( new SectionMap()
+                {
+                    attr = "NeedsWorship",
+                    category = "Event Worship",
+                    section = "Worship",
+                    type = "Worship",
+                    status = "WorshipStatus"
+                } );
+                map.Add( new SectionMap()
+                {
+                    attr = "NeedsWebCalendar",
+                    category = "Event Calendar",
+                    section = "Calendar",
+                    type = "Web Calendar",
+                    status = "PublicityStatus"
+                } );
                 return map;
             }
         }
@@ -768,6 +864,7 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
             public PersonBag createdBy { get; set; }
             public PersonBag modifiedBy { get; set; }
         }
+
         public class Comment
         {
             public ContentChannelItemBag comment { get; set; }
