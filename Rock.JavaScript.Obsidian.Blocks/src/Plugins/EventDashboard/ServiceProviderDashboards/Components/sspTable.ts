@@ -291,7 +291,7 @@ export default defineComponent({
       visiblePriority="md"
     >
       <template #format="{ row }">
-        {{ row.attributeValues.RequestType.replaceAll(',', ', ') }}
+        {{ row.attributeValues.RequestType?.replaceAll(',', ', ') }}
       </template>
     </rck-col>
     <rck-col
