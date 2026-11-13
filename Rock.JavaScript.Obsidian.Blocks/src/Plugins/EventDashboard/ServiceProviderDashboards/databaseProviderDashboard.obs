@@ -515,7 +515,7 @@ export default defineComponent({
     v-on:openrequest="selectItem"
   ></tcc-details>
   <template v-if="commentModal || (selected.comments && selected.comments.length > 0)">
-    <tcc-comments :comments="selected.comments" v-model="commentModal" v-on:createComment="createComment"></tcc-comments>
+    <tcc-comments role="SSP" :comments="selected.comments" :request="selected" v-model="commentModal" v-on:createComment="createComment"></tcc-comments>
   </template>
   <template #customButtons>
     <div class="d-flex modal-button-wrapper w-100">
