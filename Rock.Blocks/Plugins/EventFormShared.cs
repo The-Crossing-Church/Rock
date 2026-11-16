@@ -4,6 +4,7 @@ using System.Linq;
 
 using Newtonsoft.Json;
 
+using Rock.Communication;
 using Rock.Data;
 using Rock.Model;
 using Rock.Web.Cache;
@@ -627,6 +628,98 @@ namespace Rock.Blocks.Plugins.EventForm
             }
 
             return auth;
+        }
+
+        /// <summary>
+        /// Method to get the Ministry Event Admins for a given Event Request
+        /// </summary>
+        /// <param name="item">The Event Request</param>
+        /// <param name="sharedWithAttrKey">Sharing Attribute Key</param>
+        /// <param name="sharedRequestGroupTypeGuid">Sharing Group Type</param>
+        /// <returns></returns>
+        public List<Person> GetRequestUsers( ContentChannelItem item, string sharedWithAttrKey, Guid? sharedRequestGroupTypeGuid )
+        {
+            List<Person> users = new List<Person>();
+            RockContext context = new RockContext();
+            PersonService p_svc = new PersonService( context );
+            var sharedWithAttr = item.GetAttributeValue( sharedWithAttrKey );
+            Guid? requestMinistry = item.GetAttributeValue( "Ministry" ).AsGuidOrNull();
+            if ( sharedRequestGroupTypeGuid.HasValue )
+            {
+                //Shared requests are configured, find any for the current user.
+                var SharedRequestGT = new GroupTypeService( context ).Get( sharedRequestGroupTypeGuid.Value );
+                var groups = new GroupService( context ).Queryable().Where( g => g.GroupTypeId == SharedRequestGT.Id );
+                var groupMembers = new GroupMemberService( context ).Queryable().Where( gm => gm.PersonId == item.CreatedByPersonId && gm.GroupRole.Name == "Request Creator" );
+                groups = from g in groups
+                         join gm in groupMembers on g.Id equals gm.GroupId
+                         select g;
+                var grpList = groups.ToList();
+                for ( int k = 0; k < grpList.Count(); k++ )
+                {
+                    var additionalEditors = grpList[k].Members.Where( gm => gm.GroupRole.Name == "Can Edit" ).ToList();
+                    additionalEditors.LoadAttributes();
+                    for ( int j = 0; j < additionalEditors.Count(); j++ )
+                    {
+                        List<Guid?> limitedToMinistryGuid = additionalEditors[j].GetAttributeValue( "Ministry" ).Split( ',' ).AsGuidOrNullList().Where( g => g.HasValue ).ToList();
+                        if ( limitedToMinistryGuid.Any() )
+                        {
+                            if ( limitedToMinistryGuid.Contains( requestMinistry.Value ) )
+                            {
+                                users.Add( additionalEditors[j].Person );
+                            }
+                        }
+                        else
+                        {
+                            users.Add( additionalEditors[j].Person );
+                        }
+                    }
+                }
+            }
+            List<int?> sharedRequests = new List<int?>();
+            if ( !String.IsNullOrEmpty( sharedWithAttr ) )
+            {
+                List<int> ids = sharedWithAttr.Split( ',' ).Select( i =>
+                {
+                    if ( !String.IsNullOrEmpty( i ) )
+                    {
+                        int id;
+                        if ( Int32.TryParse( i, out id ) )
+                        {
+                            return id;
+                        }
+                    }
+                    return 0;
+                } ).ToList();
+                for ( int k = 0; k < ids.Count(); k++ )
+                {
+                    if ( ids[k] > 0 )
+                    {
+                        users.Add( p_svc.Get( ids[k] ) );
+                    }
+                }
+            }
+            users.Add( item.CreatedByPersonAlias.Person );
+            users = users.Distinct().ToList();
+            return users;
+        }
+
+        /// <summary>
+        /// Methos to get the OPS Event Directors
+        /// </summary>
+        /// <param name="eventAdminRole">The block attribute value for the security role</param>
+        /// <returns></returns>
+        public List<Person> GetAdminUsers( string eventAdminRole )
+        {
+            List<Person> users = new List<Person>();
+            RockContext context = new RockContext();
+            Guid securityRoleGuid = Guid.Empty;
+            if ( Guid.TryParse( eventAdminRole, out securityRoleGuid ) )
+            {
+                Rock.Model.Group securityRole = new GroupService( context ).Get( securityRoleGuid );
+                users.AddRange( securityRole.Members.Select( gm => gm.Person ) );
+            }
+            users = users.Distinct().ToList();
+            return users;
         }
     }
 
