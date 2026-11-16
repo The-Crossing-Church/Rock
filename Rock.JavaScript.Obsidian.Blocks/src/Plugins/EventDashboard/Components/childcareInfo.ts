@@ -10,6 +10,7 @@ export default defineComponent({
       details: Object,
       needsCatering: Boolean,
       requestValidation: Object,
+      editSections: Array,
       index: Number
     },
     setup() {
