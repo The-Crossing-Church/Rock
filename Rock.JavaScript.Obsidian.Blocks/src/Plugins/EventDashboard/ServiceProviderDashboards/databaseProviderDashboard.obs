@@ -73,6 +73,15 @@ export default defineComponent({
     };
     provide("updateSupportStatus", updateSupportStatus);
 
+    /** A method to update a request's support service status */
+    const addComment: (id: string | null | undefined, message: string | null | undefined, tags: string[] | null) => Promise<any> = async (id, message, tags) => {
+      const response = await invokeBlockAction("AddComment", {
+        id: id, message: message, tags: tags
+      });
+      return response
+    };
+    provide("addComment", addComment);
+
     /** A method to update a request's registration status to confirmed */
     const approveRegistration: (id: string | null | undefined) => Promise<any> = async (id) => {
         const response = await invokeBlockAction("ApproveRegistration", {
@@ -112,7 +121,8 @@ export default defineComponent({
       defaultFilters,
       updateSupportStatus,
       approveRegistration,
-      approveCCRegistration
+      approveCCRegistration,
+      addComment
     }
   },
   data() {
@@ -311,6 +321,32 @@ export default defineComponent({
     newComment() {
       this.comment = ""
       this.commentModal = true
+    },
+    createComment(comment: string, tags: string[]) {
+      let el = document.getElementById('updateProgress')
+      if(el) {
+        el.style.display = 'block'
+      }
+      this.addComment(this.selected.idKey, comment, tags).then((res: any) => {
+        if(res.isSuccess) {
+          if(res.data?.comment) {
+            let req = this.selected as any
+            req.comments.push(res.data)
+          }
+        } else if (res.isError) {
+          this.toast = {
+            message: res.errorMessage,
+            class: "show",
+            title: "System Exception",
+            titleClass: "toast-header text-red",
+            iconClass: "fas fa-exclamation-triangle mr-1" 
+          }
+        }
+      }).finally(() => {
+        if(el) {
+          el.style.display = 'none'
+        }
+      })
     },
     updateSupportService(statusKey: string, value: string) {
       if(this.selected) {

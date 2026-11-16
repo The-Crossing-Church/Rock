@@ -52,7 +52,11 @@ export default defineComponent({
     tagOptions() {
       let options = [] as any[]
       if(this.role != "Ministry") {
-        options.push({ text: "The Ministry Event Admin", value: "Ministry" })
+        if(this.request?.createdBy) {
+          options.push({ text: this.request.createdBy, value: "Ministry" })
+        } else {
+          options.push({ text: "The Ministry Event Admin", value: "Ministry" })
+        }
       } 
       if (this.role != "Admin") {
         options.push({ text: "The OPS Events Director", value: "Admin" })
@@ -80,7 +84,9 @@ export default defineComponent({
     },
     notificationPreview() {
       let previewText = ""
-      if (this.tags.length < 3) {
+      if(this.tags.length == 0) {
+        previewText = "No one"
+      } else if (this.tags.length < 3) {
         previewText = this.tagOptions.filter(opt => this.tags.includes(opt.value)).map(opt => opt.text).join(" and ")
       } else {
         previewText = this.tagOptions.filter(opt => this.tags.includes(opt.value)).map(opt => opt.text).join(", ").replace(/, (?!.*, )/, ", and ")
@@ -106,7 +112,7 @@ export default defineComponent({
       }
     },
     createComment() {
-      this.$emit('createComment', this.comment)
+      this.$emit('createComment', this.comment, this.tags)
     },
     toggleNewComment(val) {
       if(val) {
