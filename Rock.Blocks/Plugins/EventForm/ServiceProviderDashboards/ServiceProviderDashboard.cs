@@ -1,13 +1,19 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
+using System.Threading.Tasks;
+
+using DocumentFormat.OpenXml.Spreadsheet;
 
 using Rock.Attribute;
+using Rock.Blocks.Plugins.EventForm;
+using Rock.Blocks.Plugins.ViewModels;
+using Rock.Communication;
 using Rock.Data;
 using Rock.Model;
 using Rock.Web.Cache;
-using Rock.Blocks.Plugins.EventForm;
-using Rock.Blocks.Plugins.ViewModels;
 
 namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
 {
@@ -23,9 +29,26 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
     [SecurityRoleField( "Room Request Admin", key: AttributeKeyBase.RoomAdminRole, category: "Security", required: true, order: 2 )]
     [CategoryField( "Editable Cateogires", key: AttributeKeyBase.EditCategories, allowMultiple: true, entityTypeName: "Rock.Model.Attribute", entityTypeQualifierColumn: "EntityTypeId", entityTypeQualifierValue: "208", category: "Security", required: true, order: 3 )]
     [CategoryField( "Read Only Cateogires", key: AttributeKeyBase.ViewCategories, allowMultiple: true, entityTypeName: "Rock.Model.Attribute", entityTypeQualifierColumn: "EntityTypeId", entityTypeQualifierValue: "208", category: "Security", required: true, order: 4 )]
+    [SecurityRoleField( "Catering SSP Role", key: AttributeKeyBase.CateringSSPRole, category: "Security", required: true, order: 5 )]
+    [SecurityRoleField( "Childcare SSP Role", key: AttributeKeyBase.ChildcareSSPRole, category: "Security", required: true, order: 6 )]
+    [SecurityRoleField( "Database SSP Role", key: AttributeKeyBase.DatabaseSSPRole, category: "Security", required: true, order: 7 )]
+    [SecurityRoleField( "Daily OPS SSP Role", key: AttributeKeyBase.OpsSSPRole, category: "Security", required: true, order: 8 )]
+    [SecurityRoleField( "Publicity SSP Role", key: AttributeKeyBase.PublicitySSPRole, category: "Security", required: true, order: 9 )]
+    [SecurityRoleField( "Production SSP Role", key: AttributeKeyBase.ProductionSSPRole, category: "Security", required: true, order: 10 )]
+    [SecurityRoleField( "Worship SSP Role", key: AttributeKeyBase.WorshipSSPRole, category: "Security", required: true, order: 11 )]
 
     [GroupTypeField( "Shared Event Group Type", "Group Type of groups that allow for seeing shared requests", false, "", "Sharing", 0, AttributeKeyBase.SharingGroupType )]
     [TextField( "Shared With Attribut Key", category: "Sharing", order: 1, key: AttributeKeyBase.SharedWithAttrKey )]
+
+    [LinkedPage( "User Dashboard", key: AttributeKeyBase.UserDashboardPage, category: "Pages", required: true, order: 0 )]
+    [LinkedPage( "Admin Dashboard", key: AttributeKeyBase.AdminDashboardPage, category: "Pages", required: true, order: 1 )]
+    [LinkedPage( "Catering SSP Dashboard", key: AttributeKeyBase.CateringSSPDashboardPage, category: "Pages", required: true, order: 2 )]
+    [LinkedPage( "Childcare SSP Dashboard", key: AttributeKeyBase.ChildcareSSPDashboardPage, category: "Pages", required: true, order: 3 )]
+    [LinkedPage( "Database SSP Dashboard", key: AttributeKeyBase.DatabaseSSPDashboardPage, category: "Pages", required: true, order: 4 )]
+    [LinkedPage( "Daily OPS SSP Dashboard", key: AttributeKeyBase.OpsSSPDashboardPage, category: "Pages", required: true, order: 5 )]
+    [LinkedPage( "Publicity SSP Dashboard", key: AttributeKeyBase.PublicitySSPDashboardPage, category: "Pages", required: true, order: 6 )]
+    [LinkedPage( "Production SSP Dashboard", key: AttributeKeyBase.ProductionSSPDashboardPage, category: "Pages", required: true, order: 7 )]
+    [LinkedPage( "Worship SSP Dashboard", key: AttributeKeyBase.WorshipSSPDashboardPage, category: "Pages", required: true, order: 8 )]
     #endregion
     public abstract class ServiceProviderDashboard : RockBlockType
     {
@@ -50,9 +73,26 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
             public const string RoomAdminRole = "RoomAdminRole";
             public const string EditCategories = "EditCategories";
             public const string ViewCategories = "ViewCategories";
+            public const string CateringSSPRole = "CateringSSPRole";
+            public const string ChildcareSSPRole = "ChildcareSSPRole";
+            public const string DatabaseSSPRole = "DatabaseSSPRole";
+            public const string OpsSSPRole = "OpsSSPRole";
+            public const string PublicitySSPRole = "PublicitySSPRole";
+            public const string ProductionSSPRole = "ProductionSSPRole";
+            public const string WorshipSSPRole = "WorshipSSPRole";
 
             public const string SharingGroupType = "SharingGroupType";
             public const string SharedWithAttrKey = "SharedWithAttrKey";
+
+            public const string UserDashboardPage = "UserDashboardPage";
+            public const string AdminDashboardPage = "AdminDashboardPage";
+            public const string CateringSSPDashboardPage = "CateringSSPDashboardPage";
+            public const string ChildcareSSPDashboardPage = "ChildcareSSPDashboardPage";
+            public const string DatabaseSSPDashboardPage = "DatabaseSSPDashboardPage";
+            public const string OpsSSPDashboardPage = "OpsSSPDashboardPage";
+            public const string PublicitySSPDashboardPage = "PublicitySSPDashboardPage";
+            public const string ProductionSSPDashboardPage = "ProductionSSPDashboardPage";
+            public const string WorshipSSPDashboardPage = "WorshipSSPDashboardPage";
         }
 
         /// <summary>
@@ -78,6 +118,7 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
         protected List<Category> EditCategories { get; set; }
         protected List<Category> ViewCategories { get; set; }
         protected List<AttributeCache> VisibleAttributes { get; set; }
+        private List<RoleMap> RoleMappings { get; set; }
         #endregion
 
         #region Obsidian Block Type Overrides
@@ -263,6 +304,75 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
                 return ActionBadRequest( ex.Message );
             }
         }
+
+        /// <summary>
+        /// Add a comment to a request
+        /// </summary>
+        /// <param name="id">The request</param>
+        /// <param name="message">The comment to add</param>
+        /// <param name="tags">Parties to notify</param>
+        /// <returns></returns>
+        [BlockAction]
+        public BlockActionResult AddComment( string id, string message, List<string> tags )
+        {
+            try
+            {
+                RockContext rockContext = new RockContext();
+                SetProperties();
+                Person p = GetCurrentPerson();
+                ContentChannelItemService cci_svc = new ContentChannelItemService( rockContext );
+                ContentChannelItem request = cci_svc.Get( id );
+                ContentChannel commentChannel = new ContentChannelService( rockContext ).Get( EventCommentsContentChannelId );
+                ContentChannelItem comment = new ContentChannelItem()
+                {
+                    ContentChannelId = EventCommentsContentChannelId,
+                    ContentChannelTypeId = commentChannel.ContentChannelTypeId,
+                    Title = "Comment From " + p.FullName + " for " + request.Title + " on " + RockDateTime.Now.ToString( "M/d/yy h:mm tt" ),
+                    Content = message,
+                    CreatedByPersonAliasId = p.PrimaryAliasId,
+                    ModifiedByPersonAliasId = p.PrimaryAliasId,
+                    CreatedDateTime = RockDateTime.Now,
+                    ModifiedDateTime = RockDateTime.Now
+                };
+                cci_svc.Add( comment );
+                rockContext.SaveChanges(); //Disable Pre/Post Save
+
+                //We want the request to move to the top of the stack when a note is added
+                request.ModifiedDateTime = RockDateTime.Now;
+
+                //Add association between comment and request
+                var assocSvc = new ContentChannelItemAssociationService( rockContext );
+                var order = assocSvc.Queryable().AsNoTracking()
+                    .Where( a => a.ContentChannelItemId == request.Id )
+                    .Select( a => ( int? ) a.Order )
+                    .DefaultIfEmpty()
+                    .Max();
+                var assoc = new ContentChannelItemAssociation();
+                assoc.ContentChannelItemId = request.Id;
+                assoc.ChildContentChannelItemId = comment.Id;
+                assoc.Order = order.HasValue ? order.Value + 1 : 0;
+                assocSvc.Add( assoc );
+
+                rockContext.SaveChanges();
+
+                ConcurrentBag<Task> taskBag = new ConcurrentBag<Task>();
+                Task task = new Task( () =>
+                {
+                    CommentNotifications( comment, request, tags );
+                } );
+                taskBag.Add( task );
+                task.Start();
+
+                var bag = PluginHelper.GetCommonContentChannelItemEntityBag( comment );
+                return ActionOk( new { createdBy = p.FullName, comment = bag } );
+
+            }
+            catch ( Exception ex )
+            {
+                ExceptionLogService.LogException( ex );
+                return ActionBadRequest( ex.Message );
+            }
+        }
         #endregion
 
         #region Helpers
@@ -373,8 +483,14 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
             {
                 //This strategy will only pull up newly edited requests that have the specific attribute values
                 //Doing the opposite pulls things from pending when not all of a SSPs services have been confirmed
-                var pendingService = av_svc.Queryable().Where( av => serviceStatusAttrIds.Contains( av.AttributeId ) && av.Value == "0" ).Select( av => av.EntityId ).Distinct();
-                items = items.Where( i => pendingService.Contains( i.Id ) );
+                var completedProcessing = av_svc.Queryable().Where( av => serviceStatusAttrIds.Contains( av.AttributeId ) && av.Value != "0" )
+                    .GroupBy( av => av.EntityId )
+                    .Where( grp => grp.Count() == serviceStatusAttrIds.Count )
+                    .Select( grp => grp.Key );
+                items = items.Where( i => !completedProcessing.Contains( i.Id ) );
+
+                //var pendingService = av_svc.Queryable().Where( av => serviceStatusAttrIds.Contains( av.AttributeId ) && av.Value == "0" ).Select( av => av.EntityId ).Distinct();
+                //items = items.Where( i => pendingService.Contains( i.Id ) );
             }
             else if ( option != SSPDashboardOption.All )
             {
@@ -672,6 +788,18 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
             }
 
             ministryAttr = request.Attributes.FirstOrDefault( attr => attr.Key == "Ministry" ).Value;
+
+            RoleMappings = new List<RoleMap>()
+            {
+                new RoleMap() { Tag = "Admin", PageAttributeKey = AttributeKeyBase.AdminDashboardPage, RoleAttributeKey = AttributeKeyBase.EventAdminRole },
+                new RoleMap() { Tag = "Catering", PageAttributeKey = AttributeKeyBase.CateringSSPDashboardPage, RoleAttributeKey = AttributeKeyBase.CateringSSPRole },
+                new RoleMap() { Tag = "Childcare", PageAttributeKey = AttributeKeyBase.ChildcareSSPDashboardPage, RoleAttributeKey = AttributeKeyBase.ChildcareSSPRole },
+                new RoleMap() { Tag = "Database", PageAttributeKey = AttributeKeyBase.DatabaseSSPDashboardPage, RoleAttributeKey = AttributeKeyBase.DatabaseSSPRole },
+                new RoleMap() { Tag = "OPS", PageAttributeKey = AttributeKeyBase.OpsSSPDashboardPage, RoleAttributeKey = AttributeKeyBase.OpsSSPRole },
+                new RoleMap() { Tag = "Publicity", PageAttributeKey = AttributeKeyBase.PublicitySSPDashboardPage, RoleAttributeKey = AttributeKeyBase.PublicitySSPRole },
+                new RoleMap() { Tag = "Production", PageAttributeKey = AttributeKeyBase.ProductionSSPDashboardPage, RoleAttributeKey = AttributeKeyBase.ProductionSSPRole },
+                new RoleMap() { Tag = "Worship", PageAttributeKey = AttributeKeyBase.WorshipSSPDashboardPage, RoleAttributeKey = AttributeKeyBase.WorshipSSPRole }
+            };
         }
 
         /// <summary>
@@ -711,6 +839,95 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
             }
             return hasRole;
         }
+
+        /// <summary>
+        /// Notify users of new comment
+        /// </summary>
+        /// <param name="comment">The comment that was added</param>
+        /// <param name="item">The request</param>
+        /// <param name="tags">Specific tags</param>
+        private void CommentNotifications( ContentChannelItem comment, ContentChannelItem item, List<string> tags )
+        {
+            RockContext context = new RockContext();
+            Person p = GetCurrentPerson();
+            GlobalAttributesCache attributesCache = GlobalAttributesCache.Get();
+            string url = "";
+            string subject = "";
+            string message = "";
+            Dictionary<string, string> queryParams = new Dictionary<string, string>();
+            string baseUrl = attributesCache.GetValue( "InternalApplicationRoot" );
+
+            var header = attributesCache.GetValue( "EmailHeader" );
+            var footer = attributesCache.GetValue( "EmailFooter" );
+            RockEmailMessage email = new RockEmailMessage();
+
+            //Add Recipients
+            if ( tags.Contains( "Ministry" ) )
+            {
+                //Notify the ministry about the comment
+                url = this.GetLinkedPageUrl( AttributeKeyBase.UserDashboardPage, queryParams );
+                subject = p.FullName + " Has Added a Comment to " + item.Title;
+                message = "<p>This comment has been added to your request, " + item.Title + "</p>" +
+                    "<blockquote>" + comment.Content + "</blockquote><br/>" +
+                    "<p style='width: 100%; text-align: center;'><a href = '" + baseUrl + url.Substring( 1 ) + "?Id=" + item.Id + "' style = 'background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;' > Open Request </a></p>" +
+                    "<p style='color: #347689; text-align: center; margin-top: 12px;'><i>Replies to this email will not be received. Open your event request to communicate with the Event Admin and Support Service Providers.</i></p>";
+                message = header + message + footer;
+
+                List<Person> users = EventFormHelper.GetRequestUsers( item, GetAttributeValue( AttributeKeyBase.SharedWithAttrKey ), GetAttributeValue( AttributeKeyBase.SharingGroupType ).AsGuidOrNull() ).Where( u => u.Id != p.Id ).ToList();
+
+                if ( users.Count() > 0 )
+                {
+                    SendNotification( subject, message, users );
+                }
+            }
+
+            //Admin or SSP Notifications
+            subject = p.FullName + " Has Added a Comment to " + item.Title;
+            foreach ( string tag in tags )
+            {
+                var roleDetails = RoleMappings.FirstOrDefault( rm => rm.Tag == tag );
+                if ( roleDetails != null )
+                {
+                    url = this.GetLinkedPageUrl( roleDetails.PageAttributeKey, queryParams );
+                    message = "<p>This comment has been added to " + p.FullName + "'s request, " + item.Title + "</p>" +
+                        "<blockquote>" + comment.Content + "</blockquote><br/>" +
+                        "<p style='width: 100%; text-align: center;'><a href = '" + baseUrl + url.Substring( 1 ) + "?Id=" + item.Id + "' style = 'background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;' > Open Request </a></p>";
+                    message += "<p style='color: #347689; text-align: center; margin-top: 12px;'><i>Replies to this email will not be received. Open your event request to communicate with the Event Admin and Support Service Providers.</i></p>";
+                    message = header + message + footer;
+
+                    List<Person> users = EventFormHelper.GetAdminUsers( GetAttributeValue( roleDetails.RoleAttributeKey ) ).Where( u => u.Id != p.Id ).ToList();
+                    users.Remove( p );
+
+                    if ( users.Count() > 0 )
+                    {
+                        SendNotification( subject, message, users );
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Method to build the communication and send it
+        /// </summary>
+        /// <param name="subject">Subject of Email</param>
+        /// <param name="message">Content of Email</param>
+        /// <param name="users">Recipients</param>
+        private void SendNotification( string subject, string message, List<Person> users )
+        {
+            RockEmailMessage email = new RockEmailMessage();
+            users = users.Distinct().ToList();
+            for ( int i = 0; i < users.Count(); i++ )
+            {
+                RockEmailMessageRecipient recipient = new RockEmailMessageRecipient( users[i], new Dictionary<string, object>() );
+                email.AddRecipient( recipient );
+            }
+            email.Subject = subject;
+            email.Message = message;
+            email.FromEmail = "system@thecrossingchurch.com";
+            email.FromName = "The Crossing System";
+            email.CreateCommunicationRecord = true;
+            var output = email.Send();
+        }
         #endregion
 
         #region Classes
@@ -734,6 +951,13 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
             Denied = 2,
             Cancelled = 3,
             All = 4
+        }
+
+        private class RoleMap
+        {
+            public string PageAttributeKey { get; set; }
+            public string RoleAttributeKey { get; set; }
+            public string Tag { get; set; }
         }
 
         private class SectionMap

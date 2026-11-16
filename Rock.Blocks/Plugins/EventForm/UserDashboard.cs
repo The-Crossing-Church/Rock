@@ -1604,29 +1604,6 @@ namespace Rock.Blocks.Plugins.EventDashboard
             }
         }
 
-        private ContentChannelItem FromViewModel( ContentChannelItem viewModel )
-        {
-            RockContext context = new RockContext();
-            Rock.Model.Person p = GetCurrentPerson();
-            ContentChannelItem item = new ContentChannelItem()
-            {
-                ContentChannelId = viewModel.ContentChannelId,
-                ContentChannelTypeId = viewModel.ContentChannelTypeId
-            };
-            if ( !String.IsNullOrEmpty( viewModel.IdKey ) )
-            {
-                item = new ContentChannelItemService( context ).Get( viewModel.IdKey );
-            }
-            item.LoadAttributes();
-            item.Title = viewModel.Title;
-            foreach ( KeyValuePair<string, AttributeValueCache> av in viewModel.AttributeValues )
-            {
-                item.SetPublicAttributeValue( av.Key, av.Value.Value, p, false );
-            }
-
-            return item;
-        }
-
         private void SetProperties()
         {
             RockContext rockContext = new RockContext();
@@ -1683,7 +1660,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
             var footer = attributesCache.GetValue( "EmailFooter" );
             message = header + message + footer;
             RockEmailMessage email = new RockEmailMessage();
-            var users = GetAdminUsers();
+            var users = EventFormShared.GetAdminUsers( GetAttributeValue( AttributeKey.EventAdminRole ) );
             users.Remove( p );
             for ( int i = 0; i < users.Count(); i++ )
             {
@@ -1716,7 +1693,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
             var footer = attributeCache.GetValue( "EmailFooter" ); //Email Footer 
             message = header + message + footer;
             RockEmailMessage email = new RockEmailMessage();
-            var users = GetAdminUsers();
+            var users = EventFormShared.GetAdminUsers( GetAttributeValue( AttributeKey.EventAdminRole ) );
             users.Remove( p );
             for ( int i = 0; i < users.Count(); i++ )
             {
@@ -1729,20 +1706,6 @@ namespace Rock.Blocks.Plugins.EventDashboard
             email.FromName = "The Crossing System";
             email.CreateCommunicationRecord = true;
             var output = email.Send();
-        }
-
-        private List<Person> GetAdminUsers()
-        {
-            List<Person> users = new List<Person>();
-            RockContext context = new RockContext();
-            Guid securityRoleGuid = Guid.Empty;
-            if ( Guid.TryParse( GetAttributeValue( AttributeKey.EventAdminRole ), out securityRoleGuid ) )
-            {
-                Rock.Model.Group securityRole = new GroupService( context ).Get( securityRoleGuid );
-                users.AddRange( securityRole.Members.Select( gm => gm.Person ) );
-            }
-            users = users.Distinct().ToList();
-            return users;
         }
 
         #endregion Helpers
