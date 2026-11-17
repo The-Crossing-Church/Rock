@@ -5,12 +5,12 @@ using System.Data.Entity;
 using System.Linq;
 
 using Rock.Attribute;
-using Rock.Blocks.Plugins.ViewModels;
 using Rock.Communication;
 using Rock.Data;
 using Rock.Model;
 using Rock.SystemGuid;
 using Rock.Web.Cache;
+using Rock.Blocks.Plugins.ViewModels;
 
 namespace Rock.Blocks.Plugins.EventForm
 {
@@ -39,13 +39,27 @@ namespace Rock.Blocks.Plugins.EventForm
     [DefinedTypeField( "Ops Inventory Defined Type", key: AttributeKey.InventoryList, category: "Lists", required: true, order: 3 )]
     [DefinedTypeField( "Preferred Vendors Defined Type", key: AttributeKey.VendorList, category: "Lists", required: true, order: 4 )]
 
-    [LinkedPage( "Event Submission Form", key: AttributeKey.SubmissionPage, category: "Pages", required: true, order: 0 )]
-    [LinkedPage( "Admin Dashboard", key: AttributeKey.AdminDashboard, category: "Pages", required: true, order: 1 )]
-    [LinkedPage( "User Dashboard", key: AttributeKey.UserDashboard, category: "Pages", required: true, order: 2 )]
+    [LinkedPage( "Admin Dashboard", key: AttributeKey.AdminDashboard, category: "Pages", required: true, order: 0 )]
+    [LinkedPage( "User Dashboard", key: AttributeKey.UserDashboard, category: "Pages", required: true, order: 1 )]
+    [LinkedPage( "Catering SSP Dashboard", key: AttributeKey.CateringSSPDashboardPage, category: "Pages", required: true, order: 2 )]
+    [LinkedPage( "Childcare SSP Dashboard", key: AttributeKey.ChildcareSSPDashboardPage, category: "Pages", required: true, order: 3 )]
+    [LinkedPage( "Database SSP Dashboard", key: AttributeKey.DatabaseSSPDashboardPage, category: "Pages", required: true, order: 4 )]
+    [LinkedPage( "Daily OPS SSP Dashboard", key: AttributeKey.OpsSSPDashboardPage, category: "Pages", required: true, order: 5 )]
+    [LinkedPage( "Publicity SSP Dashboard", key: AttributeKey.PublicitySSPDashboardPage, category: "Pages", required: true, order: 6 )]
+    [LinkedPage( "Production SSP Dashboard", key: AttributeKey.ProductionSSPDashboardPage, category: "Pages", required: true, order: 7 )]
+    [LinkedPage( "Worship SSP Dashboard", key: AttributeKey.WorshipSSPDashboardPage, category: "Pages", required: true, order: 8 )]
+    [LinkedPage( "Event Submission Form", key: AttributeKey.SubmissionPage, category: "Pages", required: true, order: 9 )]
 
     [SecurityRoleField( "Event Request Admin", key: AttributeKey.EventAdminRole, category: "Security", required: true, order: 0 )]
     [SecurityRoleField( "Room Request Admin", key: AttributeKey.RoomAdminRole, category: "Security", required: true, order: 1 )]
-    [SecurityRoleField( "Super User", key: AttributeKey.SuperUserRole, category: "Security", required: true, order: 2 )]
+    [SecurityRoleField( "Ministry Event Admin", key: AttributeKey.SuperUserRole, category: "Security", required: true, order: 2 )]
+    [SecurityRoleField( "Catering SSP Role", key: AttributeKey.CateringSSPRole, category: "Security", required: true, order: 5 )]
+    [SecurityRoleField( "Childcare SSP Role", key: AttributeKey.ChildcareSSPRole, category: "Security", required: true, order: 6 )]
+    [SecurityRoleField( "Database SSP Role", key: AttributeKey.DatabaseSSPRole, category: "Security", required: true, order: 7 )]
+    [SecurityRoleField( "Daily OPS SSP Role", key: AttributeKey.OpsSSPRole, category: "Security", required: true, order: 8 )]
+    [SecurityRoleField( "Publicity SSP Role", key: AttributeKey.PublicitySSPRole, category: "Security", required: true, order: 9 )]
+    [SecurityRoleField( "Production SSP Role", key: AttributeKey.ProductionSSPRole, category: "Security", required: true, order: 10 )]
+    [SecurityRoleField( "Worship SSP Role", key: AttributeKey.WorshipSSPRole, category: "Security", required: true, order: 11 )]
 
     [AttributeField( name: "Request Status", key: AttributeKey.RequestStatusAttr, allowMultiple: false, category: "Attributes", entityTypeGuid: SystemGuid.EntityType.CONTENT_CHANNEL_ITEM, entityTypeQualifierColumn: "ContentChannelTypeId", entityTypeQualifierValue: "16", order: 0 )]
     [AttributeField( name: "Event Dates", key: AttributeKey.EventDatesAttr, allowMultiple: false, category: "Attributes", entityTypeGuid: SystemGuid.EntityType.CONTENT_CHANNEL_ITEM, entityTypeQualifierColumn: "ContentChannelTypeId", entityTypeQualifierValue: "16", order: 1 )]
@@ -83,18 +97,36 @@ namespace Rock.Blocks.Plugins.EventForm
             public const string EventChangesContentChannel = "EventChangesContentChannel";
             public const string EventDetailsChangesContentChannel = "EventDetailsChangesContentChannel";
             public const string EventCommentsContentChannel = "EventCommentsContentChannel";
+
             public const string LocationList = "LocationList";
             public const string MinistryList = "MinistryList";
             public const string BudgetList = "BudgetList";
             public const string InventoryList = "InventoryList";
             public const string VendorList = "VendorList";
             public const string MinistryBudgetList = "MinistryBudgetList";
+
             public const string SubmissionPage = "SubmissionPage";
             public const string AdminDashboard = "AdminDashboard";
             public const string UserDashboard = "UserDashboard";
+            public const string CateringSSPDashboardPage = "CateringSSPDashboardPage";
+            public const string ChildcareSSPDashboardPage = "ChildcareSSPDashboardPage";
+            public const string DatabaseSSPDashboardPage = "DatabaseSSPDashboardPage";
+            public const string OpsSSPDashboardPage = "OpsSSPDashboardPage";
+            public const string PublicitySSPDashboardPage = "PublicitySSPDashboardPage";
+            public const string ProductionSSPDashboardPage = "ProductionSSPDashboardPage";
+            public const string WorshipSSPDashboardPage = "WorshipSSPDashboardPage";
+
             public const string EventAdminRole = "EventAdminRole";
             public const string RoomAdminRole = "RoomAdminRole";
             public const string SuperUserRole = "SuperUserRole";
+            public const string CateringSSPRole = "CateringSSPRole";
+            public const string ChildcareSSPRole = "ChildcareSSPRole";
+            public const string DatabaseSSPRole = "DatabaseSSPRole";
+            public const string OpsSSPRole = "OpsSSPRole";
+            public const string PublicitySSPRole = "PublicitySSPRole";
+            public const string ProductionSSPRole = "ProductionSSPRole";
+            public const string WorshipSSPRole = "WorshipSSPRole";
+
             public const string EventDatesAttr = "EventDatesAttr";
             public const string IsSameAttr = "IsSameAttr";
             public const string RequestStatusAttr = "RequestStatusAttr";
@@ -112,6 +144,7 @@ namespace Rock.Blocks.Plugins.EventForm
             public const string RegistrationQuestionsMatrix = "RegistrationQuestionsMatrix";
             public const string RegistrationQuestions = "RegistrationQuestions";
             public const string EventImageFileType = "EventImageFileType";
+
             public const string SharingGroupType = "SharingGroupType";
             public const string SharedWithAttr = "SharedWithAttr";
         }

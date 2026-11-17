@@ -4,6 +4,7 @@ using System.Linq;
 
 using Newtonsoft.Json;
 
+using Rock.Blocks.Plugins.ViewModels;
 using Rock.Communication;
 using Rock.Data;
 using Rock.Model;
@@ -23,6 +24,101 @@ namespace Rock.Blocks.Plugins.EventForm
         private string DiscountCodeKey { get; set; }
         private string AdditionalRegQuestionsKey { get; set; }
         private string OpsInventoryKey { get; set; }
+
+        /// <summary>
+        /// Map of the data contained in each event request and how it relates to each service provided by another team
+        /// </summary>
+        public List<SectionMap> SectionMappings
+        {
+            get
+            {
+                var map = new List<SectionMap>();
+                map.Add( new SectionMap() { category = "Event", section = "Time" } );
+                map.Add( new SectionMap() { attr = "NeedsSpace", category = "Event Space", section = "Space", type = "Room" } );
+                map.Add( new SectionMap() { attr = "NeedsOnline", category = "Event Online", section = "Online", type = "Online Event" } );
+                map.Add( new SectionMap()
+                {
+                    attr = "NeedsCatering",
+                    category = "Event Catering",
+                    section = "Catering",
+                    type = "Catering",
+                    status = "CateringStatus"
+                } );
+                map.Add( new SectionMap()
+                {
+                    attr = "NeedsChildCare",
+                    category = "Event Childcare",
+                    section = "Childcare",
+                    type = "Childcare",
+                    status = "ChildcareStatus"
+                } );
+                map.Add( new SectionMap()
+                {
+                    attr = "NeedsChildCareCatering",
+                    category = "Event Childcare Catering",
+                    section = "Childcare Catering",
+                    type = "Childcare Catering",
+                    status = "ChildcareCateringStatus"
+                } );
+                map.Add( new SectionMap()
+                {
+                    attr = "NeedsChildCare",
+                    category = "Event Childcare Registration",
+                    section = "Childcare Registration",
+                    type = "Childcare",
+                    status = "ChildcareRegistrationStatus"
+                } );
+                map.Add( new SectionMap()
+                {
+                    attr = "NeedsOpsAccommodations",
+                    category = "Event Ops Requests",
+                    section = "Ops",
+                    type = "Extra Resources",
+                    status = "DailyOPSStatus"
+                } );
+                map.Add( new SectionMap()
+                {
+                    attr = "NeedsRegistration",
+                    category = "Event Registration",
+                    section = "Registration",
+                    type = "Registration",
+                    status = "DatabaseStatus"
+                } );
+                map.Add( new SectionMap()
+                {
+                    attr = "NeedsPublicity",
+                    category = "Event Publicity",
+                    section = "Publicity",
+                    type = "Publicity",
+                    status = "PublicityStatus"
+                } );
+                map.Add( new SectionMap()
+                {
+                    attr = "NeedsProductionAccommodations",
+                    category = "Event Production",
+                    section = "Production",
+                    type = "Production",
+                    status = "ProductionStatus"
+                } );
+                map.Add( new SectionMap()
+                {
+                    attr = "NeedsWorship",
+                    category = "Event Worship",
+                    section = "Worship",
+                    type = "Worship",
+                    status = "WorshipStatus"
+                } );
+                map.Add( new SectionMap()
+                {
+                    attr = "NeedsWebCalendar",
+                    category = "Event Calendar",
+                    section = "Calendar",
+                    type = "Web Calendar",
+                    status = "PublicityStatus"
+                } );
+                return map;
+            }
+        }
         #endregion
 
         public void InitializeEventFormHelper( int eventCCId, int eventDetailCCId, int eventChangesCCId, int eventDetailChangesCCId, string roomSetUpKey, string discountCodeKey, string opsInvKey, string addRegQuestionsKey )
@@ -721,8 +817,30 @@ namespace Rock.Blocks.Plugins.EventForm
             users = users.Distinct().ToList();
             return users;
         }
-    }
 
+        /// <summary>
+        /// Method to build the communication and send it
+        /// </summary>
+        /// <param name="subject">Subject of Email</param>
+        /// <param name="message">Content of Email</param>
+        /// <param name="users">Recipients</param>
+        public void SendNotification( string subject, string message, List<Person> users )
+        {
+            RockEmailMessage email = new RockEmailMessage();
+            users = users.Distinct().ToList();
+            for ( int i = 0; i < users.Count(); i++ )
+            {
+                RockEmailMessageRecipient recipient = new RockEmailMessageRecipient( users[i], new Dictionary<string, object>() );
+                email.AddRecipient( recipient );
+            }
+            email.Subject = subject;
+            email.Message = message;
+            email.FromEmail = "system@thecrossingchurch.com";
+            email.FromName = "The Crossing System";
+            email.CreateCommunicationRecord = true;
+            var output = email.Send();
+        }
+    }
     #region Helper Classes
     public class TableSetUp
     {
@@ -774,6 +892,40 @@ namespace Rock.Blocks.Plugins.EventForm
     {
         public string lowerValue { get; set; }
         public string upperValue { get; set; }
+    }
+    public class RoleMap
+    {
+        public string PageAttributeKey { get; set; }
+        public string RoleAttributeKey { get; set; }
+        public string Tag { get; set; }
+    }
+    public class SectionMap
+    {
+        /// <summary>
+        /// The Event Request Attribute that indicates the service is being requested
+        /// </summary>
+        public string attr { get; set; }
+        /// <summary>
+        /// The Attribute Category assigned to information for that service
+        /// </summary>
+        public string category { get; set; }
+        /// <summary>
+        /// The friendly name of the section
+        /// </summary>
+        public string section { get; set; }
+        /// <summary>
+        /// The Event Request Attribute that indicates the current status (Needs Confirmation/Approval, Confirmed/Approved, or Denied) of that service
+        /// </summary>
+        public string status { get; set; }
+        /// <summary>
+        /// The Event Request Attribute Values that indicates what resources were requested (Room, Online, Catering, etc) 
+        /// </summary>
+        public string type { get; set; }
+    }
+    public class Comment
+    {
+        public ContentChannelItemBag comment { get; set; }
+        public string createdBy { get; set; }
     }
     #endregion
 }

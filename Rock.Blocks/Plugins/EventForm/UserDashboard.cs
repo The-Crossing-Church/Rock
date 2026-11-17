@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data.Entity;
-using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -29,7 +28,6 @@ namespace Rock.Blocks.Plugins.EventDashboard
     [SupportedSiteTypes( SiteType.Web )]
 
     #region Block Attributes
-
     [ContentChannelField( "Event Content Channel", key: AttributeKey.EventContentChannel, category: "General", required: true, order: 0 )]
     [ContentChannelField( "Event Details Content Channel", key: AttributeKey.EventDetailsContentChannel, category: "General", required: true, order: 1 )]
     [ContentChannelField( "Event Changes Content Channel", key: AttributeKey.EventChangesContentChannel, category: "General", required: true, order: 2 )]
@@ -43,12 +41,26 @@ namespace Rock.Blocks.Plugins.EventDashboard
     [DefinedTypeField( "Ops Inventory Defined Type", key: AttributeKey.InventoryList, category: "Lists", required: true, order: 4 )]
 
     [LinkedPage( "Event Submission Form", key: AttributeKey.SubmissionPage, category: "Pages", required: true, order: 0 )]
-    [LinkedPage( "Workflow Entry Page", key: AttributeKey.WorkflowEntryPage, category: "Pages", required: true, order: 1 )]
-    [LinkedPage( "Event Admin Dashboard", key: AttributeKey.AdminDashboard, category: "Pages", required: true, order: 2 )]
+    [LinkedPage( "Event Admin Dashboard", key: AttributeKey.AdminDashboard, category: "Pages", required: true, order: 1 )]
+    [LinkedPage( "Catering SSP Dashboard", key: AttributeKey.CateringSSPDashboardPage, category: "Pages", required: true, order: 2 )]
+    [LinkedPage( "Childcare SSP Dashboard", key: AttributeKey.ChildcareSSPDashboardPage, category: "Pages", required: true, order: 3 )]
+    [LinkedPage( "Database SSP Dashboard", key: AttributeKey.DatabaseSSPDashboardPage, category: "Pages", required: true, order: 4 )]
+    [LinkedPage( "Daily OPS SSP Dashboard", key: AttributeKey.OpsSSPDashboardPage, category: "Pages", required: true, order: 5 )]
+    [LinkedPage( "Publicity SSP Dashboard", key: AttributeKey.PublicitySSPDashboardPage, category: "Pages", required: true, order: 6 )]
+    [LinkedPage( "Production SSP Dashboard", key: AttributeKey.ProductionSSPDashboardPage, category: "Pages", required: true, order: 7 )]
+    [LinkedPage( "Worship SSP Dashboard", key: AttributeKey.WorshipSSPDashboardPage, category: "Pages", required: true, order: 8 )]
+    [LinkedPage( "Workflow Entry Page", key: AttributeKey.WorkflowEntryPage, category: "Pages", required: true, order: 9 )]
 
     [SecurityRoleField( "Event Request Admin", key: AttributeKey.EventAdminRole, category: "Security", required: true, order: 0 )]
     [SecurityRoleField( "Room Request Admin", key: AttributeKey.RoomAdminRole, category: "Security", required: true, order: 1 )]
     [SecurityRoleField( "Ministry Event Admin", key: AttributeKey.MinistryEventAdminRole, category: "Security", required: true, order: 2 )]
+    [SecurityRoleField( "Catering SSP Role", key: AttributeKey.CateringSSPRole, category: "Security", required: true, order: 5 )]
+    [SecurityRoleField( "Childcare SSP Role", key: AttributeKey.ChildcareSSPRole, category: "Security", required: true, order: 6 )]
+    [SecurityRoleField( "Database SSP Role", key: AttributeKey.DatabaseSSPRole, category: "Security", required: true, order: 7 )]
+    [SecurityRoleField( "Daily OPS SSP Role", key: AttributeKey.OpsSSPRole, category: "Security", required: true, order: 8 )]
+    [SecurityRoleField( "Publicity SSP Role", key: AttributeKey.PublicitySSPRole, category: "Security", required: true, order: 9 )]
+    [SecurityRoleField( "Production SSP Role", key: AttributeKey.ProductionSSPRole, category: "Security", required: true, order: 10 )]
+    [SecurityRoleField( "Worship SSP Role", key: AttributeKey.WorshipSSPRole, category: "Security", required: true, order: 11 )]
 
     [TextField( "Default Statuses", key: AttributeKey.DefaultStatuses, category: "Filters", required: false, order: 0 )]
     [TextField( "Request Status Attribute Key", key: AttributeKey.RequestStatusAttrKey, category: "Filters", defaultValue: "RequestStatus", required: true, order: 1 )]
@@ -80,25 +92,45 @@ namespace Rock.Blocks.Plugins.EventDashboard
             public const string EventDetailsContentChannel = "EventDetailsContentChannel";
             public const string EventDetailsChangesContentChannel = "EventDetailsChangesContentChannel";
             public const string EventCommentsContentChannel = "EventCommentsContentChannel";
+
             public const string LocationList = "LocationList";
             public const string MinistryList = "MinistryList";
             public const string BudgetList = "BudgetList";
             public const string DrinksList = "DrinksList";
             public const string InventoryList = "InventoryList";
+
             public const string SubmissionPage = "SubmissionPage";
             public const string WorkflowEntryPage = "WorkflowEntryPage";
             public const string AdminDashboard = "AdminDashboard";
             public const string UserDashboard = "UserDashboard";
+            public const string CateringSSPDashboardPage = "CateringSSPDashboardPage";
+            public const string ChildcareSSPDashboardPage = "ChildcareSSPDashboardPage";
+            public const string DatabaseSSPDashboardPage = "DatabaseSSPDashboardPage";
+            public const string OpsSSPDashboardPage = "OpsSSPDashboardPage";
+            public const string PublicitySSPDashboardPage = "PublicitySSPDashboardPage";
+            public const string ProductionSSPDashboardPage = "ProductionSSPDashboardPage";
+            public const string WorshipSSPDashboardPage = "WorshipSSPDashboardPage";
+
             public const string EventAdminRole = "EventAdminRole";
             public const string RoomAdminRole = "RoomAdminRole";
             public const string MinistryEventAdminRole = "MinistryEventAdminRole";
+            public const string CateringSSPRole = "CateringSSPRole";
+            public const string ChildcareSSPRole = "ChildcareSSPRole";
+            public const string DatabaseSSPRole = "DatabaseSSPRole";
+            public const string OpsSSPRole = "OpsSSPRole";
+            public const string PublicitySSPRole = "PublicitySSPRole";
+            public const string ProductionSSPRole = "ProductionSSPRole";
+            public const string WorshipSSPRole = "WorshipSSPRole";
+
             public const string DefaultStatuses = "DefaultStatuses";
             public const string RequestStatusAttrKey = "RequestStatusAttrKey";
             public const string RequestedResourcesAttrKey = "RequestedResourcesAttrKey";
             public const string EventDatesAttrKey = "EventDatesAttrKey";
             public const string IsValidAttrKey = "IsValidAttrKey";
             public const string MinistryAttrKey = "MinistryAttrKey";
+
             public const string RequestActionWorkflow = "RequestActionWorkflow";
+
             public const string SharingGroupType = "SharingGroupType";
             public const string StaffGroup = "StaffGroup";
             public const string SharedWithAttrKey = "SharedWithAttrKey";
@@ -226,6 +258,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
         private int EventChangesContentChannelId { get; set; }
         private int EventDetailsChangesContentChannelId { get; set; }
         private int EventCommentsContentChannelId { get; set; }
+        private List<RoleMap> RoleMappings { get; set; }
 
         #endregion
 
@@ -363,7 +396,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
         }
 
         [BlockAction]
-        public BlockActionResult AddComment( string id, string message )
+        public BlockActionResult AddComment( string id, string message, List<string> tags )
         {
             try
             {
@@ -391,6 +424,12 @@ namespace Rock.Blocks.Plugins.EventDashboard
                 };
                 cci_svc.Add( comment );
                 rockContext.SaveChanges();
+                comment.LoadAttributes();
+                if ( comment.Attributes.ContainsKey( "Tags" ) )
+                {
+                    comment.SetAttributeValue( "Tags", String.Join( ", ", tags ) );
+                    comment.SaveAttributeValue( "Tags" );
+                }
 
                 //We want the request to move to the top of the stack when a note is added
                 request.ModifiedDateTime = RockDateTime.Now;
@@ -413,7 +452,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
                 ConcurrentBag<Task> taskBag = new ConcurrentBag<Task>();
                 Task task = new Task( () =>
                 {
-                    CommentNotification( comment, request );
+                    CommentNotification( comment, request, tags );
                 } );
                 taskBag.Add( task );
                 task.Start();
@@ -1079,428 +1118,6 @@ namespace Rock.Blocks.Plugins.EventDashboard
             ).ToList();
         }
 
-
-        private List<ContentChannelItemBag> LoadRequestsSQL( Filters filters = null )
-        {
-            int? id = PageParameter( PageParameterKey.RequestId ).AsIntegerOrNull();
-            Person p = GetCurrentPerson();
-
-            if ( filters == null )
-            {
-                //Default Filters
-                filters = new Filters()
-                {
-                    statuses = GetAttributeValue( AttributeKey.DefaultStatuses ).Split( ',' ).Select( i => i.Trim() ).ToList(),
-                };
-                filters.eventModified = new DateRangeParts()
-                {
-                    lowerValue = RockDateTime.Now.AddDays( -14 ).ToString( "yyyy-MM-dd" ),
-                    upperValue = RockDateTime.Now.ToString( "yyyy-MM-dd" )
-                };
-            }
-
-            using ( RockContext context = new RockContext() )
-            {
-                //Attributes
-                AttributeService attr_svc = new AttributeService( context );
-                string statusAttrId = "", isValidAttrId = "", datesAttrId = "", resourceAttrId = "", ministryAttrId = "", sharedWithAttrId = "", sharingGroupTypeId = "";
-                string requestStatusAttrKey = GetAttributeValue( AttributeKey.RequestStatusAttrKey );
-                if ( !String.IsNullOrEmpty( requestStatusAttrKey ) )
-                {
-                    statusAttrId = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == requestStatusAttrKey ).Id.ToString();
-                }
-                string resourcesAttrKey = GetAttributeValue( AttributeKey.RequestedResourcesAttrKey );
-                if ( !String.IsNullOrEmpty( resourcesAttrKey ) )
-                {
-                    resourceAttrId = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == resourcesAttrKey ).Id.ToString();
-                }
-                string isValidAttrKey = GetAttributeValue( AttributeKey.IsValidAttrKey );
-                if ( !String.IsNullOrEmpty( resourcesAttrKey ) )
-                {
-                    isValidAttrId = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == isValidAttrKey ).Id.ToString();
-                }
-                string datesAttrKey = GetAttributeValue( AttributeKey.EventDatesAttrKey );
-                if ( !String.IsNullOrEmpty( resourcesAttrKey ) )
-                {
-                    datesAttrId = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == datesAttrKey ).Id.ToString();
-                }
-                string ministryAttrKey = GetAttributeValue( AttributeKey.MinistryAttrKey );
-                if ( !String.IsNullOrEmpty( resourcesAttrKey ) )
-                {
-                    ministryAttrId = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == ministryAttrKey ).Id.ToString();
-                }
-                string sharedWithAttrKey = GetAttributeValue( AttributeKey.SharedWithAttrKey );
-                if ( !String.IsNullOrEmpty( sharedWithAttrKey ) )
-                {
-                    sharedWithAttrId = attr_svc.Queryable().First( a => a.EntityTypeId == 208 && a.EntityTypeQualifierColumn == "ContentChannelTypeId" && a.EntityTypeQualifierValue == EventContentChannelTypeId.ToString() && a.Key == sharedWithAttrKey ).Id.ToString();
-                }
-                Guid? sharingGroupTypeGuid = GetAttributeValue( AttributeKey.SharingGroupType ).AsGuidOrNull();
-                if ( sharingGroupTypeGuid.HasValue )
-                {
-                    sharingGroupTypeId = new GroupTypeService( context ).Get( sharingGroupTypeGuid.Value ).Id.ToString();
-                }
-
-                var sqlParams = new SqlParameter[] {
-                    new SqlParameter( "@ContentChannelId", EventContentChannelId ),
-                    new SqlParameter( "@CommentChannelId", EventCommentsContentChannelId ),
-                    new SqlParameter( "@StatusAttrId", statusAttrId ),
-                    new SqlParameter( "@IsValidAttrId", isValidAttrId ),
-                    new SqlParameter( "@DatesAttrId", datesAttrId ),
-                    new SqlParameter( "@ResourceAttrId", resourceAttrId ),
-                    new SqlParameter( "@MinistryAttrId", ministryAttrId ),
-                    new SqlParameter( "@SharedWithAttrId", sharedWithAttrId ),
-                    new SqlParameter( "@SharingGroupTypeId", sharingGroupTypeId ),
-                    new SqlParameter( "@CurrentPersonId", p.Id ),
-                    new SqlParameter( "@ModifiedLowerBound", filters.eventModified?.lowerValue ?? "" ),
-                    new SqlParameter( "@ModifiedUpperBound", filters.eventModified?.upperValue ?? "" ),
-                    new SqlParameter( "@EventDateLowerBound", filters.eventDates?.lowerValue ?? "" ),
-                    new SqlParameter( "@EventDateUpperBound", filters.eventDates?.upperValue ?? "" ),
-                    new SqlParameter( "@StatusFilter", filters.statuses != null ? String.Join(",", filters.statuses) : "" ),
-                    new SqlParameter( "@ResourceFilter", filters.resources != null ? String.Join(",", filters.resources) : "" ),
-                    new SqlParameter( "@TitleFilter", filters.title ?? "" ),
-                    new SqlParameter( "@SubmitterFilter", filters.submitter ?? "" ),
-                    new SqlParameter( "@MinistryFilter", filters.ministry ?? "" ),
-                    new SqlParameter( "@AdditionalEventId", id.ToString() ?? "" )
-                };
-                var rawQuery = context.Database.SqlQuery<RequestGridView>( $@"
-    DECLARE @EventDates TABLE
-                        (
-                            EntityId   INT,
-                            EventDates NVARCHAR(MAX),
-                            Date       DATE
-                        );
-    DECLARE @EventResources TABLE
-                            (
-                                EntityId  INT,
-                                Resources NVARCHAR(750),
-                                Resource  VARCHAR(100)
-                            );
-    DECLARE @ExplicitShares TABLE
-                            (
-                                EntityId           INT,
-                                SharedWithPersonId INT
-                            );
-    DECLARE @GroupShares TABLE
-                         (
-                             AllowedId INT
-                         );
-    DECLARE @StatusFilterTable TABLE
-                               (
-                                   Status VARCHAR(50)
-                               );
-    DECLARE @ResourceFilterTable TABLE
-                                 (
-                                     FilterResource VARCHAR(50)
-                                 );
-    DECLARE @CommentData TABLE
-                         (
-                             ContentChannelItemId INT,
-                             CommentNotifications INT
-                         );
-
-    INSERT INTO @EventDates
-    SELECT EntityId, AttributeValue.Value AS EventDates, CAST(Dates.value AS DATE) AS Date
-    FROM AttributeValue
-             CROSS APPLY STRING_SPLIT(AttributeValue.Value, ',') AS Dates
-    WHERE AttributeId = @DatesAttrId;
-
-    INSERT INTO @EventResources
-    SELECT EntityId, AttributeValue.Value AS Resources, TRIM(Resources.value) AS Resource
-    FROM AttributeValue
-             CROSS APPLY STRING_SPLIT(AttributeValue.Value, ',') AS Resources
-    WHERE AttributeId = @ResourceAttrId;
-
-    INSERT INTO @ExplicitShares
-    SELECT *
-    FROM (SELECT EntityId, Ids.value AS SharedWithPersonId
-          FROM AttributeValue
-                   CROSS APPLY STRING_SPLIT(AttributeValue.Value, ',') AS Ids
-          WHERE AttributeId = @SharedWithAttrId) AS SharedWithIds
-    WHERE SharedWithPersonId = @CurrentPersonId
-
-    INSERT INTO @GroupShares
-    SELECT GroupMember.PersonId AS AllowedId
-    FROM GroupMember
-             INNER JOIN GroupTypeRole ON GroupMember.GroupRoleId = GroupTypeRole.Id
-             INNER JOIN (SELECT GroupId, PersonId, GroupRoleId, Name
-                         FROM GroupMember
-                                  INNER JOIN GroupTypeRole ON GroupMember.GroupRoleId = GroupTypeRole.Id
-                         WHERE GroupMember.GroupTypeId = @SharingGroupTypeId
-                           AND Name NOT LIKE '%creator%'
-                           AND PersonId = @CurrentPersonId) AS UserAllowed ON UserAllowed.GroupId = GroupMember.GroupId
-    WHERE GroupMember.GroupTypeId = @SharingGroupTypeId
-      AND GroupTypeRole.Name LIKE '%creator%'
-
-    INSERT INTO @StatusFilterTable SELECT TRIM(value) AS Status FROM STRING_SPLIT(@StatusFilter, ',');
-
-    INSERT INTO @ResourceFilterTable SELECT TRIM(value) AS FilterResource FROM STRING_SPLIT(@ResourceFilter, ',');
-
-    INSERT INTO @CommentData
-    SELECT ContentChannelItemId,
-           CAST(IIF(MyFirstComment IS NULL OR MyFirstComment > FirstUserComment, LastUserComment,
-                    0) AS INT) AS CommentNotifications
-    FROM (SELECT ContentChannelItemId,
-                 MAX(MyFirstComment)   AS MyFirstComment,
-                 MAX(MyLastComment)    AS MyLastComment,
-                 MAX(FirstUserComment) AS FirstUserComment,
-                 MAX(LastUserComment)  AS LastUserComment
-          FROM (SELECT ContentChannelItemId,
-                       IIF(IsCurrentUser = 1, MinComment, NULL) AS MyFirstComment,
-                       IIF(IsCurrentUser = 1, MaxComment, NULL) AS MyLastComment,
-                       IIF(IsCurrentUser = 0, MinComment, NULL) AS FirstUserComment,
-                       IIF(IsCurrentUser = 0, MaxComment, NULL) AS LastUserComment,
-                       IsCurrentUser,
-                       MinComment,
-                       MaxComment
-                FROM (SELECT ContentChannelItemId,
-                             IsCurrentUser,
-                             MIN(CommentOrderDesc) AS MinComment,
-                             MAX(CommentOrderDesc) AS MaxComment
-                      FROM (SELECT *,
-                                   ROW_NUMBER() OVER (PARTITION BY ContentChannelItemId ORDER BY CreatedDateTime DESC) AS CommentOrderDesc
-                            FROM (SELECT ContentChannelItemId,
-                                         ChildContentChannelItemId,
-                                         ContentChannelItem.CreatedDateTime,
-                                         PersonId,
-                                         IIF(PersonId = @CurrentPersonId, 1, 0) AS IsCurrentUser
-                                  FROM ContentChannelItem
-                                           INNER JOIN ContentChannelItemAssociation
-                                                      ON ContentChannelItem.Id =
-                                                         ContentChannelItemAssociation.ChildContentChannelItemId
-                                           INNER JOIN PersonAlias
-                                                      ON ContentChannelItem.CreatedByPersonAliasId = PersonAlias.Id
-                                  WHERE ContentChannelId = @CommentChannelId) AS CommentData) AS CommentData
-                      GROUP BY ContentChannelItemId, IsCurrentUser) AS CommentData) AS CommentData
-          GROUP BY ContentChannelItemId) AS CommentData;
-
-    SELECT Id,
-           Title,
-           CreatedByPersonAliasId,
-           ModifiedByPersonAliasId,
-           StartDateTime,
-           ModifiedDateTime,
-           IsValid,
-           Ministry,
-           Status,
-           CreatedBy,
-           ModifiedBy,
-           EventDates,
-           Resources,
-           ContentChannelItemId,
-           CommentNotifications
-    FROM (SELECT Id,
-                 Title,
-                 CreatedByPersonAliasId,
-                 ModifiedByPersonAliasId,
-                 StartDateTime,
-                 ModifiedDateTime,
-                 IsValid,
-                 Ministry,
-                 Events.Status,
-                 CreatedBy,
-                 ModifiedBy,
-                 EventDates,
-                 Resources
-          FROM (SELECT Id,
-                       Title,
-                       StartDateTime,
-                       ModifiedDateTime,
-                       CreatedByPersonAliasId,
-                       MAX(CreatedByPersonId)  AS CreatedByPersonId,
-                       ModifiedByPersonAliasId,
-                       MAX(ModifiedByPersonId) AS ModifiedByPersonId,
-                       MAX(IsValid)            AS IsValid,
-                       MAX(Status)             AS Status,
-                       MAX(Ministry)           AS Ministry,
-                       MAX(MinistryValue)      AS MinistryValue,
-                       MAX(CreatedBy)          AS CreatedBy,
-                       MAX(ModifiedBy)         AS ModifiedBy
-                FROM (SELECT ContentChannelItem.Id,
-                             Title,
-                             StartDateTime,
-                             ContentChannelItem.ModifiedDateTime,
-                             ContentChannelItem.CreatedByPersonAliasId,
-                             IIF(PA.Id = ContentChannelItem.CreatedByPersonAliasId, PA.PersonId,
-                                 NULL)                                                    AS CreatedByPersonId,
-                             IIF(PA.Id = ContentChannelItem.ModifiedByPersonAliasId, PA.PersonId,
-                                 NULL)                                                    AS ModifiedByPersonId,
-                             ContentChannelItem.ModifiedByPersonAliasId,
-                             IIF(AttributeId = @IsValidAttrId, Value, NULL)               AS IsValid,
-                             IIF(AttributeId = @StatusAttrId, Value, NULL)                AS Status,
-                             IIF(AttributeId = @MinistryAttrId, PersistedTextValue, NULL) AS Ministry,
-                             IIF(AttributeId = @MinistryAttrId, Value, NULL)              AS MinistryValue,
-                             IIF(PA.Id = ContentChannelItem.CreatedByPersonAliasId, CONCAT(NickName, ' ', LastName),
-                                 NULL)                                                    AS CreatedBy,
-                             IIF(PA.Id = ContentChannelItem.ModifiedByPersonAliasId, CONCAT(NickName, ' ', LastName),
-                                 NULL)                                                    AS ModifiedBy
-                      FROM ContentChannelItem
-                               INNER JOIN AttributeValue ON EntityId = ContentChannelItem.Id
-                               INNER JOIN PersonAlias PA ON ContentChannelItem.CreatedByPersonAliasId = PA.Id OR
-                                                            ContentChannelItem.ModifiedByPersonAliasId = PA.Id
-                               INNER JOIN Person ON PA.PersonId = Person.Id
-                      WHERE ContentChannelId = @ContentChannelId
-                        AND (@TitleFilter IS NULL OR Title LIKE '%' + @TitleFilter + '%' OR
-                             ContentChannelItem.Id = @AdditionalEventId)
-                        AND AttributeId IN (@IsValidAttrId, @StatusAttrId, @MinistryAttrId)) AS Events
-                GROUP BY Id, Title, StartDateTime, ModifiedDateTime, CreatedByPersonAliasId,
-                         ModifiedByPersonAliasId) AS Events
-                   INNER JOIN @EventDates EventDates ON EventDates.EntityId = Events.Id
-                   INNER JOIN @EventResources EventResources ON EventResources.EntityId = Events.Id
-                   LEFT OUTER JOIN @StatusFilterTable StatusFilter ON StatusFilter.Status = Events.Status
-                   LEFT OUTER JOIN @ResourceFilterTable ResourceFilter
-                                   ON ResourceFilter.FilterResource = EventResources.Resource
-          WHERE (@ModifiedLowerBound = '' OR (ModifiedDateTime >= @ModifiedLowerBound) OR
-                 Events.Id = @AdditionalEventId)
-            AND (@ModifiedUpperBound = '' OR ModifiedDateTime <= @ModifiedUpperBound OR Events.Id = @AdditionalEventId)
-            AND (@EventDateLowerBound = '' OR Date >= @EventDateLowerBound OR Events.Id = @AdditionalEventId)
-            AND (@EventDateUpperBound = '' OR Date <= @EventDateUpperBound OR Events.Id = @AdditionalEventId)
-            AND (CreatedByPersonId = @CurrentPersonId OR ModifiedByPersonId = @CurrentPersonId OR
-                 (CreatedByPersonId IN (SELECT * FROM @GroupShares) AND Ministry NOT LIKE '%personal%') OR
-                 (ModifiedByPersonId IN (SELECT * FROM @GroupShares) AND Ministry NOT LIKE '%personal%') OR
-                 Id IN (SELECT EntityId FROM @ExplicitShares) OR Events.Id = @AdditionalEventId)
-            AND (@MinistryFilter = '' OR @MinistryFilter = MinistryValue OR Events.Id = @AdditionalEventId)
-            AND (@StatusFilter = '' OR StatusFilter.Status IS NOT NULL OR Events.Id = @AdditionalEventId)
-            AND (@ResourceFilter = '' OR ResourceFilter.FilterResource IS NOT NULL OR Events.Id = @AdditionalEventId)
-          GROUP BY Id, Title, CreatedByPersonAliasId, ModifiedByPersonAliasId, StartDateTime, ModifiedDateTime, IsValid,
-                   Ministry, Events.Status, CreatedBy, ModifiedBy, EventDates, Resources) AS Events
-             LEFT OUTER JOIN @CommentData AS Comments
-                             ON ContentChannelItemId = Id;
-                ", sqlParams );
-                var query = rawQuery.ToList();
-
-                ContentChannelItemService cci_svc = new ContentChannelItemService( context );
-
-                var items = cci_svc.Queryable().Where( cci => cci.ContentChannelId == EventContentChannelId ).ToList().Join( query,
-                    cci => cci.Id,
-                    qry => qry.Id,
-                    ( cci, qry ) => cci
-                ).OrderByDescending( i => i.ModifiedDateTime ).ToList().Select( cci =>
-                {
-                    var row = query.FirstOrDefault( qry => qry.Id == cci.Id );
-                    var bag = EventFormHelper.GetCommonContentChannelItemEntityBag( cci );
-                    bag.AttributeValues = new Dictionary<string, string>();
-                    if ( row != null )
-                    {
-                        bag.CreatedBy = row.CreatedBy;
-                        bag.ModifiedBy = row.ModifiedBy;
-                        bag.AttributeValues.Add( "EventDates", row.EventDates );
-                        bag.AttributeValues.Add( "RequestIsValid", row.IsValid );
-                        bag.AttributeValues.Add( "Ministry", row.Ministry );
-                        bag.AttributeValues.Add( "RequestType", row.Resources );
-                        bag.AttributeValues.Add( "RequestStatus", row.Status );
-                        bag.AttributeValues.Add( "CommentNotifications", row.UnreadComments.ToString() );
-                    }
-                    return bag;
-                } ).ToList();
-
-                return items;
-            }
-
-        }
-
-        private List<ContentChannelItemBag> LoadRequestsNew( Filters filters = null )
-        {
-            using ( RockContext context = new RockContext() )
-            {
-                ContentChannelItemService cci_svc = new ContentChannelItemService( context );
-                AttributeValueService av_svc = new AttributeValueService( context );
-
-                int? id = PageParameter( PageParameterKey.RequestId ).AsIntegerOrNull();
-                var p = GetCurrentPerson();
-                List<int> aliasIds = p.Aliases.Select( pa => pa.Id ).ToList();
-
-                if ( filters == null )
-                {
-                    List<string> defaultStatuses = GetAttributeValue( AttributeKey.DefaultStatuses ).Split( ',' ).Select( i => i.Trim() ).Where( s => !String.IsNullOrEmpty( s ) ).ToList();
-                    //Default Filters
-                    filters = new Filters()
-                    {
-                        statuses = defaultStatuses
-                    };
-                }
-
-                //Attributes
-                List<Guid> attrGuids = GetAttributeValues( "GridAttrs" ).AsGuidList();
-                List<int> attrIds = new List<int>();
-                List<AttributeCache> attrs = new List<AttributeCache>();
-
-                foreach ( Guid attrGuid in attrGuids )
-                {
-                    var attr = AttributeCache.Get( attrGuid );
-                    attrIds.Add( attr.Id );
-                    attrs.Add( attr );
-                }
-
-                var itemQry = cci_svc.Queryable().Where( cci => cci.ContentChannelId == EventContentChannelId );
-                var avQry = av_svc.Queryable().Where( av => attrIds.Contains( av.AttributeId ) );
-
-                Guid? sharingGroupTypeGuid = GetAttributeValue( AttributeKey.SharingGroupType ).AsGuidOrNull();
-                if ( sharingGroupTypeGuid.HasValue )
-                {
-                    GroupMemberService gm_svc = new GroupMemberService( context );
-                    GroupType sharingGT = new GroupTypeService( context ).Get( sharingGroupTypeGuid.Value );
-                    var memberships = gm_svc.Queryable().Where( gm => gm.GroupTypeId == sharingGT.Id && gm.PersonId == p.Id && gm.GroupRoleId == 234 ).Select( gm => gm.GroupId ).ToList();
-                    if ( memberships.Count() > 0 )
-                    {
-                        var otherAliasIds = gm_svc.Queryable().Where( gm => gm.GroupTypeId == sharingGT.Id && memberships.Contains( gm.GroupId ) && gm.GroupRoleId == 235 ).SelectMany( gm => gm.Person.Aliases.Select( pa => pa.Id ) ).ToList();
-                        aliasIds.AddRange( otherAliasIds );
-                    }
-                }
-
-                string sharedWithAttrKey = GetAttributeValue( AttributeKey.SharedWithAttrKey );
-                var sharedItemsQry = itemQry;
-                List<int> explicitSharedItemIds = new List<int>();
-                if ( !String.IsNullOrEmpty( sharedWithAttrKey ) )
-                {
-                    var sharedWithAttr = attrs.FirstOrDefault( attr => attr.Key == sharedWithAttrKey );
-                    var sharingAvQry = avQry.Where( av => av.AttributeId == sharedWithAttr.Id && av.Value != "" ).ToList().Where( av => av.Value.Split( ',' ).ToList().Contains( p.Id.ToString() ) );
-                    explicitSharedItemIds = sharingAvQry.Select( av => av.EntityId.Value ).ToList();
-                }
-
-                itemQry = itemQry.Where( cci => ( cci.CreatedByPersonAliasId.HasValue && aliasIds.Contains( cci.CreatedByPersonAliasId.Value ) ) || ( cci.ModifiedByPersonAliasId.HasValue && aliasIds.Contains( cci.ModifiedByPersonAliasId.Value ) ) || explicitSharedItemIds.Contains( cci.Id ) ).OrderByDescending( cci => cci.ModifiedDateTime );
-
-                var items = itemQry.ToList();
-
-                var comments = cci_svc.Queryable().Where( cci => cci.ContentChannelId == EventCommentsContentChannelId );
-                var comment_assoc = new ContentChannelItemAssociationService( context ).Queryable().Join( itemQry,
-                    assoc => assoc.ContentChannelItemId,
-                    cci => cci.Id,
-                    ( assoc, cci ) => assoc
-                ).Join( comments,
-                    assoc => assoc.ChildContentChannelItemId,
-                    cci => cci.Id,
-                    ( assoc, cci ) => assoc
-                ).ToList();
-
-                return items.Select( cci =>
-                {
-                    var avs = avQry.Where( av => av.EntityId == cci.Id );
-                    var bag = EventFormHelper.GetCommonContentChannelItemEntityBag( cci );
-                    bag.CreatedBy = cci.CreatedByPersonName;
-                    bag.ModifiedBy = cci.ModifiedByPersonName;
-                    bag.AttributeValues = new Dictionary<string, string>();
-                    foreach ( var attr in attrs )
-                    {
-                        var av = avs.FirstOrDefault( av => av.AttributeId == attr.Id );
-                        if ( av != null )
-                        {
-                            bag.AttributeValues.Add( attr.Key, av.ValueFormatted );
-                        }
-                    }
-                    var firstUser = comment_assoc.Where( cci_assoc => cci_assoc.ContentChannelItemId == cci.Id && cci_assoc.CreatedByPersonId == p.Id ).OrderByDescending( cci_assoc => cci_assoc.CreatedDateTime ).FirstOrDefault();
-                    if ( firstUser != null )
-                    {
-                        var nonUser = comment_assoc.Where( cci_assoc => cci_assoc.ContentChannelItemId == cci.Id && cci_assoc.CreatedByPersonId != p.Id && cci_assoc.CreatedDateTime < firstUser.CreatedDateTime ).Count();
-                        if ( nonUser > 0 )
-                        {
-                            bag.AttributeValues.Add( "CommentNotifications", nonUser.ToString() );
-                        }
-                    }
-                    return bag;
-                } ).ToList();
-            }
-        }
-
         /// <summary>
         /// Return true/false is the current person a member of the given Security Role
         /// </summary>
@@ -1641,6 +1258,18 @@ namespace Rock.Blocks.Plugins.EventDashboard
                 ContentChannel cCC = new ContentChannelService( rockContext ).Get( eventCommentsCCGuid );
                 EventCommentsContentChannelId = cCC.Id;
             }
+
+            RoleMappings = new List<RoleMap>()
+            {
+                new RoleMap() { Tag = "Admin", PageAttributeKey = AttributeKey.AdminDashboard, RoleAttributeKey = AttributeKey.EventAdminRole },
+                new RoleMap() { Tag = "Catering", PageAttributeKey = AttributeKey.CateringSSPDashboardPage, RoleAttributeKey = AttributeKey.CateringSSPRole },
+                new RoleMap() { Tag = "Childcare", PageAttributeKey = AttributeKey.ChildcareSSPDashboardPage, RoleAttributeKey = AttributeKey.ChildcareSSPRole },
+                new RoleMap() { Tag = "Database", PageAttributeKey = AttributeKey.DatabaseSSPDashboardPage, RoleAttributeKey = AttributeKey.DatabaseSSPRole },
+                new RoleMap() { Tag = "OPS", PageAttributeKey = AttributeKey.OpsSSPDashboardPage, RoleAttributeKey = AttributeKey.OpsSSPRole },
+                new RoleMap() { Tag = "Publicity", PageAttributeKey = AttributeKey.PublicitySSPDashboardPage, RoleAttributeKey = AttributeKey.PublicitySSPRole },
+                new RoleMap() { Tag = "Production", PageAttributeKey = AttributeKey.ProductionSSPDashboardPage, RoleAttributeKey = AttributeKey.ProductionSSPRole },
+                new RoleMap() { Tag = "Worship", PageAttributeKey = AttributeKey.WorshipSSPDashboardPage, RoleAttributeKey = AttributeKey.WorshipSSPRole }
+            };
         }
 
         private void StatusChangeNotification( ContentChannelItem item, string status )
@@ -1675,41 +1304,76 @@ namespace Rock.Blocks.Plugins.EventDashboard
             var output = email.Send();
         }
 
-        private void CommentNotification( ContentChannelItem comment, ContentChannelItem item )
+        /// <summary>
+        /// Notify users of new comment
+        /// </summary>
+        /// <param name="comment">The comment that was added</param>
+        /// <param name="item">The request</param>
+        /// <param name="tags">Specific tags</param>
+        private void CommentNotification( ContentChannelItem comment, ContentChannelItem item, List<string> tags )
         {
             RockContext context = new RockContext();
             Person p = GetCurrentPerson();
-            string url;
-            var attributeCache = GlobalAttributesCache.Get();
-            string baseUrl = attributeCache.GetValue( "InternalApplicationRoot" );
+            GlobalAttributesCache attributesCache = GlobalAttributesCache.Get();
+            string url = "";
+            string subject = "";
+            string message = "";
             Dictionary<string, string> queryParams = new Dictionary<string, string>();
-            url = this.GetLinkedPageUrl( AttributeKey.AdminDashboard, queryParams );
-            string subject = p.FullName + " Has Added a Comment to " + item.Title;
-            string message = "<p>This comment has been added to " + p.FullName + "'s request, " + item.Title + "</p>" +
-                "<blockquote>" + comment.Content + "</blockquote><br/>" +
-                "<p style='width: 100%; text-align: center;'><a href = '" + baseUrl + url.Substring( 1 ) + "?Id=" + item.Id + "' style = 'background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;' > Open Request </a></p>";
-            message += "<p style='color: #347689; text-align: center; margin-top: 12px;'><i>Replies to this email will not be received. Open your event request to communicate with the Event Admin.</i></p>";
-            var header = attributeCache.GetValue( "EmailHeader" ); //Email Header
-            var footer = attributeCache.GetValue( "EmailFooter" ); //Email Footer 
-            message = header + message + footer;
+            string baseUrl = attributesCache.GetValue( "InternalApplicationRoot" );
+
+            var header = attributesCache.GetValue( "EmailHeader" );
+            var footer = attributesCache.GetValue( "EmailFooter" );
             RockEmailMessage email = new RockEmailMessage();
-            var users = EventFormShared.GetAdminUsers( GetAttributeValue( AttributeKey.EventAdminRole ) );
-            users.Remove( p );
-            for ( int i = 0; i < users.Count(); i++ )
+            EventFormShared helper = new EventFormShared();
+
+            //Add Recipients
+            if ( tags.Contains( "Ministry" ) )
             {
-                RockEmailMessageRecipient recipient = new RockEmailMessageRecipient( users[i], new Dictionary<string, object>() );
-                email.AddRecipient( recipient );
+                //Notify the ministry about the comment
+                url = this.GetLinkedPageUrl( AttributeKey.UserDashboard, queryParams );
+                subject = p.FullName + " Has Added a Comment to " + item.Title;
+                message = "<p>This comment has been added to your request, " + item.Title + "</p>" +
+                    "<blockquote>" + comment.Content + "</blockquote><br/>" +
+                    "<p style='width: 100%; text-align: center;'><a href = '" + baseUrl + url.Substring( 1 ) + "?Id=" + item.Id + "' style = 'background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;' > Open Request </a></p>" +
+                    "<p style='color: #347689; text-align: center; margin-top: 12px;'><i>Replies to this email will not be received. Open your event request to communicate with the Event Admin and Support Service Providers.</i></p>";
+                message = header + message + footer;
+
+                List<Person> users = helper.GetRequestUsers( item, GetAttributeValue( AttributeKey.SharedWithAttrKey ), GetAttributeValue( AttributeKey.SharingGroupType ).AsGuidOrNull() ).Where( u => u.Id != p.Id ).ToList();
+
+                if ( users.Count() > 0 )
+                {
+                    helper.SendNotification( subject, message, users );
+                }
             }
-            email.Subject = subject;
-            email.Message = message;
-            email.FromEmail = "system@thecrossingchurch.com";
-            email.FromName = "The Crossing System";
-            email.CreateCommunicationRecord = true;
-            var output = email.Send();
+
+            //Admin or SSP Notifications
+            subject = p.FullName + " Has Added a Comment to " + item.Title;
+            foreach ( string tag in tags )
+            {
+                var roleDetails = RoleMappings.FirstOrDefault( rm => rm.Tag == tag );
+                if ( roleDetails != null )
+                {
+                    url = this.GetLinkedPageUrl( roleDetails.PageAttributeKey, queryParams );
+                    message = "<p>This comment has been added to " + p.FullName + "'s request, " + item.Title + "</p>" +
+                        "<blockquote>" + comment.Content + "</blockquote><br/>" +
+                        "<p style='width: 100%; text-align: center;'><a href = '" + baseUrl + url.Substring( 1 ) + "?Id=" + item.Id + "' style = 'background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;' > Open Request </a></p>";
+                    message += "<p style='color: #347689; text-align: center; margin-top: 12px;'><i>Replies to this email will not be received. Open your event request to communicate with the Event Admin and Support Service Providers.</i></p>";
+                    message = header + message + footer;
+
+                    List<Person> users = helper.GetAdminUsers( GetAttributeValue( roleDetails.RoleAttributeKey ) ).Where( u => u.Id != p.Id ).ToList();
+                    users.Remove( p );
+
+                    if ( users.Count() > 0 )
+                    {
+                        helper.SendNotification( subject, message, users );
+                    }
+                }
+            }
         }
 
         #endregion Helpers
 
+        #region Classes
         public class DashboardViewModel
         {
             public List<ContentChannelItemBag> events { get; set; }
@@ -1740,39 +1404,16 @@ namespace Rock.Blocks.Plugins.EventDashboard
             public PersonBag modifiedBy { get; set; }
         }
 
-        public class Comment
-        {
-            public ContentChannelItemBag comment { get; set; }
-            public string createdBy { get; set; }
-        }
-
         public class Details
         {
             public ContentChannelItemBag detail { get; set; }
             public ContentChannelItemBag detailPendingChanges { get; set; }
         }
 
-        public class Filters
-        {
-            public string title { get; set; }
-            public string ministry { get; set; }
-            public List<string> statuses { get; set; }
-            public List<string> resources { get; set; }
-            public DateRangeParts eventDates { get; set; }
-            public DateRangeParts eventModified { get; set; }
-            public string submitter { get; set; }
-        }
-
         public class Submitter
         {
             public string value { get; set; }
             public string text { get; set; }
-        }
-
-        public class DateRangeParts
-        {
-            public string lowerValue { get; set; }
-            public string upperValue { get; set; }
         }
 
         public class DuplicateDates
@@ -1798,5 +1439,6 @@ namespace Rock.Blocks.Plugins.EventDashboard
             public string IsValid { get; set; }
             public int? UnreadComments { get; set; }
         }
+        #endregion
     }
 }
