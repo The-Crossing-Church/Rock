@@ -69,7 +69,7 @@ export default defineComponent({
       :items="itemList"
       v-model="internalCodeType"
     ></rck-ddl>
-    <div class="w-100 ml-2 d-flex" style="align-items: end;">
+    <div class="form-group dcc-amount w-100 ml-2 d-flex" style="align-items: end;">
       <rck-txt
         v-model="internalAmount"
         type="number"
@@ -79,7 +79,9 @@ export default defineComponent({
   </div>
 </div>
 <v-style>
-
+  .dcc-amount > div {
+    width: 100%;
+  }
 </v-style>
 `
 });
