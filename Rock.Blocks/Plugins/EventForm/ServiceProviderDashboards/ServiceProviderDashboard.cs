@@ -5,8 +5,6 @@ using System.Data.Entity;
 using System.Linq;
 using System.Threading.Tasks;
 
-using DocumentFormat.OpenXml.Spreadsheet;
-
 using Rock.Attribute;
 using Rock.Blocks.Plugins.EventForm;
 using Rock.Blocks.Plugins.ViewModels;
@@ -14,6 +12,8 @@ using Rock.Communication;
 using Rock.Data;
 using Rock.Model;
 using Rock.Web.Cache;
+
+using static Rock.Blocks.Plugins.EventDashboard.AdminDashboard;
 
 namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
 {
@@ -118,6 +118,7 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
         protected List<Category> EditCategories { get; set; }
         protected List<Category> ViewCategories { get; set; }
         protected List<AttributeCache> VisibleAttributes { get; set; }
+        protected List<AttributeCache> EditableAttributes { get; set; }
         private List<RoleMap> RoleMappings { get; set; }
         #endregion
 
@@ -267,6 +268,174 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
         }
 
         /// <summary>
+        /// Method to resolve changes requested by the ministry to the support service
+        /// </summary>
+        /// <param name="id">The id of the Event Request</param>
+        /// <param name="approved">The list of attribute keys for approved changes</param>
+        /// <param name="denied">The list of attribute keys for denied changes</param>
+        /// <param name="events">The occurrence specific details</param>
+        /// <param name="notes">Custom message to send to the ministry with the notification</param>
+        /// <returns></returns>
+        [BlockAction]
+        public BlockActionResult PartialApproval( string id, List<string> approved, List<string> denied, List<EventPartialApproval> events, string notes )
+        {
+            try
+            {
+                SetProperties();
+                var p = GetCurrentPerson();
+                RockContext rockContext = new RockContext();
+                ContentChannelItemService cci_svc = new ContentChannelItemService( rockContext );
+                ContentChannelItemAssociationService ccia_svc = new ContentChannelItemAssociationService( rockContext );
+                ContentChannelItem item = cci_svc.Get( id );
+                ContentChannelItemAssociation changesAssoc = item.ChildItems.FirstOrDefault( ci => ci.ChildContentChannelItem.ContentChannelId == EventChangesContentChannelId );
+                ContentChannelItem changes = item.ChildItems.FirstOrDefault( ci => ci.ChildContentChannelItem.ContentChannelId == EventChangesContentChannelId ).ChildContentChannelItem;
+                List<ContentChannelItem> details = item.ChildItems.Where( ci => ci.ChildContentChannelItem.ContentChannelId == EventDetailsContentChannelId ).Select( ci => ci.ChildContentChannelItem ).ToList();
+                List<string> editCategoryNames = EditCategories.Select( cat => cat.Name ).ToList();
+
+                //Update that our admin has made a change to this request
+                item.ModifiedByPersonAliasId = p.PrimaryAliasId;
+                item.ModifiedDateTime = RockDateTime.Now;
+                List<string> validApproved = approved;
+                List<string> validDenied = denied;
+
+                if ( approved.Count() > 0 || denied.Count() > 0 )
+                {
+                    //Limit to the Attributes the SSP has access to edit so they cannot approve/deny changes to another service
+                    Helper.LoadAttributes( item, rockContext, EditableAttributes );
+                    Helper.LoadAttributes( changes, rockContext, EditableAttributes );
+
+                    //Request Approved Changes
+                    for ( var i = 0; i < approved.Count(); i++ )
+                    {
+                        if ( item.Attributes.ContainsKey( approved[i] ) )
+                        {
+                            item.SetAttributeValue( approved[i], changes.GetAttributeValue( approved[i] ) );
+                            validApproved.Add( item.Attributes[approved[i]].Name );
+                        }
+                    }
+                    for ( var i = 0; i <= denied.Count(); i++ )
+                    {
+                        if ( item.Attributes.ContainsKey( denied[i] ) )
+                        {
+                            //Filter the list of denied changes to ones relevant to the support service before notifying the ministry
+                            changes.SetAttributeValue( denied[i], item.GetAttributeValue( denied[i] ) );
+                            validDenied.Add( item.Attributes[denied[i]].Name );
+                        }
+
+                    }
+
+                    item.SaveAttributeValues();
+                    //Update value to match so it doesn't show as a pending conflict anymore
+                    changes.SaveAttributeValues();
+                }
+
+                //Event Details Approved Changes
+                for ( var i = 0; i < details.Count(); i++ )
+                {
+                    var eventChanges = events.FirstOrDefault( e => e.eventidKey == details[i].IdKey );
+                    var detailChangesAssoc = details[i].ChildItems.FirstOrDefault( ci => ci.ChildContentChannelItem.ContentChannelId == EventDetailsChangesContentChannelId );
+                    var detailChanges = detailChangesAssoc.ChildContentChannelItem;
+
+                    //Limit to the Attributes the SSP has access to edit so they cannot approve/deny changes to another service
+                    Helper.LoadAttributes( details, rockContext, EditableAttributes );
+                    if ( eventChanges != null )
+                    {
+                        Helper.LoadAttributes( detailChanges, rockContext, EditableAttributes );
+                        for ( var k = 0; k < eventChanges.approvedAttrs.Count(); k++ )
+                        {
+                            if ( details[i].Attributes.ContainsKey( eventChanges.approvedAttrs[k] ) )
+                            {
+                                details[i].SetAttributeValue( eventChanges.approvedAttrs[k], detailChanges.GetAttributeValue( eventChanges.approvedAttrs[k] ) );
+                                validApproved.Add( details[i].Attributes[eventChanges.approvedAttrs[k]].Name );
+                            }
+                        }
+                        for ( var k = 0; k < eventChanges.deniedAttrs.Count(); k++ )
+                        {
+                            if ( details[i].Attributes.ContainsKey( eventChanges.deniedAttrs[k] ) )
+                            {
+                                //Filter the list of denied changes to ones relevant to the support service before notifying the ministry
+                                detailChanges.SetAttributeValue( eventChanges.deniedAttrs[k], details[i].GetAttributeValue( eventChanges.deniedAttrs[k] ) );
+                                validDenied.Add( details[i].Attributes[eventChanges.deniedAttrs[k]].Name );
+                            }
+                        }
+                        details[i].SaveAttributeValues();
+                        //Update value to match so it doesn't show as a pending conflict anymore
+                        detailChanges.SaveAttributeValues();
+                    }
+                }
+                validApproved = validApproved.Distinct().ToList();
+                validDenied = validDenied.Distinct().ToList();
+
+                //Check for additional unresolved changes, if this action resolved everything then clean up the temporary change items and update the request status
+                item.LoadAttributes();
+                changes.LoadAttributes();
+                bool hasUnresolvedChange = false;
+                foreach ( var attr in item.Attributes )
+                {
+                    if ( item.GetAttributeValue( attr.Key ) != changes.GetAttributeValue( attr.Key ) )
+                    {
+                        hasUnresolvedChange = true;
+                        break;
+                    }
+                }
+                if ( !hasUnresolvedChange )
+                {
+                    //Only need to check the details if we haven't already found one on the parent item
+                    details.LoadAttributes();
+                    foreach ( ContentChannelItem detail in details )
+                    {
+                        var detailChangesAssoc = detail.ChildItems.FirstOrDefault( ci => ci.ChildContentChannelItem.ContentChannelId == EventDetailsChangesContentChannelId );
+                        var detailChanges = detailChangesAssoc.ChildContentChannelItem;
+                        detailChanges.LoadAttributes();
+
+                        foreach ( var attr in detail.Attributes )
+                        {
+                            if ( detail.GetAttributeValue( attr.Key ) != detailChanges.GetAttributeValue( attr.Key ) )
+                            {
+                                hasUnresolvedChange = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if ( !hasUnresolvedChange )
+                {
+                    //Clean up Pending Changes Items and Update Request Status to Approved
+                    cci_svc.Delete( changes );
+                    ccia_svc.Delete( changesAssoc );
+                    foreach ( ContentChannelItem detail in details )
+                    {
+                        var detailChangesAssoc = detail.ChildItems.FirstOrDefault( ci => ci.ChildContentChannelItem.ContentChannelId == EventDetailsChangesContentChannelId );
+                        var detailChanges = detailChangesAssoc.ChildContentChannelItem;
+                        cci_svc.Delete( detailChanges );
+                        ccia_svc.Delete( detailChangesAssoc );
+                    }
+                    item.SetAttributeValue( "RequestStatus", "Approved" );
+                    item.SaveAttributeValue( "RequestStatus" );
+                    rockContext.SaveChanges();
+                }
+
+
+                //Notifications
+                ConcurrentBag<Task> taskBag = new ConcurrentBag<Task>();
+                Task task = new Task( () =>
+                {
+                    PartialApprovalNotifications( item, validApproved, validDenied, events, notes );
+                } );
+                taskBag.Add( task );
+                task.Start();
+
+                return ActionOk( new { id = id } );
+            }
+            catch ( Exception ex )
+            {
+                ExceptionLogService.LogException( ex );
+                return ActionBadRequest( ex.Message );
+            }
+        }
+
+        /// <summary>
         /// Approve or Deny a service on a request
         /// </summary>
         /// <param name="id">The request</param>
@@ -282,7 +451,7 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
                 RockContext context = new RockContext();
                 SetProperties();
                 List<string> categories = EditCategories.Select( c => c.Name ).ToList();
-                var editableStatuses = SectionMappings.Where( si => categories.Contains( si.category ) ).Select( si => si.status ).ToList();
+                var editableStatuses = EventFormHelper.SectionMappings.Where( si => categories.Contains( si.category ) ).Select( si => si.status ).ToList();
                 if ( !editableStatuses.Contains( statusKey ) )
                 {
                     throw new UnauthorizedAccessException( "You are not able to make changes to that support service." );
@@ -291,7 +460,7 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
                 item.LoadAttributes();
                 item.SetAttributeValue( statusKey, value );
                 item.SaveAttributeValue( statusKey );
-                var section = SectionMappings.FirstOrDefault( si => si.status == statusKey );
+                var section = EventFormHelper.SectionMappings.FirstOrDefault( si => si.status == statusKey );
                 string message = item.Title + " was updated";
                 if ( section != null )
                 {
@@ -336,6 +505,12 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
                 };
                 cci_svc.Add( comment );
                 rockContext.SaveChanges(); //Disable Pre/Post Save
+                comment.LoadAttributes();
+                if ( comment.Attributes.ContainsKey( "Tags" ) )
+                {
+                    comment.SetAttributeValue( "Tags", String.Join( ", ", tags ) );
+                    comment.SaveAttributeValue( "Tags" );
+                }
 
                 //We want the request to move to the top of the stack when a note is added
                 request.ModifiedDateTime = RockDateTime.Now;
@@ -398,7 +573,7 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
                 //Make sure they aren't requesting a category not relevant to them
                 categories = categories.Where( c => EditCategories.Select( cat => cat.Name ).Contains( c ) ).ToList();
             }
-            var map = SectionMappings.Where( sm => categories.Contains( sm.category ) && sm.attr != null ).ToList();
+            var map = EventFormHelper.SectionMappings.Where( sm => categories.Contains( sm.category ) && sm.attr != null ).ToList();
             var serviceAttrKeys = map.Select( sm => sm.attr ).ToList();
             var serviceStatusAttrKeys = map.Select( sm => sm.status ).ToList();
 
@@ -586,75 +761,6 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
             return events;
         }
 
-        ///// <summary>
-        ///// Load Event Requests that match the desired status of the Support Service
-        ///// </summary>
-        ///// <returns></returns>
-        //protected List<ContentChannelItemBag> LoadByStatus( List<string> statuses, SSPDashboardOption option )
-        //{
-        //    SetProperties();
-        //    RockContext context = new RockContext();
-        //    IEnumerable<ContentChannelItem> items = null;
-        //    AttributeValueService av_svc = new AttributeValueService( context );
-
-        //    // Limit requests only to ones that are requesting the service of relevance to the provider
-        //    List<string> categories = EditCategories.Select( c => c.Name ).ToList();
-        //    var map = SectionMappings.Where( sm => categories.Contains( sm.category ) && sm.status != null && sm.attr != null ).ToList();
-        //    var serviceAttrKeys = map.Select( sm => sm.attr ).ToList();
-        //    var serviceStatusAttrKeys = map.Select( sm => sm.status ).ToList();
-
-        //    //Load all attributes to find specific attributes based on keys
-        //    items = new ContentChannelItemService( context ).Queryable().Where( cci => cci.ContentChannelId == EventContentChannelId );
-        //    ContentChannelItem item = items.First();
-        //    item.LoadAttributes();
-
-        //    AttributeCache requestStatusAttr = item.Attributes.FirstOrDefault( attr => attr.Key == "RequestStatus" ).Value;
-        //    List<AttributeCache> serviceAttrs = item.Attributes.Where( attr => serviceAttrKeys.Contains( attr.Key ) ).Select( kvp => kvp.Value ).ToList();
-        //    List<AttributeCache> serviceStatusAttrs = item.Attributes.Where( attr => serviceStatusAttrKeys.Contains( attr.Key ) ).Select( kvp => kvp.Value ).ToList();
-        //    List<int> serviceAttrIds = serviceAttrs.Select( ac => ac.Id ).ToList();
-        //    List<int> serviceStatusAttrIds = serviceStatusAttrs.Select( ac => ac.Id ).ToList();
-
-
-        //    //Only include requests that have been vetted by Event Request Admin
-        //    items = FilterByStringMatch( context, items, requestStatusAttr, statuses );
-
-        //    //Include items with any of the matching services requested
-        //    var requestedServices = av_svc.Queryable().Where( av => serviceAttrIds.Contains( av.AttributeId ) && av.ValueAsBoolean == true ).Select( av => av.EntityId ).Distinct();
-        //    items = items.Join( requestedServices,
-        //            i => i.Id,
-        //            av => av,
-        //            ( i, av ) => i
-        //        );
-
-        //    //Only include items that match the desired statusof the service
-        //    if ( option == SSPDashboardOption.PendingConfirmation )
-        //    {
-        //        var pendingService = av_svc.Queryable().Where( av => serviceStatusAttrIds.Contains( av.AttributeId ) && av.Value == "0" ).Select( av => av.EntityId ).Distinct();
-        //        items = items.Where( i => pendingService.Contains( i.Id ) );
-        //    }
-        //    else
-        //    {
-        //        string sspStatusValue = option.ToString();
-        //        var matchSSPStatus = av_svc.Queryable().Where( av => serviceStatusAttrIds.Contains( av.AttributeId ) && av.Value == sspStatusValue ).Select( av => av.EntityId ).Distinct();
-        //        items = items.Where( i => matchSSPStatus.Contains( i.Id ) );
-        //    }
-
-        //    var events = items.Distinct().AsEnumerable().OrderByDescending( i => i.ModifiedDateTime ).Select( cci =>
-        //    {
-        //        var bag = PluginHelper.GetCommonContentChannelItemEntityBag( cci );
-        //        bag.CreatedBy = cci.CreatedByPersonName;
-        //        bag.ModifiedBy = cci.ModifiedByPersonName;
-        //        bag.Id = cci.Id;
-
-        //        //Only Load Attributes Visible to the Provider
-        //        Rock.Attribute.Helper.LoadAttributes( cci, context, VisibleAttributes );
-        //        bag.LoadAttributesAndValuesForPublicView( cci, RequestContext.CurrentPerson );
-        //        return bag;
-        //    } ).ToList();
-
-        //    return events;
-        //}
-
         private IEnumerable<ContentChannelItem> FilterByStringMatch( RockContext context, IEnumerable<ContentChannelItem> items, AttributeCache attr, List<string> values )
         {
             AttributeValueService av_svc = new AttributeValueService( context );
@@ -767,6 +873,7 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
             }
 
             VisibleAttributes = new List<AttributeCache>();
+            EditableAttributes = new List<AttributeCache>();
             ContentChannelItem request = new ContentChannelItem() { ContentChannelId = EventContentChannelId, ContentChannelTypeId = EventContentChannelTypeId };
             request.LoadAttributes();
             ContentChannelItem detail = new ContentChannelItem() { ContentChannelId = EventDetailsContentChannelId, ContentChannelTypeId = EventDetailsContentChannelTypeId };
@@ -776,8 +883,10 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
             {
                 var attrsInCategory = request.Attributes.Select( kvp => kvp.Value ).Where( ac => ac.CategoryIds.Contains( c.Id ) );
                 VisibleAttributes.AddRange( attrsInCategory );
+                EditableAttributes.AddRange( attrsInCategory );
                 attrsInCategory = detail.Attributes.Select( kvp => kvp.Value ).Where( ac => ac.CategoryIds.Contains( c.Id ) );
                 VisibleAttributes.AddRange( attrsInCategory );
+                EditableAttributes.AddRange( attrsInCategory );
             }
             foreach ( Category c in ViewCategories )
             {
@@ -877,7 +986,7 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
 
                 if ( users.Count() > 0 )
                 {
-                    SendNotification( subject, message, users );
+                    EventFormHelper.SendNotification( subject, message, users );
                 }
             }
 
@@ -900,34 +1009,100 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
 
                     if ( users.Count() > 0 )
                     {
-                        SendNotification( subject, message, users );
+                        EventFormHelper.SendNotification( subject, message, users );
                     }
                 }
             }
         }
 
         /// <summary>
-        /// Method to build the communication and send it
+        /// Notify users that changes to a support service have been resolved
         /// </summary>
-        /// <param name="subject">Subject of Email</param>
-        /// <param name="message">Content of Email</param>
-        /// <param name="users">Recipients</param>
-        private void SendNotification( string subject, string message, List<Person> users )
+        /// <param name="item">The request</param>
+        /// <param name="message">Custom message from the SSP to the ministry</param>
+        private void PartialApprovalNotifications( ContentChannelItem item, List<string> approved, List<string> denied, List<EventPartialApproval> events, string notes )
         {
+            RockContext context = new RockContext();
+            Person p = GetCurrentPerson();
+            GlobalAttributesCache attributesCache = GlobalAttributesCache.Get();
+            string url = "";
+            Dictionary<string, string> queryParams = new Dictionary<string, string>();
+            string baseUrl = attributesCache.GetValue( "InternalApplicationRoot" );
+
+            var header = attributesCache.GetValue( "EmailHeader" );
+            var footer = attributesCache.GetValue( "EmailFooter" );
+
             RockEmailMessage email = new RockEmailMessage();
-            users = users.Distinct().ToList();
-            for ( int i = 0; i < users.Count(); i++ )
+            url = this.GetLinkedPageUrl( AttributeKeyBase.UserDashboardPage, queryParams );
+
+            string subject = "Some of Your Changes Have Been Approved for " + item.Title;
+            string message = "";
+            if ( !String.IsNullOrEmpty( notes ) )
             {
-                RockEmailMessageRecipient recipient = new RockEmailMessageRecipient( users[i], new Dictionary<string, object>() );
-                email.AddRecipient( recipient );
+                message = notes + "<br/>";
             }
-            email.Subject = subject;
-            email.Message = message;
-            email.FromEmail = "system@thecrossingchurch.com";
-            email.FromName = "The Crossing System";
-            email.CreateCommunicationRecord = true;
-            var output = email.Send();
+            message += "Please see below which modifications have been approved or denied:<br/>";
+            message += "<strong>Approved Modifications</strong><br/>";
+            message += "<ul>";
+            for ( int i = 0; i < approved.Count(); i++ )
+            {
+                message += "<li>" + approved[i] + "</li>";
+            }
+            message += "</ul>";
+            message += "<strong>Denied Modifications</strong><br/>";
+            message += "<ul>";
+            for ( int i = 0; i < denied.Count(); i++ )
+            {
+                message += "<li>" + denied[i] + "</li>";
+            }
+            message += "</ul>";
+
+            if ( events.Count() > 1 )
+            {
+                for ( int i = 0; i < events.Count(); i++ )
+                {
+                    var e = item.ChildItems.FirstOrDefault( ci => ci.ChildContentChannelItem.IdKey == events[i].eventidKey );
+                    if ( e != null )
+                    {
+                        message += "<strong>Approved Modifications for " + DateTime.Parse( e.GetAttributeValue( "EventDate" ) ).ToString( "MM/dd/yyyy" ) + "</strong><br/>";
+                        message += "<ul>";
+                        for ( int k = 0; i < events[i].approvedAttrs.Count(); k++ )
+                        {
+                            string attrName = e.ChildContentChannelItem.Attributes[events[i].approvedAttrs[k]].Name;
+                            if ( approved.Contains( attrName ) )
+                            {
+                                message += "<li>" + attrName + "</li>";
+                            }
+                        }
+                        message += "</ul>";
+                        message += "<strong>Denied Modifications for " + DateTime.Parse( e.GetAttributeValue( "EventDate" ) ).ToString( "MM/dd/yyyy" ) + "</strong><br/>";
+                        message += "<ul>";
+                        for ( int k = 0; i < events[i].deniedAttrs.Count(); k++ )
+                        {
+                            string attrName = e.ChildContentChannelItem.Attributes[events[i].deniedAttrs[k]].Name;
+                            if ( denied.Contains( attrName ) )
+                            {
+                                message += "<li>" + attrName + "</li>";
+                            }
+                        }
+                        message += "</ul>";
+                    }
+                }
+            }
+
+            message = "<p style='width: 100%; text-align: center;'><a href = '" + baseUrl + url.Substring( 1 ) + "?Id=" + item.Id + "' style = 'background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;' > Open Request </a></p>" +
+                "<p style='color: #347689; text-align: center; margin-top: 12px;'><i>Replies to this email will not be received. Open your event request to communicate with the Event Admin and Support Service Providers.</i></p>";
+            message = header + message + footer;
+
+            List<Person> users = EventFormHelper.GetRequestUsers( item, GetAttributeValue( AttributeKeyBase.SharedWithAttrKey ), GetAttributeValue( AttributeKeyBase.SharingGroupType ).AsGuidOrNull() ).Where( u => u.Id != p.Id ).ToList();
+
+            if ( users.Count() > 0 )
+            {
+                EventFormHelper.SendNotification( subject, message, users );
+            }
+
         }
+
         #endregion
 
         #region Classes
@@ -953,132 +1128,6 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
             All = 4
         }
 
-        private class RoleMap
-        {
-            public string PageAttributeKey { get; set; }
-            public string RoleAttributeKey { get; set; }
-            public string Tag { get; set; }
-        }
-
-        private class SectionMap
-        {
-            /// <summary>
-            /// The Event Request Attribute that indicates the service is being requested
-            /// </summary>
-            public string attr { get; set; }
-            /// <summary>
-            /// The Attribute Category assigned to information for that service
-            /// </summary>
-            public string category { get; set; }
-            /// <summary>
-            /// The friendly name of the section
-            /// </summary>
-            public string section { get; set; }
-            /// <summary>
-            /// The Event Request Attribute that indicates the current status (Needs Confirmation/Approval, Confirmed/Approved, or Denied) of that service
-            /// </summary>
-            public string status { get; set; }
-            /// <summary>
-            /// The Event Request Attribute Values that indicates what resources were requested (Room, Online, Catering, etc) 
-            /// </summary>
-            public string type { get; set; }
-        }
-
-        /// <summary>
-        /// Map of the data contained in each event request and how it relates to each service provided by another team
-        /// </summary>
-        private List<SectionMap> SectionMappings
-        {
-            get
-            {
-                var map = new List<SectionMap>();
-                map.Add( new SectionMap() { category = "Event", section = "Time" } );
-                map.Add( new SectionMap() { attr = "NeedsSpace", category = "Event Space", section = "Space", type = "Room" } );
-                map.Add( new SectionMap() { attr = "NeedsOnline", category = "Event Online", section = "Online", type = "Online Event" } );
-                map.Add( new SectionMap()
-                {
-                    attr = "NeedsCatering",
-                    category = "Event Catering",
-                    section = "Catering",
-                    type = "Catering",
-                    status = "CateringStatus"
-                } );
-                map.Add( new SectionMap()
-                {
-                    attr = "NeedsChildCare",
-                    category = "Event Childcare",
-                    section = "Childcare",
-                    type = "Childcare",
-                    status = "ChildcareStatus"
-                } );
-                map.Add( new SectionMap()
-                {
-                    attr = "NeedsChildCareCatering",
-                    category = "Event Childcare Catering",
-                    section = "Childcare Catering",
-                    type = "Childcare Catering",
-                    status = "ChildcareCateringStatus"
-                } );
-                map.Add( new SectionMap()
-                {
-                    attr = "NeedsChildCare",
-                    category = "Event Childcare Registration",
-                    section = "Childcare Registration",
-                    type = "Childcare",
-                    status = "ChildcareRegistrationStatus"
-                } );
-                map.Add( new SectionMap()
-                {
-                    attr = "NeedsOpsAccommodations",
-                    category = "Event Ops Requests",
-                    section = "Ops",
-                    type = "Extra Resources",
-                    status = "DailyOPSStatus"
-                } );
-                map.Add( new SectionMap()
-                {
-                    attr = "NeedsRegistration",
-                    category = "Event Registration",
-                    section = "Registration",
-                    type = "Registration",
-                    status = "DatabaseStatus"
-                } );
-                map.Add( new SectionMap()
-                {
-                    attr = "NeedsPublicity",
-                    category = "Event Publicity",
-                    section = "Publicity",
-                    type = "Publicity",
-                    status = "PublicityStatus"
-                } );
-                map.Add( new SectionMap()
-                {
-                    attr = "NeedsProductionAccommodations",
-                    category = "Event Production",
-                    section = "Production",
-                    type = "Production",
-                    status = "ProductionStatus"
-                } );
-                map.Add( new SectionMap()
-                {
-                    attr = "NeedsWorship",
-                    category = "Event Worship",
-                    section = "Worship",
-                    type = "Worship",
-                    status = "WorshipStatus"
-                } );
-                map.Add( new SectionMap()
-                {
-                    attr = "NeedsWebCalendar",
-                    category = "Event Calendar",
-                    section = "Calendar",
-                    type = "Web Calendar",
-                    status = "PublicityStatus"
-                } );
-                return map;
-            }
-        }
-
         public class GetRequestResponse
         {
             public ContentChannelItemBag request { get; set; }
@@ -1087,12 +1136,6 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
             public List<Details> details { get; set; }
             public PersonBag createdBy { get; set; }
             public PersonBag modifiedBy { get; set; }
-        }
-
-        public class Comment
-        {
-            public ContentChannelItemBag comment { get; set; }
-            public string createdBy { get; set; }
         }
 
         public class Details

@@ -13,6 +13,8 @@ export type DatabaseProviderBlockViewModel = {
     budgetLines: DefinedValueBag[];
     drinks: DefinedValueBag[];
     inventory: DefinedValueBag[];
+    discountCodeAttrs: AttributeBag[];
+    reqQuestionAttrs: AttributeBag[];
     editCategories: any[];
     viewCategories: any[];
     requestStatus: AttributeBag;

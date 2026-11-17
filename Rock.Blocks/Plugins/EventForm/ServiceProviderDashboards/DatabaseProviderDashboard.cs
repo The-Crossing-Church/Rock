@@ -4,10 +4,11 @@ using System.ComponentModel;
 using System.Linq;
 
 using Rock.Attribute;
-using Rock.Data;
-using Rock.Model;
 using Rock.Blocks.Plugins.EventForm;
 using Rock.Blocks.Plugins.ViewModels;
+using Rock.Data;
+using Rock.Model;
+using Rock.Web.Cache;
 
 namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
 {
@@ -24,6 +25,9 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
     [DefinedTypeField( "Budgets Defined Type", key: AttributeKey.BudgetList, category: "Lists", required: true, order: 2 )]
     [DefinedTypeField( "Drinks Defined Type", key: AttributeKey.DrinksList, category: "Lists", required: true, order: 3 )]
     [DefinedTypeField( "Ops Inventory Defined Type", key: AttributeKey.InventoryList, category: "Lists", required: true, order: 4 )]
+
+    [IntegerField( "Discount Code Matrix Id", key: AttributeKey.DiscountCodeMatrixId, category: "Attributes", required: true, order: 0 )]
+    [IntegerField( "Additional Registration Questions Matrix Id", key: AttributeKey.AdditionalRegQuestionsMatrixId, category: "Attributes", required: true, order: 1 )]
     #endregion
 
     public class DatabaseProviderDashboard : ServiceProviderDashboard
@@ -37,6 +41,9 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
             public const string BudgetList = "BudgetList";
             public const string DrinksList = "DrinksList";
             public const string InventoryList = "InventoryList";
+
+            public const string DiscountCodeMatrixId = "DiscountCodeMatrixId";
+            public const string AdditionalRegQuestionsMatrixId = "AdditionalRegQuestionsMatrixId";
         }
         #endregion
 
@@ -86,6 +93,18 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
                     inventory.LoadAttributes();
                     viewModel.inventory = inventory.ToList();
                 }
+
+                string matrixId = GetAttributeValue( AttributeKey.DiscountCodeMatrixId );
+                if ( !String.IsNullOrEmpty( matrixId ) )
+                {
+                    viewModel.discountCodeAttrs = AttributeCache.GetByEntityTypeQualifier( 483, "AttributeMatrixTemplateId", matrixId, true ).Select( a => PluginHelper.GetCommonAttributeEntityBag( a ) ).ToList();
+                }
+                matrixId = GetAttributeValue( AttributeKey.AdditionalRegQuestionsMatrixId );
+                if ( !String.IsNullOrEmpty( matrixId ) )
+                {
+                    viewModel.reqQuestionAttrs = AttributeCache.GetByEntityTypeQualifier( 483, "AttributeMatrixTemplateId", matrixId, true ).Select( a => PluginHelper.GetCommonAttributeEntityBag( a ) ).ToList();
+                }
+
                 //viewModel.pending = LoadRequestsByStatus( SSPDashboardOption.PendingConfirmation );
                 //viewModel.cancelled = LoadRequestsByStatus( SSPDashboardOption.Cancelled );
                 viewModel.ministryAttr = ministryAttr;
@@ -171,6 +190,8 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
 
             public List<DefinedValue> drinks { get; set; }
             public List<DefinedValue> inventory { get; set; }
+            public List<AttributeBag> discountCodeAttrs { get; set; }
+            public List<AttributeBag> reqQuestionAttrs { get; set; }
         }
         #endregion
     }

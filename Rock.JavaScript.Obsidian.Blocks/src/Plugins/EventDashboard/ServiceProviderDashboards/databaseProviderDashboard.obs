@@ -22,6 +22,8 @@ import RockLabel from "@Obsidian/Controls/rockLabel.obs"
 import RockField from "@Obsidian/Controls/rockField.obs"
 import DateRangePicker from "@Obsidian/Controls/dateRangePicker.obs"
 import SupportServiceButton from "./Components/supportServiceButton"
+import PartialApproval from "./Components/partialApproval"
+import EditDetails from "./Components/editModal"
 
 const store = useStore()
 
@@ -42,7 +44,9 @@ export default defineComponent({
     "tcc-table": SSPTable,
     "tcc-grid": GridAction,
     "tcc-details": Details,
+    "tcc-edit": EditDetails,
     "tcc-comments": Comments,
+    "tcc-partial": PartialApproval,
     "tcc-ssp-btn": SupportServiceButton
   },
   setup() {
@@ -73,7 +77,7 @@ export default defineComponent({
     };
     provide("updateSupportStatus", updateSupportStatus);
 
-    /** A method to update a request's support service status */
+    /** A method to add a comment to the request */
     const addComment: (id: string | null | undefined, message: string | null | undefined, tags: string[] | null) => Promise<any> = async (id, message, tags) => {
       const response = await invokeBlockAction("AddComment", {
         id: id, message: message, tags: tags
@@ -82,23 +86,14 @@ export default defineComponent({
     };
     provide("addComment", addComment);
 
-    /** A method to update a request's registration status to confirmed */
-    const approveRegistration: (id: string | null | undefined) => Promise<any> = async (id) => {
-        const response = await invokeBlockAction("ApproveRegistration", {
-            id: id
+    /** A method to resolve a users requested changes */
+    const completePartialApproval: (id: string | null | undefined, approved: string[], denied: string[], events: any[], message: string) => Promise<any> = async (id, approved, denied, events, message) => {
+        const response = await invokeBlockAction("PartialApproval", {
+          id: id, approved: approved, denied: denied, events: events, notes: message
         });
         return response
-    };
-    provide("approveRegistration", approveRegistration);
-
-    /** A method to update a request's childcare registration status to confirmed */
-    const approveCCRegistration: (id: string | null | undefined) => Promise<any> = async (id) => {
-        const response = await invokeBlockAction("ApproveChildcareRegistration", {
-            id: id
-        });
-        return response
-    };
-    provide("approveCCRegistration", approveCCRegistration);
+      }
+    provide("partialApproval", completePartialApproval);
 
     let defaultFilters = {
       title: "",
@@ -120,8 +115,7 @@ export default defineComponent({
       loadDetails,
       defaultFilters,
       updateSupportStatus,
-      approveRegistration,
-      approveCCRegistration,
+      completePartialApproval,
       addComment
     }
   },
@@ -136,10 +130,13 @@ export default defineComponent({
       pickExistingValueFilter: pickExistingValueFilter,
       selected: {} as ContentChannelItemBag,
       sections: [] as any,
-      editSections: [] as any,
+      editCategories: [] as any,
+      categoriesWithChanges: [] as any,
       createdBy: {},
       modifiedBy: {},
       modal: false,
+      partialApprovalModal: false,
+      editModal: false,
       comment: "",
       commentModal: false,
       toast: {
@@ -213,24 +210,28 @@ export default defineComponent({
     },
     sspActions() {
       let sspActions = [] as any[]
-      if(this.selected?.attributes && this.selected?.attributeValues) {
-        this.editSections.forEach(section => {
+      if(this.selected?.attributes && this.selected?.attributeValues && this.editCategories?.length > 0) {
+        this.editCategories?.forEach(cat => {
           let info = helper.sectionInfo.filter(si => {
-            return section == si.section
+            return cat == si.cat
           })[0]
-          let statusKey = info.status
-          let statusAttr = this.selected?.attributes[statusKey] as any
-          let options = JSON.parse(statusAttr.configurationValues.values)
-          let status = this.selected?.attributeValues[statusKey]
-          let currentStatus = options.filter(opt => opt.value == status)
-          if(currentStatus && currentStatus.length > 0) {
-            currentStatus = currentStatus[0]
-          } else {
-            currentStatus = options[0]
+          if(!this.categoriesWithChanges.includes(cat)) {
+            //Verify that the action does not have any pending changes that need to be resolved 
+            //before the SSP can take action on the status of the support service
+            let statusKey = info.status
+            let statusAttr = this.selected?.attributes[statusKey] as any
+            let options = JSON.parse(statusAttr.configurationValues.values)
+            let status = this.selected?.attributeValues[statusKey]
+            let currentStatus = options.filter(opt => opt.value == status)
+            if(currentStatus && currentStatus.length > 0) {
+              currentStatus = currentStatus[0]
+            } else {
+              currentStatus = options[0]
+            }
+            options.filter(opt => opt.value != status).forEach(opt => {
+              sspActions.push({ service: info.section, action: opt.text, value: opt.value, statusKey: statusKey })
+            })
           }
-          options.filter(opt => opt.value != status).forEach(opt => {
-            sspActions.push({ service: info.section, action: opt.text, value: opt.value, statusKey: statusKey })
-          })
         })
       }
       return sspActions
@@ -292,24 +293,26 @@ export default defineComponent({
             return 0
           })
           response.data.request.changes = response.data.requestChanges
-          // response.data.request.comments = response.data.comments
+          response.data.request.comments = response.data.comments
           // response.data.request.conflicts = response.data.conflicts
           // response.data.request.changesConflicts = response.data.changesConflicts
           this.selected = response.data.request
-          let editCategories = this.viewModel?.editCategories.map(c => c.name)
           let viewCategories = this.viewModel?.viewCategories.map(c => c.name)
+          this.editCategories = this.viewModel?.editCategories.map(c => c.name)
           this.sections = helper.sectionInfo.filter(si => {
-            return editCategories?.includes(si.cat) || viewCategories?.includes(si.cat)
+            return this.editCategories?.includes(si.cat) || viewCategories?.includes(si.cat)
           }).map(si => si.type )
-          this.editSections = helper.sectionInfo.filter(si => {
-            return editCategories?.includes(si.cat)
-          }).map(si => si.section )
           this.createdBy = response.data.createdBy
           this.modifiedBy = response.data.modifiedBy
           this.modal = true
           this.requestValidation = this.rules.validate(this.selected, response.data.request?.childItems, this.viewModel?.locations, this.viewModel?.ministries, true)
           if(this.selected?.attributeValues?.RequestErrors) {
             this.requestValidation.errors = JSON.parse(this.selected?.attributeValues?.RequestErrors as string)
+          }
+          if(this.selected?.attributeValues?.RequestStatus == "Pending Changes") {
+            this.processEventChanges()
+          } else {
+            this.categoriesWithChanges = []
           }
         }
       }).finally(() => {
@@ -382,6 +385,67 @@ export default defineComponent({
       let el = document.getElementById('toast')
       el?.classList.remove("show")
     },
+    processEventChanges() {
+      //Method to determine what sections have pending changes and if the SSP needs to   
+      //resolve those before taking action on the status of their support service 
+      let request = this.selected as any
+      let updatedAttributeCategories = [] as any
+      if(request?.attributeValues && request?.changes?.attributeValues) {
+        Object.keys(request.attributeValues).forEach(key => {
+          if(request.attributeValues[key] != request.changes.attributeValues[key]) {
+            if(request.attributes[key] && request.attributes[key].categories?.length > 0) {
+              updatedAttributeCategories.push(...request.attributes[key]?.categories?.map(c => c.name))
+            }
+          }
+        })
+        request.childItems.forEach(detail => {
+          Object.keys(detail.attributeValues).forEach(key => {
+            if(detail.attributeValues[key] != detail.changes.attributeValues[key]) {
+              if(detail.attributes[key] && detail.attributes[key].categories?.length > 0) {
+                updatedAttributeCategories.push(...detail.attributes[key].categories.map(c => c.name))
+              }
+            }
+          })
+        })
+      }
+      this.categoriesWithChanges = updatedAttributeCategories.filter((cat, idx, list) => {
+        if(cat && list.indexOf(cat) == idx) {
+          return this.editCategories.includes(cat)
+        }
+        return false
+      })
+    },
+    partialApproval() {
+      let ref = this.$refs.partialApprovalInfo as any
+      let approved = ref.approvedAttributes as string[]
+      let denied = ref.deniedAttributes as string[]
+      let events = ref.eventChanges as any[]
+      let message = ref.message as string
+      let el = document.getElementById('updateProgress')
+      if(el) {
+        el.style.display = 'block'
+      }
+
+      this.completePartialApproval(this.selected.idKey, approved, denied, events, message).then((res) => {
+        this.partialApprovalModal = false
+        if(res.isSuccess) {
+          if(res.data?.id) {
+            this.selectItem({ idKey: res.data.id })
+          }
+        } else if (res.isError) {
+          this.toast = {
+            message: res.errorMessage,
+            class: "show",
+            title: "System Exception",
+            titleClass: "toast-header text-red",
+            iconClass: "fas fa-exclamation-triangle mr-1" 
+          }
+          if(el) {
+            el.style.display = 'none'
+          }
+        }
+      })
+    }
   },
   watch: {
     
@@ -547,7 +611,7 @@ export default defineComponent({
     :modifiedBy="modifiedBy" 
     :requestValidation="requestValidation" 
     :sections="sections"
-    :editSections="editSections"
+    :editCategories="editCategories"
     v-on:openrequest="selectItem"
   ></tcc-details>
   <template v-if="commentModal || (selected.comments && selected.comments.length > 0)">
@@ -555,6 +619,14 @@ export default defineComponent({
   </template>
   <template #customButtons>
     <div class="d-flex modal-button-wrapper w-100">
+      <rck-btn v-if="categoriesWithChanges.length > 0" btnType="primary" @click="partialApprovalModal = true">
+        <i class="mr-1 fas fa-tasks"></i>
+        Resolve Changes
+      </rck-btn>
+      <rck-btn v-else btnType="primary" @click="editModal = true">
+        <i class="mr-1 fa fa-pencil-alt"></i>
+        Edit
+      </rck-btn>
       <tcc-ssp-btn
         v-for="action in sspActions"
         :service="action.service"
@@ -574,6 +646,53 @@ export default defineComponent({
         Close
       </rck-btn>
     </div>
+  </template>
+</rck-modal>
+
+<rck-modal v-if="partialApprovalModal" v-model="partialApprovalModal" width="70%" isCloseButtonHidden cancelText="" clickBackdropToClose modalWrapperClasses="modal-no-header">
+  <h4>Partial Approval for: {{selected.title}}</h4>
+  <p>
+    Changes have been requested for this event. Please approve or deny each change request for items related to your support service.
+  </p>
+  
+  <tcc-partial
+    :request="selected" 
+    :rooms="viewModel.locations" 
+    :inventory="viewModel.inventory" 
+    :editCategories="editCategories"
+    ref="partialApprovalInfo"
+  ></tcc-partial>
+  
+  <template #customButtons>
+    <rck-btn btnType="accent" @click="partialApproval">
+      <i class="mr-1 fa fa-check"></i>
+      Complete
+    </rck-btn>
+    <rck-btn btnType="grey" @click="partialApprovalModal = false;">
+      <i class="mr-1 fa fa-ban"></i>
+      Cancel
+    </rck-btn>
+  </template>
+</rck-modal>
+
+<rck-modal v-model="editModal" width="80%" isCloseButtonHidden cancelText="" clickBackdropToClose modalWrapperClasses="modal-no-header">
+  <h4>Edit: {{selected.title}}</h4>
+  <tcc-edit
+    :request="selected" 
+    :editCategories="editCategories"
+    :regAttrs="viewModel.reqQuestionAttrs"
+    :discountAttrs="viewModel.discountCodeAttrs"
+  ></tcc-edit>
+  
+  <template #customButtons>
+    <rck-btn btnType="accent" @click="save">
+      <i class="mr-1 ti ti-device-floppy"></i>
+      Save
+    </rck-btn>
+    <rck-btn btnType="grey" @click="editModal = false;">
+      <i class="mr-1 fa fa-ban"></i>
+      Cancel
+    </rck-btn>
   </template>
 </rck-modal>
 

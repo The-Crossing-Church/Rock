@@ -50,7 +50,7 @@ export default defineComponent({
       createdBy: Object,
       modifiedBy: Object,
       sections: Array,
-      editSections: Array,
+      editCategories: Array,
       requestValidation: Object
     },
     setup() {
@@ -293,7 +293,7 @@ export default defineComponent({
           className += " chip-background-" + currentStatus.value
         }
         return className
-      }
+      },
     },
     watch: {
       
@@ -555,18 +555,18 @@ export default defineComponent({
         </div>
       </div>
     </div>
-    <tcc-space v-if="(sections == null || sections?.includes('Room')) && (request.attributeValues.NeedsSpace == 'True' || ( request.changes && request.changes.attributeValues.NeedsSpace == 'True' ))" :details="ci" :rooms="rooms" :index="idx" :requestValidation="requestValidation"></tcc-space>
+    <tcc-space v-if="(sections == null || sections?.includes('Room')) && (request.attributeValues.NeedsSpace == 'True' || ( request.changes && request.changes.attributeValues.NeedsSpace == 'True' ))" :details="ci" :rooms="rooms" :index="idx" :requestValidation="requestValidation" :editCategories="editCategories"></tcc-space>
     <tcc-offsite v-else :details="ci" :index="idx" :requestValidation="requestValidation"></tcc-offsite>
-    <tcc-catering v-if="(sections == null || sections?.includes('Catering')) && (request.attributeValues.NeedsCatering == 'True' || ( request.changes && request.changes.attributeValues.NeedsCatering == 'True' ))" :details="ci" :drinks="drinks" :needsSpace="needsSpace" :index="idx" :requestValidation="requestValidation"></tcc-catering>
-    <tcc-ops v-if="(sections == null || sections?.includes('Extra Resources')) && (request.attributeValues.NeedsOpsAccommodations == 'True' || ( request.changes && request.changes.attributeValues.NeedsOpsAccommodations == 'True' ))" :details="ci" :rooms="rooms" :drinks="drinks" :inventory="inventory" :needsCatering="needsCatering" :index="idx" :requestValidation="requestValidation"></tcc-ops>
-    <tcc-childcare v-if="(sections == null || sections?.includes('Childcare')) && (request.attributeValues.NeedsChildCare == 'True' || ( request.changes && request.changes.attributeValues.NeedsChildCare == 'True' ))" :details="ci" :needsCatering="needsChildcareCatering" :index="idx" :requestValidation="requestValidation"></tcc-childcare>
-    <tcc-registration v-if="(sections == null || sections?.includes('Registration')) && (request.attributeValues.NeedsRegistration == 'True' || ( request.changes && request.changes.attributeValues.NeedsRegistration == 'True' ))" :details="ci" :index="idx" :requestValidation="requestValidation"></tcc-registration>
-    <tcc-online v-if="(sections == null || sections?.includes('Online')) && (request.attributeValues.NeedsOnline == 'True' || ( request.changes && request.changes.attributeValues.NeedsOnline == 'True' ))" :details="ci" :index="idx" :requestValidation="requestValidation"></tcc-online>
+    <tcc-catering v-if="(sections == null || sections?.includes('Catering')) && (request.attributeValues.NeedsCatering == 'True' || ( request.changes && request.changes.attributeValues.NeedsCatering == 'True' ))" :details="ci" :drinks="drinks" :needsSpace="needsSpace" :index="idx" :requestValidation="requestValidation" :editCategories="editCategories"></tcc-catering>
+    <tcc-ops v-if="(sections == null || sections?.includes('Extra Resources')) && (request.attributeValues.NeedsOpsAccommodations == 'True' || ( request.changes && request.changes.attributeValues.NeedsOpsAccommodations == 'True' ))" :details="ci" :rooms="rooms" :drinks="drinks" :inventory="inventory" :needsCatering="needsCatering" :index="idx" :requestValidation="requestValidation" :editCategories="editCategories"></tcc-ops>
+    <tcc-childcare v-if="(sections == null || sections?.includes('Childcare')) && (request.attributeValues.NeedsChildCare == 'True' || ( request.changes && request.changes.attributeValues.NeedsChildCare == 'True' ))" :details="ci" :needsCatering="needsChildcareCatering" :index="idx" :requestValidation="requestValidation" :editCategories="editCategories"></tcc-childcare>
+    <tcc-registration v-if="(sections == null || sections?.includes('Registration')) && (request.attributeValues.NeedsRegistration == 'True' || ( request.changes && request.changes.attributeValues.NeedsRegistration == 'True' ))" :details="ci" :index="idx" :requestValidation="requestValidation" :editCategories="editCategories"></tcc-registration>
+    <tcc-online v-if="(sections == null || sections?.includes('Online')) && (request.attributeValues.NeedsOnline == 'True' || ( request.changes && request.changes.attributeValues.NeedsOnline == 'True' ))" :details="ci" :index="idx" :requestValidation="requestValidation" :editCategories="editCategories"></tcc-online>
   </rck-panel>
-  <tcc-web-cal v-if="(sections == null || sections?.includes('Web Calendar')) && (request.attributeValues.NeedsWebCalendar == 'True' || ( request.changes && request.changes.attributeValues.NeedsWebCalendar == 'True' ))" :request="request" :requestValidation="requestValidation"></tcc-web-cal>
-  <tcc-production v-if="(sections == null || sections?.includes('Production')) && (request.attributeValues.NeedsProductionAccommodations == 'True' || ( request.changes && request.changes.attributeValues.NeedsProductionAccommodations == 'True' ))" :request="request" :requestValidation="requestValidation"></tcc-production>
-  <tcc-worship v-if="(sections == null || sections?.includes('Worship')) && (request.attributeValues.NeedsWorship == 'True' || ( request.changes && request.changes.attributeValues.NeedsWorship == 'True' ))" :request="request" :requestValidation="requestValidation"></tcc-worship>
-  <tcc-publicity v-if="(sections == null || sections?.includes('Publicity')) && (request.attributeValues.NeedsPublicity == 'True' || ( request.changes && request.changes.attributeValues.NeedsPublicity == 'True' ))" :request="request" :requestValidation="requestValidation"></tcc-publicity>
+  <tcc-web-cal v-if="(sections == null || sections?.includes('Web Calendar')) && (request.attributeValues.NeedsWebCalendar == 'True' || ( request.changes && request.changes.attributeValues.NeedsWebCalendar == 'True' ))" :request="request" :requestValidation="requestValidation" :editCategories="editCategories"></tcc-web-cal>
+  <tcc-production v-if="(sections == null || sections?.includes('Production')) && (request.attributeValues.NeedsProductionAccommodations == 'True' || ( request.changes && request.changes.attributeValues.NeedsProductionAccommodations == 'True' ))" :request="request" :requestValidation="requestValidation" :editCategories="editCategories"></tcc-production>
+  <tcc-worship v-if="(sections == null || sections?.includes('Worship')) && (request.attributeValues.NeedsWorship == 'True' || ( request.changes && request.changes.attributeValues.NeedsWorship == 'True' ))" :request="request" :requestValidation="requestValidation" :editCategories="editCategories"></tcc-worship>
+  <tcc-publicity v-if="(sections == null || sections?.includes('Publicity')) && (request.attributeValues.NeedsPublicity == 'True' || ( request.changes && request.changes.attributeValues.NeedsPublicity == 'True' ))" :request="request" :requestValidation="requestValidation" :editCategories="editCategories"></tcc-publicity>
   <div class="row" v-if="request.attributeValues.Notes != '' || (request.changes && request.changes.attributeValues.Notes != '')">
     <template v-if="request.changes && request.changes.attributeValues.Notes != request.attributeValues.Notes">
       <div class="col col-xs-6">
