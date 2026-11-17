@@ -51,81 +51,82 @@ export default defineComponent({
     "rck-col-per": PersonColumn,
   },
   setup() {
-      const invokeBlockAction = useInvokeBlockAction();
-      const viewModel = useConfigurationValues<AdminDashboardBlockViewModel | null>();
+    const invokeBlockAction = useInvokeBlockAction();
+    const viewModel = useConfigurationValues<AdminDashboardBlockViewModel | null>();
 
-      let defaultFilters = {
-        title: "",
-        statuses: viewModel?.defaultStatuses,
-        resources: [] as string[],
-        ministry: "",
-        submitter: "",
-        eventDates:  { lowerValue: "", upperValue: "" },
-        eventModified: { lowerValue: "", upperValue: "" }
-      }
-      defaultFilters.eventModified.upperValue = DateTime.now().toFormat("yyyy-MM-dd")
-      let twoWeeks = Duration.fromObject({weeks: 2})
-      defaultFilters.eventModified.lowerValue = DateTime.now().minus(twoWeeks).toFormat("yyyy-MM-dd")
+    let defaultFilters = {
+      title: "",
+      statuses: viewModel?.defaultStatuses,
+      resources: [] as string[],
+      ministry: "",
+      submitter: "",
+      eventDates:  { lowerValue: "", upperValue: "" },
+      eventModified: { lowerValue: "", upperValue: "" }
+    }
+    defaultFilters.eventModified.upperValue = DateTime.now().toFormat("yyyy-MM-dd")
+    let twoWeeks = Duration.fromObject({weeks: 2})
+    defaultFilters.eventModified.lowerValue = DateTime.now().minus(twoWeeks).toFormat("yyyy-MM-dd")
 
-      /** A method to load a specific request's details */
-      const loadDetails: (id: string | null | undefined) => Promise<any> = async (id) => {
-          const response = await invokeBlockAction("GetRequestDetails", {
-              id: id
-          });
-          return response
-      };
-      provide("loadDetails", loadDetails);
-
-      const filterRequests: (option: string, filters: any) => Promise<any> = async (option, filters) => {
-        const response = await invokeBlockAction("FilterRequests", {
-            opt: option, filters: filters
+    /** A method to load a specific request's details */
+    const loadDetails: (id: string | null | undefined) => Promise<any> = async (id) => {
+        const response = await invokeBlockAction("GetRequestDetails", {
+            id: id
         });
         return response
-      }
-      provide("filterRequests", filterRequests);
+    };
+    provide("loadDetails", loadDetails);
 
-      const changeStatus: (id: string | null | undefined, status: string, withComment: boolean) => Promise<any> = async (id, status, withComment) => {
-        const response = await invokeBlockAction("ChangeStatus", {
-            id: id, status: status, denyWithComments: withComment
-        });
-        return response
-      }
-      provide("changeStatus", changeStatus);
+    const filterRequests: (option: string, filters: any) => Promise<any> = async (option, filters) => {
+      const response = await invokeBlockAction("FilterRequests", {
+          opt: option, filters: filters
+      });
+      return response
+    }
+    provide("filterRequests", filterRequests);
 
-      const addComment: (id: string | null | undefined, message: string) => Promise<any> = async (id, message) => {
-        const response = await invokeBlockAction("AddComment", {
-          id: id, message: message
-        });
-        return response
-      }
-      provide("addComment", addComment);
-      
-      const completePartialApproval: (id: string | null | undefined, approved: string[], denied: string[], events: any[], message: string) => Promise<any> = async (id, approved, denied, events, message) => {
-        const response = await invokeBlockAction("PartialApproval", {
-          id: id, approved: approved, denied: denied, events: events, notes: message
-        });
-        return response
-      }
-      provide("completePartialApproval", completePartialApproval);
+    const changeStatus: (id: string | null | undefined, status: string, withComment: boolean) => Promise<any> = async (id, status, withComment) => {
+      const response = await invokeBlockAction("ChangeStatus", {
+          id: id, status: status, denyWithComments: withComment
+      });
+      return response
+    }
+    provide("changeStatus", changeStatus);
 
-      const addBuffer: (data: any) => Promise<any> = async (data) => {
-        const response = await invokeBlockAction("AddBuffer", {
-          data: data
-        });
-        return response
-      }
-      provide("addBuffer", addBuffer);
+    /** A method to add a comment to the request */
+    const addComment: (id: string | null | undefined, message: string | null | undefined, tags: string[] | null) => Promise<any> = async (id, message, tags) => {
+      const response = await invokeBlockAction("AddComment", {
+        id: id, message: message, tags: tags
+      });
+      return response
+    };
+    provide("addComment", addComment);
+    
+    const completePartialApproval: (id: string | null | undefined, approved: string[], denied: string[], events: any[], message: string) => Promise<any> = async (id, approved, denied, events, message) => {
+      const response = await invokeBlockAction("PartialApproval", {
+        id: id, approved: approved, denied: denied, events: events, notes: message
+      });
+      return response
+    }
+    provide("completePartialApproval", completePartialApproval);
 
-      return {
-          viewModel,
-          defaultFilters,
-          loadDetails,
-          filterRequests,
-          changeStatus,
-          addComment,
-          completePartialApproval,
-          addBuffer
-      }
+    const addBuffer: (data: any) => Promise<any> = async (data) => {
+      const response = await invokeBlockAction("AddBuffer", {
+        data: data
+      });
+      return response
+    }
+    provide("addBuffer", addBuffer);
+
+    return {
+        viewModel,
+        defaultFilters,
+        loadDetails,
+        filterRequests,
+        changeStatus,
+        addComment,
+        completePartialApproval,
+        addBuffer
+    }
   },
   data() {
       return {
@@ -140,30 +141,6 @@ export default defineComponent({
         denyPop: false,
         approvePop: false,
         editPop: false,
-        requestStatuses: [
-          { text: "Draft", value: "Draft" },
-          { text: "Submitted", value: "Submitted" },
-          { text: "In Progress", value: "In Progress" },
-          { text: "Approved", value: "Approved" },
-          { text: "Denied", value: "Denied" },
-          { text: "Cancelled", value: "Cancelled" },
-          { text: "Pending Changes", value: "Pending Changes" },
-          { text: "Proposed Changes Denied", value: "Proposed Changes Denied" },
-          { text: "Changes Accepted by User", value: "Changes Accepted by User" },
-          { text: "Cancelled by User", value: "Cancelled by User" }
-        ],
-        resources: [
-          { text: "Room",  value: "Room" },
-          { text: "Online Event", value: "Online Event" },
-          { text: "Catering", value: "Catering" },
-          { text: "Childcare", value: "Childcare" },
-          { text: "Extra Resources", value: "Extra Resources" },
-          { text: "Registration", value: "Registration" },
-          { text: "Web Calendar", value: "Web Calendar" },
-          { text: "Production", value: "Production" },
-          { text: "Worship", value: "Worship" },
-          { text: "Publicity", value: "Publicity" }
-        ],
         loading: true,
         btnLoading: {
           inprogress: false,
@@ -446,12 +423,12 @@ export default defineComponent({
       this.comment = ""
       this.commentModal = true
     },
-    createComment(comment) {
+    createComment(comment, tags: string[]) {
       let el = document.getElementById('updateProgress')
       if(el) {
         el.style.display = 'block'
       }
-      this.addComment(this.selected.idKey, comment).then((res: any) => {
+      this.addComment(this.selected.idKey, comment, tags).then((res: any) => {
         if(res.isSuccess) {
           if(res.data?.comment) {
             let req = this.selected as any
@@ -591,13 +568,13 @@ export default defineComponent({
   },
   template: `
 <div class="card mb-2">
-  <tcc-table :openByDefault="true" option="Submitted" :events="viewModel.submittedEvents" :users="viewModel.users" :ministryAttr="ministryAttr" :resources="resources" v-on:updatestatus="updateFromGridAction" v-on:addbuffer="addBufferFromGridAction" v-on:selectitem="selectItem" v-on:filter="filterTables"></tcc-table>
+  <tcc-table :openByDefault="true" option="Submitted" :events="viewModel.submittedEvents" :users="viewModel.users" :ministryAttr="ministryAttr" :resources="helper.resources" v-on:updatestatus="updateFromGridAction" v-on:addbuffer="addBufferFromGridAction" v-on:selectitem="selectItem" v-on:filter="filterTables"></tcc-table>
 </div>
 <div class="card mb-2">
-  <tcc-table :openByDefault="false" option="Pending Changes" :events="viewModel.changedEvents" :users="viewModel.users" :ministryAttr="ministryAttr" :resources="resources" v-on:updatestatus="updateFromGridAction" v-on:addbuffer="addBufferFromGridAction" v-on:selectitem="selectItem" v-on:filter="filterTables"></tcc-table>
+  <tcc-table :openByDefault="false" option="Pending Changes" :events="viewModel.changedEvents" :users="viewModel.users" :ministryAttr="ministryAttr" :resources="helper.resources" v-on:updatestatus="updateFromGridAction" v-on:addbuffer="addBufferFromGridAction" v-on:selectitem="selectItem" v-on:filter="filterTables"></tcc-table>
 </div>
 <div class="card mb-2">
-  <tcc-table :openByDefault="false" option="In Progress" :events="viewModel.inprogressEvents" :users="viewModel.users" :ministryAttr="ministryAttr" :resources="resources" v-on:updatestatus="updateFromGridAction" v-on:addbuffer="addBufferFromGridAction" v-on:selectitem="selectItem" v-on:filter="filterTables"></tcc-table>
+  <tcc-table :openByDefault="false" option="In Progress" :events="viewModel.inprogressEvents" :users="viewModel.users" :ministryAttr="ministryAttr" :resources="helper.resources" v-on:updatestatus="updateFromGridAction" v-on:addbuffer="addBufferFromGridAction" v-on:selectitem="selectItem" v-on:filter="filterTables"></tcc-table>
 </div>
 <div class="card">
   <div style="display: flex; align-items: center;">
@@ -631,7 +608,7 @@ export default defineComponent({
         <div class="col col-xs-12 col-md-4">
           <rck-ddl
             label="Request Status"
-            :items="requestStatuses"
+            :items="helper.requestStatuses"
             v-model="filters.statuses"
             multiple
           ></rck-ddl>
@@ -639,7 +616,7 @@ export default defineComponent({
         <div class="col col-xs-12 col-md-4">
           <rck-ddl
             label="Requested Resources"
-            :items="resources"
+            :items="helper.resources"
             v-model="filters.resources"
             multiple
           ></rck-ddl>
@@ -732,7 +709,7 @@ export default defineComponent({
 <rck-modal v-model="modal" width="80%" isCloseButtonHidden cancelText="" clickBackdropToClose modalWrapperClasses="modal-no-header">
   <tcc-details :request="selected" :rooms="viewModel.locations" :drinks="viewModel.drinks" :inventory="viewModel.inventory" :createdBy="createdBy" :modifiedBy="modifiedBy" :requestValidation="requestValidation" v-on:openrequest="selectItem"></tcc-details>
   <template v-if="commentModal || (selected.comments && selected.comments.length > 0)">
-    <tcc-comments :comments="selected.comments" v-model="commentModal" v-on:createComment="createComment"></tcc-comments>
+    <tcc-comments role="Admin" :comments="selected.comments" :request="selected" v-model="commentModal" v-on:createComment="createComment"></tcc-comments>
     <!--
     <h3 class="text-accent">Comments</h3>
     <div>

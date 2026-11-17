@@ -3,7 +3,6 @@ import { defineComponent, provide } from "vue"
 import { useConfigurationValues, useInvokeBlockAction } from "@Obsidian/Utility/block"
 import { CurrentPersonBag } from "@Obsidian/ViewModels/Crm/currentPersonBag"
 import { ContentChannelItemBag } from "../ViewModels/contentChannelItemBag"
-import { PublicAttributeBag } from "@Obsidian/ViewModels/Utility/publicAttributeBag"
 import { UserDashboardBlockViewModel, DuplicateRequestViewModel } from "./userDashboardBlockViewModel"
 import { useStore } from "@Obsidian/PageState"
 import { DateTime, Interval } from "luxon"
@@ -23,6 +22,7 @@ import DropDownList from "@Obsidian/Controls/dropDownList.obs"
 import Comments from "./Components/comments"
 import UserGridAction from "./Components/userGridAction"
 import rules from "../EventForm/Rules/rules"
+import helper from "./Helpers/helper"
 
 const store = useStore();
 
@@ -49,168 +49,146 @@ export default defineComponent({
     "rck-col-dt": DateColumn,
   },
   setup() {
-      const invokeBlockAction = useInvokeBlockAction();
-      const viewModel = useConfigurationValues<UserDashboardBlockViewModel | null>();
+    const invokeBlockAction = useInvokeBlockAction();
+    const viewModel = useConfigurationValues<UserDashboardBlockViewModel | null>();
 
-      let defaultFilters = {
-        title: "",
-        statuses: viewModel?.defaultStatuses,
-        resources: [] as string[],
-        ministry: "",
-        submitter: "", //{ value: "", text: ""},
-        eventDates:  { lowerValue: "", upperValue: "" },
-        eventModified: { lowerValue: "", upperValue: "" }
-      }
+    let defaultFilters = {
+      title: "",
+      statuses: viewModel?.defaultStatuses,
+      resources: [] as string[],
+      ministry: "",
+      submitter: "", //{ value: "", text: ""},
+      eventDates:  { lowerValue: "", upperValue: "" },
+      eventModified: { lowerValue: "", upperValue: "" }
+    }
 
-      /** A method to load a specific request's details */
-      const loadDetails: (id: string | null | undefined) => Promise<any> = async (id) => {
-          const response = await invokeBlockAction("GetRequestDetails", {
-              id: id
-          });
-          return response
-      };
-      provide("loadDetails", loadDetails);
-
-      const filterRequests: (filters: any) => Promise<any> = async (filters) => {
-        const response = await invokeBlockAction("FilterRequests", {
-            filters: filters
+    /** A method to load a specific request's details */
+    const loadDetails: (id: string | null | undefined) => Promise<any> = async (id) => {
+        const response = await invokeBlockAction("GetRequestDetails", {
+            id: id
         });
         return response
-      }
-      provide("filterRequests", filterRequests);
+    };
+    provide("loadDetails", loadDetails);
 
-      const changeStatus: (id: string | null | undefined, status: string) => Promise<any> = async (id, status) => {
-        const response = await invokeBlockAction("ChangeStatus", {
-            id: id, status: status
+    const filterRequests: (filters: any) => Promise<any> = async (filters) => {
+      const response = await invokeBlockAction("FilterRequests", {
+          filters: filters
+      });
+      return response
+    }
+    provide("filterRequests", filterRequests);
+
+    const changeStatus: (id: string | null | undefined, status: string) => Promise<any> = async (id, status) => {
+      const response = await invokeBlockAction("ChangeStatus", {
+          id: id, status: status
+      });
+      return response
+    }
+    provide("changeStatus", changeStatus);
+
+    /** A method to add a comment to the request */
+    const addComment: (id: string | null | undefined, message: string | null | undefined, tags: string[] | null) => Promise<any> = async (id, message, tags) => {
+      const response = await invokeBlockAction("AddComment", {
+        id: id, message: message, tags: tags
+      });
+      return response
+    };
+    provide("addComment", addComment);
+
+    /** Resubmit a Copy of an Event */
+    const resubmitEvent: (id: string | null | undefined, eventDates: string, removedResources: string[], copyDates: any[]) => Promise<any> = async (id, eventDates, removedResources, copyDates) => {
+        const response = await invokeBlockAction<{ expirationDateTime: string }>("DuplicateEvent", {
+          id: id, eventDates: eventDates, removedResources: removedResources, copyDates: copyDates
         });
-        return response
-      }
-      provide("changeStatus", changeStatus);
-
-      const addComment: (id: string | null | undefined, message: string) => Promise<any> = async (id, message) => {
-        const response = await invokeBlockAction("AddComment", {
-          id: id, message: message
-        });
-        return response
-      }
-      provide("addComment", addComment);
-
-      /** Resubmit a Copy of an Event */
-      const resubmitEvent: (id: string | null | undefined, eventDates: string, removedResources: string[], copyDates: any[]) => Promise<any> = async (id, eventDates, removedResources, copyDates) => {
-          const response = await invokeBlockAction<{ expirationDateTime: string }>("DuplicateEvent", {
-            id: id, eventDates: eventDates, removedResources: removedResources, copyDates: copyDates
-          });
-          if (response.data) {
-              return response
-          }
-      };
-      provide("resubmitEvent", resubmitEvent);
-
-      /** A method for the user to respond to Proposed Changes Denied */
-      const userAction: (id: string | null | undefined, action: string) => Promise<any> = async (id, action) => {
-          const response = await invokeBlockAction<{ expirationDateTime: string }>("ProposedChangesAction", {
-              id: id, action: action
-          });
-          if (response) {
+        if (response.data) {
             return response
-          }
-      };
-      provide("userAction", userAction);
+        }
+    };
+    provide("resubmitEvent", resubmitEvent);
 
-      /** A method for the user to delete a draft */
-      const deleteDraft: (id: string | null | undefined) => Promise<any> = async (id) => {
-        const response = await invokeBlockAction<{ expirationDateTime: string }>("DeleteDraft", {
-          id: id
+    /** A method for the user to respond to Proposed Changes Denied */
+    const userAction: (id: string | null | undefined, action: string) => Promise<any> = async (id, action) => {
+        const response = await invokeBlockAction<{ expirationDateTime: string }>("ProposedChangesAction", {
+            id: id, action: action
         });
         if (response) {
           return response
         }
-      };
-      provide("deleteDraft", deleteDraft);
+    };
+    provide("userAction", userAction);
 
-      return {
-          viewModel,
-          defaultFilters,
-          loadDetails,
-          filterRequests,
-          changeStatus,
-          addComment,
-          resubmitEvent,
-          userAction,
-          deleteDraft
+    /** A method for the user to delete a draft */
+    const deleteDraft: (id: string | null | undefined) => Promise<any> = async (id) => {
+      const response = await invokeBlockAction<{ expirationDateTime: string }>("DeleteDraft", {
+        id: id
+      });
+      if (response) {
+        return response
       }
+    };
+    provide("deleteDraft", deleteDraft);
+
+    return {
+      viewModel,
+      defaultFilters,
+      loadDetails,
+      filterRequests,
+      changeStatus,
+      addComment,
+      resubmitEvent,
+      userAction,
+      deleteDraft
+    }
   },
   data() {
-      return {
-        columns: [
-          {
-            title: 'Title',
-            dataIndex: 'title',
-            key: 'reqtitle'
-          },
-          {
-            title: 'Submitted On',
-            dataIndex: 'startDateTime',
-            key: 'start'
-          },
-          {
-            title: 'Event Dates',
-            dataIndex: 'attributeValues.EventDates',
-            key: 'dates'
-          },
-          {
-            title: 'Status',
-            key: 'action'
-          },
-        ],
-        selected: {} as ContentChannelItemBag,
-        copy: {} as ContentChannelItemBag,
-        copyDates: [] as any[],
-        removedResources: [] as string[],
-        createdBy: {},
-        modifiedBy: {},
-        modal: false,
-        commentModal: false,
-        resubmissionModal: false,
-        deleteModal: false,
-        comment: "",
-        visible: false,
-        requestStatuses: [
-          { text: "Draft", value: "Draft" },
-          { text: "Submitted", value: "Submitted" },
-          { text: "In Progress", value: "In Progress" },
-          { text: "Approved", value: "Approved" },
-          { text: "Denied", value: "Denied" },
-          { text: "Cancelled", value: "Cancelled" },
-          { text: "Pending Changes", value: "Pending Changes" },
-          { text: "Proposed Changes Denied", value: "Proposed Changes Denied" },
-          { text: "Changes Accepted by User", value: "Changes Accepted by User" },
-          { text: "Cancelled by User", value: "Cancelled by User" }
-        ],
-        resources: [
-          { text: "Room",  value: "Room" },
-          { text: "Online Event", value: "Online Event" },
-          { text: "Catering", value: "Catering" },
-          { text: "Childcare", value: "Childcare" },
-          { text: "Extra Resources", value: "Extra Resources" },
-          { text: "Registration", value: "Registration" },
-          { text: "Web Calendar", value: "Web Calendar" },
-          { text: "Production", value: "Production" },
-          { text: "Worship", value: "Worship" },
-          { text: "Publicity", value: "Publicity" }
-        ],
-        loading: false,
-        btnLoading: {
-          inprogress: false,
-          cancelled: false,
-          delete: false
+    return {
+      columns: [
+        {
+          title: 'Title',
+          dataIndex: 'title',
+          key: 'reqtitle'
         },
-        toastMessage: "",
-        filters: {} as any,
-        ministryAttr: null,
-        rules: rules,
-        requestValidation: {} as any
-      };
+        {
+          title: 'Submitted On',
+          dataIndex: 'startDateTime',
+          key: 'start'
+        },
+        {
+          title: 'Event Dates',
+          dataIndex: 'attributeValues.EventDates',
+          key: 'dates'
+        },
+        {
+          title: 'Status',
+          key: 'action'
+        },
+      ],
+      selected: {} as ContentChannelItemBag,
+      copy: {} as ContentChannelItemBag,
+      copyDates: [] as any[],
+      removedResources: [] as string[],
+      createdBy: {},
+      modifiedBy: {},
+      modal: false,
+      commentModal: false,
+      resubmissionModal: false,
+      deleteModal: false,
+      comment: "",
+      visible: false,
+      loading: false,
+      btnLoading: {
+        inprogress: false,
+        cancelled: false,
+        delete: false
+      },
+      toastMessage: "",
+      filters: {} as any,
+      ministryAttr: null,
+      rules: rules,
+      helper: helper,
+      requestValidation: {} as any
+    };
   },
   computed: {
       /** The person currently authenticated */
@@ -435,12 +413,12 @@ export default defineComponent({
       this.comment = ""
       this.commentModal = true
     },
-    createComment(comment) {
+    createComment(comment, tags: string[]) {
       let el = document.getElementById('updateProgress')
       if(el) {
         el.style.display = 'block'
       }
-      this.addComment(this.selected.idKey, comment).then((res: any) => {
+      this.addComment(this.selected.idKey, comment, tags).then((res: any) => {
         if(res.isSuccess) {
           if(res.data?.comment) {
             let req = this.selected as any
@@ -771,7 +749,7 @@ export default defineComponent({
       <div class="col col-xs-12 col-md-4">
         <rck-ddl
           label="Request Status"
-          :items="requestStatuses"
+          :items="helper.requestStatuses"
           v-model="filters.statuses"
           multiple
         ></rck-ddl>
@@ -779,7 +757,7 @@ export default defineComponent({
       <div class="col col-xs-12 col-md-4">
         <rck-ddl
           label="Requested Resources"
-          :items="resources"
+          :items="helper.resources"
           v-model="filters.resources"
           multiple
         ></rck-ddl>
@@ -858,7 +836,7 @@ export default defineComponent({
   <rck-modal v-model="modal" width="80%" :isCloseButtonHidden="true" cancelText="" :clickBackdropToClose="true" modalWrapperClasses="modal-no-header">
     <tcc-details :request="selected" :rooms="viewModel.locations" :drinks="viewModel.drinks" :inventory="viewModel.inventory" :createdBy="createdBy" :modifiedBy="modifiedBy" :requestValidation="requestValidation"></tcc-details>
     <template v-if="commentModal || (selected.comments && selected.comments.length > 0)">
-      <tcc-comments :comments="selected.comments" v-model="commentModal" v-on:createComment="createComment"></tcc-comments>
+      <tcc-comments role="Ministry" :comments="selected.comments" :request="selected" v-model="commentModal" v-on:createComment="createComment"></tcc-comments>
     </template>
     <template #customButtons>
       <div class="d-flex modal-button-wrapper w-100">
