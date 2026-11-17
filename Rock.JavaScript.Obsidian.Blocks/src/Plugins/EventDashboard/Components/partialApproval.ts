@@ -291,6 +291,15 @@ export default defineComponent({
       v-on:denied="denyRequestAttribute(request.attributes.NeedsRegistration.key)"
     ></tcc-pa-val>
   </template>
+  <template v-if="request.attributeValues.NeedsCheckin != request.changes.attributeValues.NeedsCheckin">
+    <tcc-pa-val 
+      :attribute="request.attributes.NeedsCheckin"
+      :originalValue="request.attributeValues.NeedsCheckin"
+      :newValue="request.changes.attributeValues.NeedsCheckin"
+      v-on:approved="approveRequestAttribute(request.attributes.NeedsCheckin.key)"
+      v-on:denied="denyRequestAttribute(request.attributes.NeedsCheckin.key)"
+    ></tcc-pa-val>
+  </template>
   <template v-if="request.attributeValues.NeedsWebCalendar != request.changes.attributeValues.NeedsWebCalendar">
     <tcc-pa-val 
       :attribute="request.attributes.NeedsWebCalendar"

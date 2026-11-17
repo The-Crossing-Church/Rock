@@ -180,6 +180,9 @@ export default defineComponent({
         <tcc-chip v-if="event.needsRegistration" :disabled="true">
           <i class="mr-1 fas fa-laptop"></i> Registration
         </tcc-chip>
+        <tcc-chip v-if="event.needsCheckin" :disabled="true">
+          <i class="mr-1 fas fa-laptop"></i> Check-in
+        </tcc-chip>
         <tcc-chip v-if="event.needsOps" :disabled="true">
           <i class="mr-1 fas fa-cogs"></i> Ops Request
         </tcc-chip>

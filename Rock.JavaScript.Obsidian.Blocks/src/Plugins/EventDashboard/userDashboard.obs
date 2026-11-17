@@ -225,6 +225,7 @@ export default defineComponent({
             this.copy.attributeValues.NeedsOpsAccommodations == 'True' ||
             this.copy.attributeValues.NeedsProductionAccommodations == 'True' ||
             this.copy.attributeValues.NeedsRegistration == 'True' ||
+            this.copy.attributeValues.NeedsCheckin == 'True' ||
             this.copy.attributeValues.NeedsWebCalendar == 'True'
           ) {
             date = date.plus({days: 14})
@@ -247,6 +248,7 @@ export default defineComponent({
                   this.selected.attributeValues.NeedsProductionAccommodations == 'True' ||
                   this.selected.attributeValues.NeedsPublicity == 'True' ||
                   this.selected.attributeValues.NeedsRegistration == 'True' ||
+                  this.selected.attributeValues.NeedsCheckin == 'True' ||
                   this.selected.attributeValues.NeedsWebCalendar == 'True'
                 ) {
                   return false
@@ -883,6 +885,7 @@ export default defineComponent({
       <tcc-chip v-if="copy.attributeValues?.NeedsChildCare == 'True'" v-on:chipdeleted="copy.attributeValues.NeedsChildCare = 'False'; removedResources.push('NeedsChildCare')">Childcare</tcc-chip>
       <tcc-chip v-if="copy.attributeValues?.NeedsChildCareCatering == 'True'" v-on:chipdeleted="copy.attributeValues.NeedsChildCareCatering = 'False'; removedResources.push('NeedsChildCareCatering')">Childcare Catering</tcc-chip>
       <tcc-chip v-if="copy.attributeValues?.NeedsRegistration == 'True'" v-on:chipdeleted="copy.attributeValues.NeedsRegistration = 'False'; removedResources.push('NeedsRegistration')">Registration</tcc-chip>
+      <tcc-chip v-if="copy.attributeValues?.NeedsCheckin == 'True'" v-on:chipdeleted="copy.attributeValues.NeedsCheckin = 'False'; removedResources.push('NeedsCheckin')">Check-in</tcc-chip>
       <tcc-chip v-if="copy.attributeValues?.NeedsOpsAccommodations == 'True'" v-on:chipdeleted="copy.attributeValues.NeedsOpsAccommodations = 'False'; removedResources.push('NeedsOpsAccommodations')">Ops Accommodations</tcc-chip>
       <tcc-chip v-if="copy.attributeValues?.NeedsProductionAccommodations == 'True'" v-on:chipdeleted="copy.attributeValues.NeedsProductionAccommodations = 'False'; removedResources.push('NeedsProductionAccommodations')">Production Accommodations</tcc-chip>
       <tcc-chip v-if="copy.attributeValues?.NeedsWebCalendar == 'True'" v-on:chipdeleted="copy.attributeValues.NeedsWebCalendar = 'False'; removedResources.push('NeedsWebCalendar')">Web Calendar</tcc-chip>

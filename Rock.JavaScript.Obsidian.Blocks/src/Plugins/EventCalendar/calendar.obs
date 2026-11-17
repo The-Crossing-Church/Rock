@@ -265,6 +265,9 @@ export default defineComponent({
             if(this.filters.resources.includes('Registration')) {
               inFilter = e.needsRegistration == true
             }
+            if(this.filters.resources.includes('Check-in')) {
+              inFilter = e.needsCheckin == true
+            }
             if(this.filters.resources.includes('Web Calendar')) {
               inFilter = e.needsCalendar == true
             }
