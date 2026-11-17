@@ -318,6 +318,15 @@ export default defineComponent({
       v-on:denied="denyRequestAttribute(request.attributes.NeedsProductionAccommodations.key)"
     ></tcc-pa-val>
   </template>
+  <template v-if="request.attributeValues.NeedsWorship != request.changes.attributeValues.NeedsWorship">
+    <tcc-pa-val 
+      :attribute="request.attributes.NeedsWorship"
+      :originalValue="request.attributeValues.NeedsWorship"
+      :newValue="request.changes.attributeValues.NeedsWorship"
+      v-on:approved="approveRequestAttribute(request.attributes.NeedsWorship.key)"
+      v-on:denied="denyRequestAttribute(request.attributes.NeedsWorship.key)"
+    ></tcc-pa-val>
+  </template>
   <template v-if="request.attributeValues.NeedsOnline != request.changes.attributeValues.NeedsOnline">
     <tcc-pa-val 
       :attribute="request.attributes.NeedsOnline"
