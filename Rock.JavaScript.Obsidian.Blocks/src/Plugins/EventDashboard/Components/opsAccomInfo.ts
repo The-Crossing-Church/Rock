@@ -1,7 +1,7 @@
 import { defineComponent, PropType } from "vue";
 import RockField from "@Obsidian/Controls/rockField.obs"
 import RockLabel from "@Obsidian/Controls/rockLabel.obs"
-import imageDisplay from "./imageDisplay";
+import imageDisplay from "./imageDisplay"
 
 type ListItem = {
   text: string,
