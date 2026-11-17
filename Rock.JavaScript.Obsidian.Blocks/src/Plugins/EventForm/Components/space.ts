@@ -55,7 +55,8 @@ export default defineComponent({
     showValidation: Boolean,
     refName: String,
     isSuperUser: Boolean,
-    readonly: Boolean
+    readonly: Boolean,
+    isMultiOccurrence: Boolean
   },
   setup() {
 
@@ -191,27 +192,6 @@ export default defineComponent({
           existingRooms.push(...ev.childContentChannelItem.attributeValues?.Rooms?.value.split(","))
         })
       })
-      // console.log('Room Conflicts')
-      // console.log(existingOnDate?.map((e: any) => { 
-      //   return {
-      //     title: e.title, 
-      //     dates: e.attributeValues.EventDates.value, 
-      //     childItems: e.childItems.map((ci: any) => { 
-      //       return { 
-      //         rooms: ci.childContentChannelItem.attributeValues.Rooms.valueFormatted, 
-      //         date: ci.childContentChannelItem.attributeValues.EventDate?.value,
-      //         start: ci.childContentChannelItem.attributeValues.StartTime.valueFormatted, 
-      //         end: ci.childContentChannelItem.attributeValues.EndTime.valueFormatted, 
-      //         startBuffer: ci.childContentChannelItem.attributeValues.StartBuffer.valueFormatted, 
-      //         endBuffer: ci.childContentChannelItem.attributeValues.EndBuffer.valueFormatted 
-      //       }
-      //     })
-      //     // rooms: e.childItems.map((ci: any) => { return ci.childContentChannelItem.attributeValues.Rooms.valueFormatted }).join(", ")
-      //   } 
-      // }))
-      // console.log(existingRooms.filter((value, index, array) => {
-      //   return array.indexOf(value) === index;
-      // }))
       this.rooms?.forEach(l => {
           let idx = -1
           loc.forEach((i, x) => {
@@ -233,7 +213,7 @@ export default defineComponent({
           }
       })
       loc.forEach(l => {
-          l.locations = l.locations.sort((a:any, b: any) => {
+        l.locations = l.locations.sort((a:any, b: any) => {
           if (a.order < b.order) {
             return -1
           } else if (a.order > b.order) {
@@ -310,6 +290,11 @@ export default defineComponent({
       },
       deep: true
     },
+    isMultiOccurrence(val) {
+      if(val == false && this.e?.attributeValues) {
+        this.e.attributeValues.NeedsSpace = 'True'
+      }
+    },
     'e.attributeValues.Rooms': {
       handler(val, oval) {
         //Find Values that were removed 
@@ -366,7 +351,25 @@ export default defineComponent({
     }
   },
   template: `
-<rck-form ref="form" @validationChanged="validationChange">
+<div class="row" v-if="isMultiOccurrence">
+  <div class="col col-xs-12 col-md-6">
+    <tcc-switch
+      v-model="e.attributeValues.NeedsSpace"
+      :label="e.attributes.NeedsSpace.name"
+      v-if="!readonly"
+      id="boolNeedsSpace"
+    ></tcc-switch>
+    <rck-field
+      v-else
+      v-model="e.attributeValues.NeedsSpace"
+      :attribute="e.attributes.NeedsSpace"
+      :is-edit-mode="false"
+      :showEmptyValue="true"
+      id="boolNeedsSpace"
+    ></rck-field>
+  </div>
+</div>
+<rck-form ref="form" @validationChanged="validationChange" v-if="e.attributeValues.NeedsSpace == 'True' || !isMultiOccurrence">
   <div class="row">
     <div class="col col-xs-12 col-md-6">
       <tcc-validator :name="e.attributes.ExpectedAttendance.key" :rules="[rules.required(e.attributeValues.ExpectedAttendance, e.attributes.ExpectedAttendance.name), rules.attendance(e.attributeValues.ExpectedAttendance, e.attributeValues.Rooms, locations, e.attributes.ExpectedAttendance.name), rules.largeEventSecurity(e.attributeValues.ExpectedAttendance, request.attributeValues.NeedsOpsAccommodations, e.attributeValues.NeedsSecurity, isSuperUser)]" ref="validator_att">

@@ -26,7 +26,8 @@ export default defineComponent({
       },
       showValidation: Boolean,
       refName: String,
-      readonly: Boolean
+      readonly: Boolean,
+      isMultiOccurrence: Boolean
     },
     setup() {
 

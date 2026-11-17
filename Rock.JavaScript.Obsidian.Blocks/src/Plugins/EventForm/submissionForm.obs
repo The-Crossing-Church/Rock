@@ -7,6 +7,7 @@ import { Steps } from "ant-design-vue"
 import { CurrentPersonBag } from "@Obsidian/ViewModels/Crm/currentPersonBag"
 import { ListItemBag } from "@Obsidian/ViewModels/Utility/listItemBag"
 import { DefinedValueBag } from "../ViewModels/definedValueBag"
+import { DateTime, Duration } from "luxon"
 import ResourceSwitches from "./Components/resourceSwitches"
 import Space from "./Components/space"
 import Online from "./Components/online"
@@ -14,6 +15,7 @@ import Catering from "./Components/catering"
 import Childcare from "./Components/childcare"
 import Ops from "./Components/opsAccommodations"
 import Registration from "./Components/registration"
+import Checkin from "./Components/checkin"
 import Publicity from "./Components/publicity"
 import WebCal from "./Components/webCal"
 import ProdTech from "./Components/productionTech"
@@ -24,7 +26,7 @@ import CCRegistration from "./Components/childcareRegistration"
 import EventTime from "./Components/eventTime"
 import DatePicker from "./Components/datePicker"
 import EventBuffer from "./Components/eventBuffer"
-import { DateTime, Duration } from "luxon"
+import OccurrenceServices from "./Components/occurrenceServices"
 import RockLabel from "@Obsidian/Controls/rockLabel.obs"
 import RockField from "@Obsidian/Controls/rockField.obs"
 import Modal from "@Obsidian/Controls/modal.obs"
@@ -52,10 +54,12 @@ export default defineComponent({
     "tcc-childcare-registration": CCRegistration,
     "tcc-ops": Ops,
     "tcc-registration": Registration,
+    "tcc-check-in": Checkin,
     "tcc-publicity": Publicity,
     "tcc-web-cal": WebCal,
     "tcc-prod-tech": ProdTech,
     "tcc-worship": Worship,
+    "tcc-occ-svcs": OccurrenceServices,
     "tcc-event-time": EventTime,
     "tcc-buffer": EventBuffer,
     "tcc-date-pkr": DatePicker,
@@ -68,9 +72,9 @@ export default defineComponent({
   },
   setup() {
     const viewModel = useConfigurationValues<SubmissionFormBlockViewModel | null>();
-    viewModel?.existing.forEach((e: any) => {
-      e.childItems = viewModel.existingDetails.filter((d: any) => { return d.contentChannelItemId == e.id })
-    })
+    // viewModel?.existing.forEach((e: any) => {
+    //   e.childItems = viewModel.existingDetails.filter((d: any) => { return d.contentChannelItemId == e.id })
+    // })
     viewModel?.locationSetupMatrix?.forEach((l: any) => {
       l.matrixItems = viewModel.locationSetupMatrixItem.filter((mi: any) => { return mi.attributeMatrixId == l.id })
     })
@@ -109,6 +113,17 @@ export default defineComponent({
     };
     provide("reload", reload);
 
+    /** A method to load the existing requests */
+    const loadExisting: (id: string | null | undefined) => Promise<any> = async (id) => {
+      const response = await invokeBlockAction("LoadExistingRequests", {
+          id: id
+      });
+      if (response) {
+        return response
+      }
+    };
+    provide("loadExisting", loadExisting);
+
     const addComment: (id: string, message: string) => Promise<any> = async (id, message) => {
       const response = await invokeBlockAction("AddComment", {
         id: id, message: message
@@ -122,7 +137,8 @@ export default defineComponent({
       save,
       submit,
       addComment,
-      reload
+      reload,
+      loadExisting
     }
   },
   data() {
@@ -165,7 +181,7 @@ export default defineComponent({
       },
       hasEventData(): boolean {
         if(this.viewModel?.request.attributeValues) {
-          return this.viewModel.request.attributeValues.NeedsSpace == 'True' || this.viewModel.request.attributeValues.NeedsOnline == 'True' || this.viewModel.request.attributeValues.NeedsCatering == 'True' || this.viewModel.request.attributeValues.NeedsChildCare == 'True' || this.viewModel.request.attributeValues.NeedsOpsAccommodations == 'True' || this.viewModel.request.attributeValues.NeedsRegistration == 'True'
+          return this.viewModel.request.attributeValues.NeedsSpace == 'True' || this.viewModel.request.attributeValues.NeedsOnline == 'True' || this.viewModel.request.attributeValues.NeedsCatering == 'True' || this.viewModel.request.attributeValues.NeedsChildCare == 'True' || this.viewModel.request.attributeValues.NeedsOpsAccommodations == 'True' || this.viewModel.request.attributeValues.NeedsRegistration == 'True' || this.viewModel.request.attributeValues.NeedsCheckin == 'True'
         }
         return false
       },
@@ -239,6 +255,7 @@ export default defineComponent({
         if(this.viewModel) {
           if( this.viewModel.request?.attributeValues?.NeedsOnline == "True"
             || this.viewModel.request?.attributeValues?.NeedsRegistration == "True"
+            || this.viewModel.request?.attributeValues?.NeedsCheckin == "True"
             || this.viewModel.request?.attributeValues?.NeedsWebCalendar == "True"
             || this.viewModel.request?.attributeValues?.NeedsCatering == "True"
             || this.viewModel.request?.attributeValues?.NeedsOpsAccommodations == "True"
@@ -286,6 +303,9 @@ export default defineComponent({
         }
         if(this.viewModel?.request?.attributeValues?.NeedsRegistration == 'True') {
           options.push({ text: 'Registration', value: 'Event Registration' })
+        }
+        if(this.viewModel?.request?.attributeValues?.NeedsCheckin == 'True') {
+          options.push({ text: 'Check-in', value: 'Event Check-in' })
         }
         if(this.viewModel?.request?.attributeValues?.NeedsOnline == 'True') {
           options.push({ text: 'Zoom', value: 'Event Online' })
@@ -1036,6 +1056,28 @@ export default defineComponent({
         }
       }
     },
+    'viewModel.request.attributeValues.NeedsCheckin'(val) {
+      let idx = this.resources.indexOf('Check-in')
+      if(val == 'False') {
+        //Remove all Check-in data
+        this.clearEventDetailsData("Event Check-in")
+        //Remove Check-in from Requested Resources List
+        if(idx > -1) {
+          this.resources.splice(idx, 1)
+        }
+        //Remove any errors related to Check-in requests
+        this.requestErrors.forEach(err => {
+          if(err.ref.startsWith('checkin_')) {
+            err.errors = []
+          }
+        })
+      } else {
+        //Add Check-in to Requested Resources List
+        if(idx < 0) {
+          this.resources.push('Check-in')
+        }
+      }
+    },
     'viewModel.request.attributeValues.NeedsPublicity'(val) {
       let idx = this.resources.indexOf('Publicity')
       if(val == 'False') {
@@ -1183,6 +1225,18 @@ export default defineComponent({
     },
   },
   mounted() {
+    this.loadExisting(this.viewModel?.request.idKey)
+    .then((res) => {
+      if(this.viewModel) {
+        this.viewModel.existing = res.data.existing
+        this.viewModel.existingDetails = res.data.details
+
+        this.viewModel.existing.forEach((e: any) => {
+          e.childItems = this.viewModel?.existingDetails.filter((d: any) => { return d.contentChannelItemId == e.id })
+        })
+      }
+    })
+
     if(this.viewModel?.errors) {
       console.error(this.viewModel.errors)
       this.toastIsError = true
@@ -1296,7 +1350,7 @@ export default defineComponent({
               Space Information
               <rck-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" btnType="accent-outlined" class="rounded-huge" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Space'; preFillModal = true;">Prefill Section</rck-btn>
             </h3>
-            <tcc-space :e="e" :request="viewModel.request" :originalRequest="viewModel.originalRequest" :locations="viewModel.locations" :existing="viewModel.existing" :showValidation="pagesViewed.includes(idx + 2)" :isSuperUser="viewModel.isSuperUser" :readonly="readonlySections.includes('Space')" :refName="getRefName('space', idx)" @validation-change="validationChange" :ref="getRefName('space', idx)"></tcc-space>
+            <tcc-space :e="e" :request="viewModel.request" :originalRequest="viewModel.originalRequest" :locations="viewModel.locations" :existing="viewModel.existing" :showValidation="pagesViewed.includes(idx + 2)" :isSuperUser="viewModel.isSuperUser" :readonly="readonlySections.includes('Space')" :isMultiOccurrence="viewModel.events.length > 1" :refName="getRefName('space', idx)" @validation-change="validationChange" :ref="getRefName('space', idx)"></tcc-space>
             <br/>
           </template>
           <template v-if="viewModel.request.attributeValues.NeedsCatering == 'True'">
@@ -1304,7 +1358,7 @@ export default defineComponent({
               Catering Information
               <rck-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" btnType="accent-outlined" class="rounded-huge" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Catering'; preFillModal = true;">Prefill Section</rck-btn>
             </h3>
-            <tcc-catering :e="e" :request="viewModel.request" :showValidation="pagesViewed.includes(idx + 2)" :vendorList="viewModel.vendorList" :refName="getRefName('catering', idx)" @validation-change="validationChange" :ref="getRefName('catering', idx)" :readonly="readonlySections.includes('Catering')"></tcc-catering>
+            <tcc-catering :e="e" :request="viewModel.request" :showValidation="pagesViewed.includes(idx + 2)" :vendorList="viewModel.vendorList" :refName="getRefName('catering', idx)" @validation-change="validationChange" :ref="getRefName('catering', idx)" :readonly="readonlySections.includes('Catering')" :isMultiOccurrence="viewModel.events.length > 1"></tcc-catering>
             <br/>
           </template>
           <template v-if="viewModel.request.attributeValues.NeedsOpsAccommodations == 'True'">
@@ -1312,7 +1366,7 @@ export default defineComponent({
               Other Accomodations
               <rck-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" btnType="accent-outlined" class="rounded-huge" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Ops Requests'; preFillModal = true;">Prefill Section</rck-btn>
             </h3>
-            <tcc-ops :e="e" :request="viewModel.request" :showValidation="pagesViewed.includes(idx + 2)" :locations="viewModel.locations" :locationSetUp="viewModel.locationSetupMatrix" :inventoryList="viewModel.inventoryList" :existing="viewModel.existing" :inventoryAttrs="viewModel.opsInventoryAttrs" :refName="getRefName('ops', idx)" @validation-change="validationChange" :ref="getRefName('ops', idx)" :readonly="readonlySections.includes('Ops')"></tcc-ops>
+            <tcc-ops :e="e" :request="viewModel.request" :showValidation="pagesViewed.includes(idx + 2)" :locations="viewModel.locations" :locationSetUp="viewModel.locationSetupMatrix" :inventoryList="viewModel.inventoryList" :existing="viewModel.existing" :inventoryAttrs="viewModel.opsInventoryAttrs" :isMultiOccurrence="viewModel.events.length > 1" :refName="getRefName('ops', idx)" @validation-change="validationChange" :ref="getRefName('ops', idx)" :readonly="readonlySections.includes('Ops')"></tcc-ops>
             <br/>
           </template>
           <template v-if="viewModel.request.attributeValues.NeedsChildCare == 'True'">
@@ -1320,21 +1374,31 @@ export default defineComponent({
               Childcare Information
               <rck-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" btnType="accent-outlined" class="rounded-huge" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Childcare'; preFillModal = true;">Prefill Section</rck-btn>
             </h3>
-            <tcc-childcare :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('childcare', idx)" @validation-change="validationChange" :ref="getRefName('childcare', idx)" :readonly="readonlySections.includes('Childcare')"></tcc-childcare>
+            <tcc-childcare :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('childcare', idx)" @validation-change="validationChange" :ref="getRefName('childcare', idx)" :readonly="readonlySections.includes('Childcare')" :isMultiOccurrence="viewModel.events.length > 1"></tcc-childcare>
             <br v-if="viewModel.request.attributeValues.NeedsChildCareCatering == 'True'" />
             <h4 class="text-accent" v-if="viewModel.request.attributeValues.NeedsChildCareCatering == 'True'">Childcare Catering Information</h4>
-            <tcc-childcare-catering v-if="viewModel.request.attributeValues.NeedsChildCareCatering == 'True'" :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('cccatering', idx)" @validation-change="validationChange" :ref="getRefName('cccatering', idx)" :readonly="readonlySections.includes('Childcare Catering')"></tcc-childcare-catering>
+            <tcc-childcare-catering v-if="viewModel.request.attributeValues.NeedsChildCareCatering == 'True'" :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('cccatering', idx)" @validation-change="validationChange" :ref="getRefName('cccatering', idx)" :readonly="readonlySections.includes('Childcare Catering')" :isMultiOccurrence="viewModel.events.length > 1"></tcc-childcare-catering>
             <br />
-            <h4 class="text-accent">Childcare Registration Information</h4>
-            <tcc-childcare-registration :e="e" :request="viewModel.request" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('ccregistration', idx)" @validation-change="validationChange" :ref="getRefName('ccregistration', idx)" :readonly="readonlySections.includes('Childcare Registration')"></tcc-childcare-registration>
-            <br/>
+            <template v-if="e.attributeValues.NeedsChildCare == 'True' || viewModel.events.length == 1">
+              <h4 class="text-accent">Childcare Registration Information</h4>
+              <tcc-childcare-registration :e="e" :request="viewModel.request" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('ccregistration', idx)" @validation-change="validationChange" :ref="getRefName('ccregistration', idx)" :readonly="readonlySections.includes('Childcare Registration')" :isMultiOccurrence="viewModel.events.length > 1"></tcc-childcare-registration>
+              <br/>
+            </template>
           </template>
           <template v-if="viewModel.request.attributeValues.NeedsRegistration == 'True'">
             <h3 class="text-primary">
               Registration Information
               <rck-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" btnType="accent-outlined" class="rounded-huge" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Registration'; preFillModal = true;">Prefill Section</rck-btn>
             </h3>
-            <tcc-registration :e="e" :request="viewModel.request" :original="viewModel.originalRequest" :ministries="viewModel.ministries" :discountAttrs="viewModel.discountCodeAttrs" :regAttrs="viewModel.reqQuestionAttrs" :locations="viewModel.locations" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('reg', idx)" @validation-change="validationChange" :ref="getRefName('reg', idx)" :readonly="readonlySections.includes('Registration')"></tcc-registration>
+            <tcc-registration :e="e" :request="viewModel.request" :original="viewModel.originalRequest" :ministries="viewModel.ministries" :discountAttrs="viewModel.discountCodeAttrs" :regAttrs="viewModel.reqQuestionAttrs" :locations="viewModel.locations" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('reg', idx)" @validation-change="validationChange" :ref="getRefName('reg', idx)" :readonly="readonlySections.includes('Registration')" :isMultiOccurrence="viewModel.events.length > 1"></tcc-registration>
+            <br/>
+          </template>
+          <template v-if="viewModel.request.attributeValues.NeedsCheckin == 'True'">
+            <h3 class="text-primary">
+              Check-in Information
+              <rck-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" btnType="accent-outlined" class="rounded-huge" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Check-in'; preFillModal = true;">Prefill Section</rck-btn>
+            </h3>
+            <tcc-check-in :e="e" :request="viewModel.request" :original="viewModel.originalRequest" :ministries="viewModel.ministries" :locations="viewModel.locations" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('reg', idx)" @validation-change="validationChange" :ref="getRefName('reg', idx)" :readonly="readonlySections.includes('Check-in')" :isMultiOccurrence="viewModel.events.length > 1"></tcc-check-in>
             <br/>
           </template>
           <template v-if="viewModel.request.attributeValues.NeedsOnline == 'True'">
@@ -1342,7 +1406,12 @@ export default defineComponent({
               Zoom Information
               <rck-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" btnType="accent-outlined" class="rounded-huge" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Online'; preFillModal = true;">Prefill Section</rck-btn>
             </h3>
-            <tcc-online :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('online', idx)" @validation-change="validationChange" :ref="getRefName('online', idx)" :readonly="readonlySections.includes('Online')"></tcc-online>
+            <tcc-online :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('online', idx)" @validation-change="validationChange" :ref="getRefName('online', idx)" :readonly="readonlySections.includes('Online')" :isMultiOccurrence="viewModel.events.length > 1"></tcc-online>
+            <br/>
+          </template>
+          <template v-if="viewModel.events.length > 1">
+            <h3 class="text-primary">Additional Information</h3>
+            <tcc-occ-svcs :e="e" :request="viewModel.request" :showValidation="pagesViewed.includes(idx + 2)" :readonlySections="readonlySections" :refName="getRefName('addinfo', idx)" @validation-change="validationChange" :ref="getRefName('addinfo', idx)" :isMultiOccurrence="viewModel.events.length > 1"></tcc-occ-svcs>
             <br/>
           </template>
         </template>

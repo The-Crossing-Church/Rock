@@ -176,8 +176,8 @@ namespace Rock.Blocks.Plugins.EventForm
 
                 viewModel = LoadRequest();
                 viewModel.isSuperUser = CheckSecurityRole( context, AttributeKey.SuperUserRole );
-                viewModel.existing = LoadExisting( viewModel.request.IdKey );
-                viewModel.existingDetails = viewModel.existing.SelectMany( cci => cci.ChildItems ).ToList();
+                //viewModel.existing = LoadExisting( viewModel.request.IdKey );
+                //viewModel.existingDetails = viewModel.existing.SelectMany( cci => cci.ChildItems ).ToList();
 
                 //Lists
                 Guid locationGuid = Guid.Empty;
@@ -436,6 +436,21 @@ namespace Rock.Blocks.Plugins.EventForm
             }
         }
 
+        [BlockAction]
+        public BlockActionResult LoadExistingRequests( string id )
+        {
+            try
+            {
+                SetProperties();
+                var existing = LoadExisting( id );
+                var details = existing.SelectMany( cci => cci.ChildItems ).ToList();
+                return ActionOk( new { existing, details } );
+            }
+            catch ( Exception ex )
+            {
+                return ActionBadRequest( ex.Message );
+            }
+        }
         #endregion Block Actions
 
         #region Helpers

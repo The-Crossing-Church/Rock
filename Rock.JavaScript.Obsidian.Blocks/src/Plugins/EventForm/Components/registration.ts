@@ -3,6 +3,7 @@ import { DefinedValueBag } from "../../ViewModels/definedValueBag"
 import { ContentChannelItemBag } from "../../ViewModels/contentChannelItemBag"
 import { AttributeBag } from "../../ViewModels/attributeBag"
 import { ListItemBag } from "@Obsidian/ViewModels/Utility/listItemBag"
+import { DateTime } from "luxon"
 import RockField from "@Obsidian/Controls/rockField.obs"
 import RockForm from "@Obsidian/Controls/rockForm.obs"
 import Validator from "./validator"
@@ -11,561 +12,566 @@ import Toggle from "./toggle"
 import DatePicker from "./datePicker"
 import DiscountCodes from "./discountCodes"
 import AdditionalRegQuestions from "./additionalRegQuestions"
-import { DateTime } from "luxon"
 import rules from "../Rules/rules"
 
 
 export default defineComponent({
-    name: "EventForm.Components.Registration",
-    components: {
-      "rck-field": RockField,
-      "rck-form": RockForm,
-      "tcc-validator": Validator,
-      "tcc-time": TimePicker,
-      "tcc-switch": Toggle,
-      "tcc-date-pkr": DatePicker,
-      "tcc-discount": DiscountCodes,
-      "tcc-reg-questions": AdditionalRegQuestions
+  name: "EventForm.Components.Registration",
+  components: {
+    "rck-field": RockField,
+    "rck-form": RockForm,
+    "tcc-validator": Validator,
+    "tcc-time": TimePicker,
+    "tcc-switch": Toggle,
+    "tcc-date-pkr": DatePicker,
+    "tcc-discount": DiscountCodes,
+    "tcc-reg-questions": AdditionalRegQuestions
+  },
+  props: {
+    e: {
+      type: Object as PropType<ContentChannelItemBag>,
+      required: false
     },
-    props: {
-      e: {
-        type: Object as PropType<ContentChannelItemBag>,
-        required: false
-      },
-      request: {
-        type: Object as PropType<ContentChannelItemBag>,
-        required: false
-      },
-      original: {
-        type: Object as PropType<ContentChannelItemBag>,
-        required: false
-      },
-      ministries: Array as PropType<DefinedValueBag[]>,
-      discountAttrs: Array as PropType<AttributeBag[]>,
-      regAttrs: Array as PropType<AttributeBag[]>,
-      locations: Array,
-      showValidation: Boolean,
-      refName: String,
-      readonly: Boolean
+    request: {
+      type: Object as PropType<ContentChannelItemBag>,
+      required: false
     },
-    setup() {
+    original: {
+      type: Object as PropType<ContentChannelItemBag>,
+      required: false
+    },
+    ministries: Array as PropType<DefinedValueBag[]>,
+    discountAttrs: Array as PropType<AttributeBag[]>,
+    regAttrs: Array as PropType<AttributeBag[]>,
+    locations: Array,
+    showValidation: Boolean,
+    refName: String,
+    readonly: Boolean,
+    isMultiOccurrence: Boolean
+  },
+  setup() {
 
-    },
-    data() {
-      return {
-        rules: rules,
-        errors: [] as Record<string, string>[],
-        needsAdditionalRegQuestions: 'False'
-      };
-    },
-    computed: {
-      lastDate() {
-        if(this.e?.attributeValues?.EventDate) {
-          return this.e.attributeValues?.EventDate
-        } else {
-          let dates = this.request?.attributeValues?.EventDates.split(",").map((d: string) => d.trim() )
-          if(dates && dates.length > 0) {
-            return dates[dates.length - 1]
-          }
+  },
+  data() {
+    return {
+      rules: rules,
+      errors: [] as Record<string, string>[],
+      needsAdditionalRegQuestions: 'False'
+    };
+  },
+  computed: {
+    lastDate() {
+      if(this.e?.attributeValues?.EventDate) {
+        return this.e.attributeValues?.EventDate
+      } else {
+        let dates = this.request?.attributeValues?.EventDates.split(",").map((d: string) => d.trim() )
+        if(dates && dates.length > 0) {
+          return dates[dates.length - 1]
         }
-        return ""
-      },
-      earliestDate() {
-        let submissionDate = DateTime.now()
-        if(this.request?.attributeValues) {
-          let isFuneralRequest = false
-          let val = this.request.attributeValues.Ministry
-          let ministry = {} as DefinedValueBag | undefined
-          if(val != '') {
-            let min = JSON.parse(val) as ListItemBag
-            ministry = this.ministries?.filter((dv: any) => {
-              return dv.guid == min.value
-            })[0]
-          }
-          if(ministry?.value?.toLowerCase().includes("funeral")) {
-            isFuneralRequest = true
-          }
-          //Funeral Request, can submit for today
-          if(isFuneralRequest) {
-            return submissionDate.toFormat("yyyy-MM-dd")
-          }
-          //New request, must be min two weeks from today
-          if(this.request.idKey || this.request.attributeValues.RequestStatus == 'Draft') {
-            return submissionDate.plus({days: 14}).toFormat("yyyy-MM-dd")
-          }
-          //if newly requesting registration, two weeks from today, else two weeks from submission date
-          //Existing request, no pending changes
-          if(this.original?.attributeValues?.NeedsRegistration == 'True') {
-            let val = this.request.startDateTime as string
-            submissionDate = DateTime.fromISO(val)
-          }
+      }
+      return ""
+    },
+    earliestDate() {
+      let submissionDate = DateTime.now()
+      if(this.request?.attributeValues) {
+        let isFuneralRequest = false
+        let val = this.request.attributeValues.Ministry
+        let ministry = {} as DefinedValueBag | undefined
+        if(val != '') {
+          let min = JSON.parse(val) as ListItemBag
+          ministry = this.ministries?.filter((dv: any) => {
+            return dv.guid == min.value
+          })[0]
+        }
+        if(ministry?.value?.toLowerCase().includes("funeral")) {
+          isFuneralRequest = true
+        }
+        //Funeral Request, can submit for today
+        if(isFuneralRequest) {
+          return submissionDate.toFormat("yyyy-MM-dd")
+        }
+        //New request, must be min two weeks from today
+        if(this.request.idKey || this.request.attributeValues.RequestStatus == 'Draft') {
           return submissionDate.plus({days: 14}).toFormat("yyyy-MM-dd")
         }
-      },
-      separateRegLinkLabel() {
-        if(this.request?.attributeValues) {
-          if(this.request.attributeValues.IsSame == 'False') {
-            return 'Does this occurrence require a separate link?'
-          } else {
-            if(this.request.attributeValues.EventDates) {
-              let dates = this.request.attributeValues.EventDates.split(',')
-              if(dates.length > 1) {
-                return 'Does each occurrence of this event require a separate link?'
-              }
-            }
-          }
+        //if newly requesting registration, two weeks from today, else two weeks from submission date
+        //Existing request, no pending changes
+        if(this.original?.attributeValues?.NeedsRegistration == 'True') {
+          let val = this.request.startDateTime as string
+          submissionDate = DateTime.fromISO(val)
         }
-        return this.e?.attributes?.EventNeedsSeparateLink?.name
-      },
-      separateLinksValid() {
-        let isValid = false
-        if(this.request?.attributeValues) {
-          if(this.request.attributeValues.IsSame == 'False') {
-            isValid = true
-            if(this.refName == "reg_0") {
-              isValid = false
-            }
-          } else {
-            if(this.request.attributeValues.EventDates) {
-              let dates = this.request.attributeValues.EventDates.split(',')
-              if(dates.length > 1) {
-                isValid = true
-              }
-            }
-          }
-        }
-        return isValid
+        return submissionDate.plus({days: 14}).toFormat("yyyy-MM-dd")
       }
     },
-    methods: {
-      validate() {
-        let formRef = this.$refs as any
-        for(let r in formRef) {
-          if(formRef[r].className?.includes("validator")) {
-            formRef[r].validate()
-          }
-        }
-      },
-      validationChange(errs: Record<string, string>[]) {
-        this.errors = errs
-      }
-    },
-    watch: {
-      'e.attributeValues.EventNeedsSeparateLink'(val, original) {
-        console.log('Separate Link Update')
-        console.log(val, original)
-      },
-      'e.attributeValues.RegistrationFeeType'(val, original) {
-        if(val.includes('No Fees') && !original.includes('No Fees')) {
-          //Overwrite options and clear out all other choices.
-          if(this.e?.attributeValues?.RegistrationFeeType) {
-            this.e.attributeValues.RegistrationFeeType = "No Fees"
-          }
-          if(this.e?.attributeValues) {
-            this.e.attributeValues.RegistrationFeeBudgetLine = ""
-            this.e.attributeValues.RegistrationFeeBudgetMinistry = ""
-            this.e.attributeValues.IndividualRegistrationFee = ""
-            this.e.attributeValues.CoupleRegistrationFee = ""
-            this.e.attributeValues.OnlineRegistrationFee = ""
-            this.e.attributeValues.DiscountCodes = ""
-          }
-        } else if(original == "No Fees" && val.includes(",")) {
-          if(this.e?.attributeValues?.RegistrationFeeType) {
-            let items = val.split(",").filter((i: string) => { return i != "No Fees" })
-            this.e.attributeValues.RegistrationFeeType = items.join(",")
-          }
-        }
-      },
-      'e.attributeValues.ExpectedAttendance'(val, original) {
-        if(this.e?.attributeValues) {
-          if(val && val >= 180 && this.e.attributeValues.NeedsCheckin == 'True') {
-            this.e.attributeValues.NeedsDatabaseSupportTeam = 'True'
-          }
-          if(!val || val <= 100) {
-            this.e.attributeValues.NeedsDatabaseSupportTeam = 'False'
-          }
-        }
-      },
-      'e.attributeValues.NeedsReminderEmail'(val, original) {
-        if(this.e?.attributeValues) {
-          if(val == 'False') {
-            this.e.attributeValues.RegistrationReminderEmailAdditionalDetails = ''
-            this.e.attributeValues.ReminderEmailSendDate = ''
-          }
-        }
-      },
-      'e.attributeValues.NeedsCustomCommContent'(val, original) {
-        if(this.e?.attributeValues) {
-          if(val == 'False') {
-            this.e.attributeValues.RegistrationReminderEmailAdditionalDetails = ''
-            this.e.attributeValues.RegistrationConfirmationEmailAdditionalDetails = ''
-          }
-        }
-      },
-      'e.attributeValues.NeedsCheckin'(val, original) {
-        if(this.e?.attributeValues) {
-          let att = parseInt(this.e.attributeValues.ExpectedAttendance)
-          if(this.e.attributeValues.ExpectedAttendance && att >= 180 && val == 'True') {
-            this.e.attributeValues.NeedsDatabaseSupportTeam = 'True'
-          }
-          if(val == 'False') {
-            this.e.attributeValues.NeedsDatabaseSupportTeam = 'False'
-            this.e.attributeValues.NeedsLabels = 'False'
-          }
-          if(val == 'True') {
-            this.e.attributeValues.NeedsAttendanceOccurrence = 'True'
-          }
-        }
-      },
-      'e.attributeValues.NeedsDatabaseSupportTeam'(val, original) {
-        if(this.e?.attributeValues) {
-          let att = parseInt(this.e.attributeValues.ExpectedAttendance)
-          if(val == 'False' && att >= 180 && this.e.attributeValues.NeedsCheckin == 'True') {
-            this.e.attributeValues.NeedsDatabaseSupportTeam = 'True'
-          }
-          if(this.e.attributeValues.NeedsDatabaseSupportTeam == 'True') {
-            this.e.attributeValues.NeedsCheckin = 'True'
-          }
-        }
-      },
-      'e.attributeValues.AdditionalRegistrationQuestions'(val, original) {
-        console.log('Additional Reg Updated')
-        console.log(this.e?.attributeValues?.AdditionalRegistrationQuestions)
-        if(val) {
-          this.needsAdditionalRegQuestions = 'True'
-        } 
-      },
-      errors: {
-        handler(val) {
-          this.$emit("validation-change", { ref: this.refName, errors: val})
-        },
-        deep: true
-      }
-    },
-    mounted() {
-      if(this.showValidation) {
-        this.validate()
-      }
-      if(this.e?.attributeValues?.StartTime) {
-        let dt = {} as DateTime
-        if(this.e?.attributeValues?.EventDate) {
-          dt = DateTime.fromFormat(`${this.e?.attributeValues?.EventDate} ${this.e?.attributeValues?.StartTime}`, "yyyy-MM-dd HH:mm:ss")
-        } else if(this.request?.attributeValues?.EventDates) {
-          let dates = this.request?.attributeValues?.EventDates.split(",").map(d => {
-            return DateTime.fromFormat(d.trim(), "yyyy-MM-dd")
-          }).sort()
-          dt = DateTime.fromFormat(`${dates[0].toFormat("yyyy-MM-dd")} ${this.e?.attributeValues?.StartTime}`, "yyyy-MM-dd HH:mm:ss")
+    separateRegLinkLabel() {
+      if(this.request?.attributeValues) {
+        if(this.request.attributeValues.IsSame == 'False') {
+          return 'Does this occurrence require a separate link?'
         } else {
-          dt = DateTime.fromFormat(`${DateTime.now().toFormat("yyyy-MM-dd")} ${this.e?.attributeValues?.StartTime}`, "yyyy-MM-dd HH:mm:ss")
-        }
-        let defaultTime = dt.minus({days: 1})
-        //If Childcare close one week before event
-        if(this.request?.attributeValues?.NeedsChildCare == 'True') {
-          defaultTime = dt.minus({weeks: 1})
-        }
-        if(this.e.attributeValues.RegistrationEndDate == '') {
-          this.e.attributeValues.RegistrationEndDate = defaultTime.toFormat("yyyy-MM-dd")
-        }
-        if(this.e.attributeValues.RegistrationEndTime == '') {
-          this.e.attributeValues.RegistrationEndTime = defaultTime.toFormat("HH:mm:ss")
+          if(this.request.attributeValues.EventDates) {
+            let dates = this.request.attributeValues.EventDates.split(',')
+            if(dates.length > 1) {
+              return 'Does each occurrence of this event require a separate link?'
+            }
+          }
         }
       }
-      if(this.e?.attributeValues?.AdditionalRegistrationQuestions) {
-        this.needsAdditionalRegQuestions = 'True'
+      return this.e?.attributes?.EventNeedsSeparateLink?.name
+    },
+    // separateLinksValid() {
+    //   let isValid = false
+    //   if(this.request?.attributeValues) {
+    //     if(this.request.attributeValues.IsSame == 'False') {
+    //       isValid = true
+    //       if(this.refName == "reg_0") {
+    //         isValid = false
+    //       }
+    //     } else {
+    //       if(this.request.attributeValues.EventDates) {
+    //         let dates = this.request.attributeValues.EventDates.split(',')
+    //         if(dates.length > 1) {
+    //           isValid = true
+    //         }
+    //       }
+    //     }
+    //   }
+    //   return isValid
+    // }
+  },
+  methods: {
+    validate() {
+      let formRef = this.$refs as any
+      for(let r in formRef) {
+        if(formRef[r].className?.includes("validator")) {
+          formRef[r].validate()
+        }
       }
     },
-    template: `
-<rck-form ref="form" @validationChanged="validationChange">
+    validationChange(errs: Record<string, string>[]) {
+      this.errors = errs
+    }
+  },
+  watch: {
+    isMultiOccurrence(val) {
+      if(val == false && this.e?.attributeValues) {
+        this.e.attributeValues.EventNeedsSeparateLink = 'True'
+      }
+    },
+    'e.attributeValues.EventNeedsSeparateLink'(val, original) {
+      console.log('Separate Link Update')
+      console.log(val, original)
+    },
+    'e.attributeValues.RegistrationFeeType'(val, original) {
+      if(val.includes('No Fees') && !original.includes('No Fees')) {
+        //Overwrite options and clear out all other choices.
+        if(this.e?.attributeValues?.RegistrationFeeType) {
+          this.e.attributeValues.RegistrationFeeType = "No Fees"
+        }
+        if(this.e?.attributeValues) {
+          this.e.attributeValues.RegistrationFeeBudgetLine = ""
+          this.e.attributeValues.RegistrationFeeBudgetMinistry = ""
+          this.e.attributeValues.IndividualRegistrationFee = ""
+          this.e.attributeValues.CoupleRegistrationFee = ""
+          this.e.attributeValues.OnlineRegistrationFee = ""
+          this.e.attributeValues.DiscountCodes = ""
+        }
+      } else if(original == "No Fees" && val.includes(",")) {
+        if(this.e?.attributeValues?.RegistrationFeeType) {
+          let items = val.split(",").filter((i: string) => { return i != "No Fees" })
+          this.e.attributeValues.RegistrationFeeType = items.join(",")
+        }
+      }
+    },
+    // 'e.attributeValues.ExpectedAttendance'(val, original) {
+    //   if(this.e?.attributeValues) {
+    //     if(val && val >= 180 && this.e.attributeValues.NeedsCheckin == 'True') {
+    //       this.e.attributeValues.NeedsDatabaseSupportTeam = 'True'
+    //     }
+    //     if(!val || val <= 100) {
+    //       this.e.attributeValues.NeedsDatabaseSupportTeam = 'False'
+    //     }
+    //   }
+    // },
+    'e.attributeValues.NeedsReminderEmail'(val, original) {
+      if(this.e?.attributeValues) {
+        if(val == 'False') {
+          this.e.attributeValues.RegistrationReminderEmailAdditionalDetails = ''
+          this.e.attributeValues.ReminderEmailSendDate = ''
+        }
+      }
+    },
+    'e.attributeValues.NeedsCustomCommContent'(val, original) {
+      if(this.e?.attributeValues) {
+        if(val == 'False') {
+          this.e.attributeValues.RegistrationReminderEmailAdditionalDetails = ''
+          this.e.attributeValues.RegistrationConfirmationEmailAdditionalDetails = ''
+        }
+      }
+    },
+    // 'e.attributeValues.NeedsCheckin'(val, original) {
+    //   if(this.e?.attributeValues) {
+    //     let att = parseInt(this.e.attributeValues.ExpectedAttendance)
+    //     if(this.e.attributeValues.ExpectedAttendance && att >= 180 && val == 'True') {
+    //       this.e.attributeValues.NeedsDatabaseSupportTeam = 'True'
+    //     }
+    //     if(val == 'False') {
+    //       this.e.attributeValues.NeedsDatabaseSupportTeam = 'False'
+    //       this.e.attributeValues.NeedsLabels = 'False'
+    //     }
+    //     if(val == 'True') {
+    //       this.e.attributeValues.NeedsAttendanceOccurrence = 'True'
+    //     }
+    //   }
+    // },
+    // 'e.attributeValues.NeedsDatabaseSupportTeam'(val, original) {
+    //   if(this.e?.attributeValues) {
+    //     let att = parseInt(this.e.attributeValues.ExpectedAttendance)
+    //     if(val == 'False' && att >= 180 && this.e.attributeValues.NeedsCheckin == 'True') {
+    //       this.e.attributeValues.NeedsDatabaseSupportTeam = 'True'
+    //     }
+    //     if(this.e.attributeValues.NeedsDatabaseSupportTeam == 'True') {
+    //       this.e.attributeValues.NeedsCheckin = 'True'
+    //     }
+    //   }
+    // },
+    'e.attributeValues.AdditionalRegistrationQuestions'(val, original) {
+      console.log('Additional Reg Updated')
+      console.log(this.e?.attributeValues?.AdditionalRegistrationQuestions)
+      if(val) {
+        this.needsAdditionalRegQuestions = 'True'
+      } 
+    },
+    errors: {
+      handler(val) {
+        this.$emit("validation-change", { ref: this.refName, errors: val})
+      },
+      deep: true
+    }
+  },
+  mounted() {
+    if(this.showValidation) {
+      this.validate()
+    }
+    if(this.e?.attributeValues?.StartTime) {
+      let dt = {} as DateTime
+      if(this.e?.attributeValues?.EventDate) {
+        dt = DateTime.fromFormat(`${this.e?.attributeValues?.EventDate} ${this.e?.attributeValues?.StartTime}`, "yyyy-MM-dd HH:mm:ss")
+      } else if(this.request?.attributeValues?.EventDates) {
+        let dates = this.request?.attributeValues?.EventDates.split(",").map(d => {
+          return DateTime.fromFormat(d.trim(), "yyyy-MM-dd")
+        }).sort()
+        dt = DateTime.fromFormat(`${dates[0].toFormat("yyyy-MM-dd")} ${this.e?.attributeValues?.StartTime}`, "yyyy-MM-dd HH:mm:ss")
+      } else {
+        dt = DateTime.fromFormat(`${DateTime.now().toFormat("yyyy-MM-dd")} ${this.e?.attributeValues?.StartTime}`, "yyyy-MM-dd HH:mm:ss")
+      }
+      let defaultTime = dt.minus({days: 1})
+      //If Childcare close one week before event
+      if(this.request?.attributeValues?.NeedsChildCare == 'True') {
+        defaultTime = dt.minus({weeks: 1})
+      }
+      if(this.e.attributeValues.RegistrationEndDate == '') {
+        this.e.attributeValues.RegistrationEndDate = defaultTime.toFormat("yyyy-MM-dd")
+      }
+      if(this.e.attributeValues.RegistrationEndTime == '') {
+        this.e.attributeValues.RegistrationEndTime = defaultTime.toFormat("HH:mm:ss")
+      }
+    }
+    if(this.e?.attributeValues?.AdditionalRegistrationQuestions) {
+      this.needsAdditionalRegQuestions = 'True'
+    }
+  },
+  template: `
+<div class="row" v-if="isMultiOccurrence">
+  <div class="col col-xs-12 col-md-6">
+    <tcc-switch
+      v-model="e.attributeValues.EventNeedsSeparateLink"
+      :label="e.attributes.EventNeedsSeparateLink.name"
+      v-if="!readonly"
+      id="boolEventNeedsSeparateLink"
+    ></tcc-switch>
+    <rck-field
+      v-else
+      v-model="e.attributeValues.EventNeedsSeparateLink"
+      :attribute="e.attributes.EventNeedsSeparateLink"
+      :is-edit-mode="false"
+      :showEmptyValue="true"
+      id="boolEventNeedsSeparateLink"
+    ></rck-field>
+  </div>
+</div>
+<rck-form ref="form" @validationChanged="validationChange" v-if="e.attributeValues.EventNeedsSeparateLink == 'True' || !isMultiOccurrence">
   <div class="row">
-    <div class="col col-xs-12 col-md-6" v-if="separateLinksValid">
-      <tcc-switch
-        v-model="e.attributeValues.EventNeedsSeparateLink"
-        :label="separateRegLinkLabel"
-        v-if="!readonly"
-        id="boolEventNeedsSeparateLink"
-      ></tcc-switch>
+    <div class="col col-xs-12 col-md-6">
+      <tcc-validator :name="e.attributes.RegistrationStartDate.key" :rules="[rules.required(e.attributeValues.RegistrationStartDate, e.attributes.RegistrationStartDate.name), rules.dateCannotBeAfterEvent(e.attributeValues.RegistrationStartDate, lastDate, e.attributes.RegistrationStartDate.name)]" ref="validators_start" v-if="!readonly">
+        <tcc-date-pkr
+          :label="e.attributes.RegistrationStartDate.name"
+          v-model="e.attributeValues.RegistrationStartDate"
+          :min="earliestDate"
+          id="dateRegistrationStartDate"
+        ></tcc-date-pkr>
+      </tcc-validator>
       <rck-field
         v-else
-        v-model="e.attributeValues.EventNeedsSeparateLink"
-        :attribute="e.attributes.EventNeedsSeparateLink"
+        v-model="e.attributeValues.RegistrationStartDate"
+        :attribute="e.attributes.RegistrationStartDate"
         :is-edit-mode="false"
         :showEmptyValue="true"
-        id="boolEventNeedsSeparateLink"
+        id="dateRegistrationStartDate"
+      ></rck-field>
+    </div>
+    <div class="col col-xs-12 col-md-6">
+      <tcc-validator :name="e.attributes.RegistrationFeeType.key" :rules="[rules.required(e.attributeValues.RegistrationFeeType, e.attributes.RegistrationFeeType.name)]" ref="validators_feetype">
+        <rck-field
+          v-model="e.attributeValues.RegistrationFeeType"
+          :attribute="e.attributes.RegistrationFeeType"
+          :is-edit-mode="!readonly"
+          :showEmptyValue="true"
+          id="ddlRegistrationFeeType"
+        ></rck-field>
+      </tcc-validator>
+    </div>
+  </div>
+  <div class="row" v-if="e.attributeValues.RegistrationFeeType != '' && e.attributeValues.RegistrationFeeType != 'No Fees'">
+    <div class="col col-xs-12 col-md-6">
+      <tcc-validator :name="e.attributes.RegistrationFeeBudgetMinistry.key" :rules="[rules.required(e.attributeValues.RegistrationFeeBudgetMinistry, e.attributes.RegistrationFeeBudgetMinistry.name)]" ref="validators_budgetmin">
+        <rck-field
+          v-model="e.attributeValues.RegistrationFeeBudgetMinistry"
+          :attribute="e.attributes.RegistrationFeeBudgetMinistry"
+          :is-edit-mode="!readonly"
+          :showEmptyValue="true"
+          id="ddlRegistrationFeeBudgetMinistry"
+        ></rck-field>
+      </tcc-validator>
+    </div>
+    <div class="col col-xs-12 col-md-6">
+      <tcc-validator :name="e.attributes.RegistrationFeeBudgetLine.key" :rules="[rules.required(e.attributeValues.RegistrationFeeBudgetLine, e.attributes.RegistrationFeeBudgetLine.name)]" ref="validators_budget">
+        <rck-field
+          v-model="e.attributeValues.RegistrationFeeBudgetLine"
+          :attribute="e.attributes.RegistrationFeeBudgetLine"
+          :is-edit-mode="!readonly"
+          :showEmptyValue="true"
+          id="ddlRegistrationFeeBudgetLine"
+        ></rck-field>
+      </tcc-validator>
+    </div>
+  </div>
+  <div class="row" v-if="e.attributeValues.RegistrationFeeType != '' && e.attributeValues.RegistrationFeeType != 'No Fees'">
+    <div class="col col-xs-12 col-md-6" v-if="e.attributeValues.RegistrationFeeType.includes('Individual')">
+      <tcc-validator :name="e.attributes.IndividualRegistrationFee.key" :rules="[rules.required(e.attributeValues.IndividualRegistrationFee, e.attributes.IndividualRegistrationFee.name)]" ref="validators_indv">
+        <rck-field
+          v-model="e.attributeValues.IndividualRegistrationFee"
+          :attribute="e.attributes.IndividualRegistrationFee"
+          :is-edit-mode="!readonly"
+          :showEmptyValue="true"
+          id="txtIndividualRegistrationFee"
+        ></rck-field>
+      </tcc-validator>
+    </div>
+    <div class="col col-xs-12 col-md-6" v-if="e.attributeValues.RegistrationFeeType.includes('Couple')">
+      <tcc-validator :name="e.attributes.CoupleRegistrationFee.key" :rules="[rules.required(e.attributeValues.CoupleRegistrationFee, e.attributes.CoupleRegistrationFee.name)]" ref="validators_couple">
+        <rck-field
+          v-model="e.attributeValues.CoupleRegistrationFee"
+          :attribute="e.attributes.CoupleRegistrationFee"
+          :is-edit-mode="!readonly"
+          :showEmptyValue="true"
+          id="txtCoupleRegistrationFee"
+        ></rck-field>
+      </tcc-validator>
+    </div>
+    <div class="col col-xs-12 col-md-6" v-if="e.attributeValues.RegistrationFeeType.includes('Online')">
+      <tcc-validator :name="e.attributes.OnlineRegistrationFee.key" :rules="[rules.required(e.attributeValues.OnlineRegistrationFee, e.attributes.OnlineRegistrationFee.name)]" ref="validators_online">
+        <rck-field
+          v-model="e.attributeValues.OnlineRegistrationFee"
+          :attribute="e.attributes.OnlineRegistrationFee"
+          :is-edit-mode="!readonly"
+          :showEmptyValue="true"
+          id="OnlineRegistrationFee"
+        ></rck-field>
+      </tcc-validator>
+    </div>
+  </div>
+  <tcc-discount v-if="e.attributeValues.RegistrationFeeType != '' && !e.attributeValues.RegistrationFeeType.includes('No Fees')" :e="e" :attrs="discountAttrs" :readonly="readonly"></tcc-discount>
+  <div class="row">
+    <div class="col col-xs-12 col-md-6">
+      <tcc-validator :name="e.attributes.RegistrationEndDate.key" :rules="[rules.required(e.attributeValues.RegistrationEndDate, e.attributes.RegistrationEndDate.name)]" ref="validators_end" v-if="!readonly">
+        <tcc-date-pkr
+          :label="e.attributes.RegistrationEndDate.name"
+          v-model="e.attributeValues.RegistrationEndDate"
+          :min="earliestDate"
+          id="dateRegistrationEndDate"
+        ></tcc-date-pkr>
+      </tcc-validator>
+      <rck-field
+        v-else
+        v-model="e.attributeValues.RegistrationEndDate"
+        :attribute="e.attributes.RegistrationEndDate"
+        :is-edit-mode="false"
+        :showEmptyValue="true"
+        id="dateRegistrationEndDate"
+      ></rck-field>
+    </div>
+    <div class="col col-xs-12 col-md-6">
+      <tcc-validator :name="e.attributes.RegistrationEndTime.key" :rules="[rules.required(e.attributeValues.RegistrationEndTime, e.attributes.RegistrationEndTime.name)]" ref="validators_endtime" v-if="!readonly">
+        <tcc-time 
+          :label="e.attributes.RegistrationEndTime.name"
+          v-model="e.attributeValues.RegistrationEndTime"
+          id="TimeRegistrationEndTime"
+        ></tcc-time>
+      </tcc-validator>
+      <rck-field
+        v-else
+        v-model="e.attributeValues.RegistrationEndTime"
+        :attribute="e.attributes.RegistrationEndTime"
+        :is-edit-mode="false"
+        :showEmptyValue="true"
+        id="timeRegistrationEndTime"
       ></rck-field>
     </div>
   </div>
-  <template v-if="!separateLinksValid || e.attributeValues.EventNeedsSeparateLink == 'True' || request.attributeValues.IsSame == 'True'">
-    <div class="row">
-      <div class="col col-xs-12 col-md-6">
-        <tcc-validator :name="e.attributes.RegistrationStartDate.key" :rules="[rules.required(e.attributeValues.RegistrationStartDate, e.attributes.RegistrationStartDate.name), rules.dateCannotBeAfterEvent(e.attributeValues.RegistrationStartDate, lastDate, e.attributes.RegistrationStartDate.name)]" ref="validators_start" v-if="!readonly">
-          <tcc-date-pkr
-            :label="e.attributes.RegistrationStartDate.name"
-            v-model="e.attributeValues.RegistrationStartDate"
-            :min="earliestDate"
-            id="dateRegistrationStartDate"
-          ></tcc-date-pkr>
-        </tcc-validator>
+  <div class="row mt-2">
+    <div class="col col-xs-12 col-md-6">
+      <tcc-switch
+        v-model="e.attributeValues.NeedsShortLink"
+        :label="e.attributes.NeedsShortLink.name"
+        v-if="!readonly"
+        id="boolNeedsShortLink"
+      ></tcc-switch>
+      <rck-field
+        v-else
+        v-model="e.attributeValues.NeedsShortLink"
+        :attribute="e.attributes.NeedsShortLink"
+        :is-edit-mode="false"
+        :showEmptyValue="true"
+        id="boolNeedsShortLink"
+      ></rck-field>
+    </div>
+    <div class="col col-xs-12 col-md-6">
+      <tcc-validator :name="e.attributes.MaxRegistrants.key" :rules="[rules.required(e.attributeValues.MaxRegistrants, e.attributes.MaxRegistrants.name), rules.maxRegistration(e.attributeValues.MaxRegistrants, e.attributeValues.Rooms, locations, e.attributes.MaxRegistrants.name, request.attributeValues.NeedsOnline == 'True')]" ref="validator_maxreg">
         <rck-field
-          v-else
-          v-model="e.attributeValues.RegistrationStartDate"
-          :attribute="e.attributes.RegistrationStartDate"
-          :is-edit-mode="false"
+          v-model="e.attributeValues.MaxRegistrants"
+          :attribute="e.attributes.MaxRegistrants"
+          :is-edit-mode="!readonly"
           :showEmptyValue="true"
-          id="dateRegistrationStartDate"
+          id="txtMaxRegistrants"
         ></rck-field>
-      </div>
-      <div class="col col-xs-12 col-md-6">
-        <tcc-validator :name="e.attributes.RegistrationFeeType.key" :rules="[rules.required(e.attributeValues.RegistrationFeeType, e.attributes.RegistrationFeeType.name)]" ref="validators_feetype">
-          <rck-field
-            v-model="e.attributeValues.RegistrationFeeType"
-            :attribute="e.attributes.RegistrationFeeType"
-            :is-edit-mode="!readonly"
-            :showEmptyValue="true"
-            id="ddlRegistrationFeeType"
-          ></rck-field>
-        </tcc-validator>
-      </div>
+      </tcc-validator>
     </div>
-    <div class="row" v-if="e.attributeValues.RegistrationFeeType != '' && e.attributeValues.RegistrationFeeType != 'No Fees'">
-      <div class="col col-xs-12 col-md-6">
-        <tcc-validator :name="e.attributes.RegistrationFeeBudgetMinistry.key" :rules="[rules.required(e.attributeValues.RegistrationFeeBudgetMinistry, e.attributes.RegistrationFeeBudgetMinistry.name)]" ref="validators_budgetmin">
-          <rck-field
-            v-model="e.attributeValues.RegistrationFeeBudgetMinistry"
-            :attribute="e.attributes.RegistrationFeeBudgetMinistry"
-            :is-edit-mode="!readonly"
-            :showEmptyValue="true"
-            id="ddlRegistrationFeeBudgetMinistry"
-          ></rck-field>
-        </tcc-validator>
-      </div>
-      <div class="col col-xs-12 col-md-6">
-        <tcc-validator :name="e.attributes.RegistrationFeeBudgetLine.key" :rules="[rules.required(e.attributeValues.RegistrationFeeBudgetLine, e.attributes.RegistrationFeeBudgetLine.name)]" ref="validators_budget">
-          <rck-field
-            v-model="e.attributeValues.RegistrationFeeBudgetLine"
-            :attribute="e.attributes.RegistrationFeeBudgetLine"
-            :is-edit-mode="!readonly"
-            :showEmptyValue="true"
-            id="ddlRegistrationFeeBudgetLine"
-          ></rck-field>
-        </tcc-validator>
-      </div>
+    <div class="col col-xs-12 col-md-6">
+      <tcc-switch
+        v-model="needsAdditionalRegQuestions"
+        label="All registrations will ask for Name, DOB, Gender, Email, Phone Number, and Agape. Do you need to ask your registrants any other questions?"
+        v-if="!readonly"
+        id="boolNeedsAddReg"
+      ></tcc-switch>
     </div>
-    <div class="row" v-if="e.attributeValues.RegistrationFeeType != '' && e.attributeValues.RegistrationFeeType != 'No Fees'">
-      <div class="col col-xs-12 col-md-6" v-if="e.attributeValues.RegistrationFeeType.includes('Individual')">
-        <tcc-validator :name="e.attributes.IndividualRegistrationFee.key" :rules="[rules.required(e.attributeValues.IndividualRegistrationFee, e.attributes.IndividualRegistrationFee.name)]" ref="validators_indv">
-          <rck-field
-            v-model="e.attributeValues.IndividualRegistrationFee"
-            :attribute="e.attributes.IndividualRegistrationFee"
-            :is-edit-mode="!readonly"
-            :showEmptyValue="true"
-            id="txtIndividualRegistrationFee"
-          ></rck-field>
-        </tcc-validator>
-      </div>
-      <div class="col col-xs-12 col-md-6" v-if="e.attributeValues.RegistrationFeeType.includes('Couple')">
-        <tcc-validator :name="e.attributes.CoupleRegistrationFee.key" :rules="[rules.required(e.attributeValues.CoupleRegistrationFee, e.attributes.CoupleRegistrationFee.name)]" ref="validators_couple">
-          <rck-field
-            v-model="e.attributeValues.CoupleRegistrationFee"
-            :attribute="e.attributes.CoupleRegistrationFee"
-            :is-edit-mode="!readonly"
-            :showEmptyValue="true"
-            id="txtCoupleRegistrationFee"
-          ></rck-field>
-        </tcc-validator>
-      </div>
-      <div class="col col-xs-12 col-md-6" v-if="e.attributeValues.RegistrationFeeType.includes('Online')">
-        <tcc-validator :name="e.attributes.OnlineRegistrationFee.key" :rules="[rules.required(e.attributeValues.OnlineRegistrationFee, e.attributes.OnlineRegistrationFee.name)]" ref="validators_online">
-          <rck-field
-            v-model="e.attributeValues.OnlineRegistrationFee"
-            :attribute="e.attributes.OnlineRegistrationFee"
-            :is-edit-mode="!readonly"
-            :showEmptyValue="true"
-            id="OnlineRegistrationFee"
-          ></rck-field>
-        </tcc-validator>
-      </div>
+  </div>
+  <tcc-reg-questions v-if="needsAdditionalRegQuestions == 'True'" :e="e" :attrs="regAttrs" :readonly="readonly"></tcc-reg-questions>
+  <br/>
+  <h4 class="text-accent">Let's build-out the confirmation email your registrants will receive after signing up for this event</h4>
+  <div class="row">
+    <div class="col col-xs-12">
+      <tcc-switch
+        v-model="e.attributeValues.NeedsCustomCommContent"
+        :label="e.attributes.NeedsCustomCommContent.name"
+        :hint="e.attributes.NeedsCustomCommContent.description"
+        :persistentHint="true"
+        v-if="!readonly"
+        id="boolNeedsCustomCommContent"
+      ></tcc-switch>
+      <rck-field
+        v-else
+        v-model="e.attributeValues.NeedsCustomCommContent"
+        :attribute="e.attributes.NeedsCustomCommContent"
+        :is-edit-mode="false"
+        :showEmptyValue="true"
+        id="boolNeedsCustomCommContent"
+      ></rck-field>
     </div>
-    <tcc-discount v-if="e.attributeValues.RegistrationFeeType != '' && !e.attributeValues.RegistrationFeeType.includes('No Fees')" :e="e" :attrs="discountAttrs" :readonly="readonly"></tcc-discount>
-    <div class="row">
-      <div class="col col-xs-12 col-md-6">
-        <tcc-validator :name="e.attributes.RegistrationEndDate.key" :rules="[rules.required(e.attributeValues.RegistrationEndDate, e.attributes.RegistrationEndDate.name)]" ref="validators_end" v-if="!readonly">
-          <tcc-date-pkr
-            :label="e.attributes.RegistrationEndDate.name"
-            v-model="e.attributeValues.RegistrationEndDate"
-            :min="earliestDate"
-            id="dateRegistrationEndDate"
-          ></tcc-date-pkr>
-        </tcc-validator>
+    <div class="col col-xs-12">
+      <tcc-validator :name="e.attributes.RegistrationConfirmationEmailSender.key" :rules="[rules.required(e.attributeValues.RegistrationConfirmationEmailSender, e.attributes.RegistrationConfirmationEmailSender.name)]" ref="validators_sender">
         <rck-field
-          v-else
-          v-model="e.attributeValues.RegistrationEndDate"
-          :attribute="e.attributes.RegistrationEndDate"
-          :is-edit-mode="false"
+          v-model="e.attributeValues.RegistrationConfirmationEmailSender"
+          :attribute="e.attributes.RegistrationConfirmationEmailSender"
+          :is-edit-mode="!readonly"
           :showEmptyValue="true"
-          id="dateRegistrationEndDate"
+          id="txtRegistrationConfirmationEmailSender"
         ></rck-field>
-      </div>
-      <div class="col col-xs-12 col-md-6">
-        <tcc-validator :name="e.attributes.RegistrationEndTime.key" :rules="[rules.required(e.attributeValues.RegistrationEndTime, e.attributes.RegistrationEndTime.name)]" ref="validators_endtime" v-if="!readonly">
-          <tcc-time 
-            :label="e.attributes.RegistrationEndTime.name"
-            v-model="e.attributeValues.RegistrationEndTime"
-            id="TimeRegistrationEndTime"
-          ></tcc-time>
-        </tcc-validator>
-        <rck-field
-          v-else
-          v-model="e.attributeValues.RegistrationEndTime"
-          :attribute="e.attributes.RegistrationEndTime"
-          :is-edit-mode="false"
-          :showEmptyValue="true"
-          id="timeRegistrationEndTime"
-        ></rck-field>
-      </div>
+      </tcc-validator>
     </div>
-    <div class="row mt-2">
-      <div class="col col-xs-12 col-md-6">
-        <tcc-switch
-          v-model="e.attributeValues.NeedsShortLink"
-          :label="e.attributes.NeedsShortLink.name"
-          v-if="!readonly"
-          id="boolNeedsShortLink"
-        ></tcc-switch>
+  </div>
+  <div class="row">
+    <div class="col col-xs-12">
+      <tcc-validator :rules="[]" ref="validators_email">
         <rck-field
-          v-else
-          v-model="e.attributeValues.NeedsShortLink"
-          :attribute="e.attributes.NeedsShortLink"
-          :is-edit-mode="false"
+          v-model="e.attributeValues.RegistrationConfirmationEmailFromAddress"
+          :attribute="e.attributes.RegistrationConfirmationEmailFromAddress"
+          :is-edit-mode="!readonly"
           :showEmptyValue="true"
-          id="boolNeedsShortLink"
+          id="txtRegistrationConfirmationEmailFromAddress"
         ></rck-field>
-      </div>
-      <div class="col col-xs-12 col-md-6">
-        <tcc-validator :name="e.attributes.MaxRegistrants.key" :rules="[rules.required(e.attributeValues.MaxRegistrants, e.attributes.MaxRegistrants.name), rules.maxRegistration(e.attributeValues.MaxRegistrants, e.attributeValues.Rooms, locations, e.attributes.MaxRegistrants.name, request.attributeValues.NeedsOnline == 'True')]" ref="validator_maxreg">
-          <rck-field
-            v-model="e.attributeValues.MaxRegistrants"
-            :attribute="e.attributes.MaxRegistrants"
-            :is-edit-mode="!readonly"
-            :showEmptyValue="true"
-            id="txtMaxRegistrants"
-          ></rck-field>
-        </tcc-validator>
-      </div>
-      <div class="col col-xs-12 col-md-6">
-        <tcc-switch
-          v-model="needsAdditionalRegQuestions"
-          label="All registrations will ask for Name, DOB, Gender, Email, Phone Number, and Agape. Do you need to ask your registrants any other questions?"
-          v-if="!readonly"
-          id="boolNeedsAddReg"
-        ></tcc-switch>
-      </div>
+        <div class="input-hint rock-hint">If you want to use an email other than your sender's firstname.lastname@thecrossing email enter it here</div>
+      </tcc-validator>
     </div>
-    <tcc-reg-questions v-if="needsAdditionalRegQuestions == 'True'" :e="e" :attrs="regAttrs" :readonly="readonly"></tcc-reg-questions>
-    <br/>
-    <h4 class="text-accent">Let's build-out the confirmation email your registrants will receive after signing up for this event</h4>
-    <div class="row">
+  </div>
+  <div class="row mb-2" v-if="e.attributeValues.NeedsCustomCommContent == 'True'">
+    <div class="col col-xs-12">
+      <tcc-validator :name="e.attributes.RegistrationConfirmationEmailAdditionalDetails.key" :rules="[rules.required(e.attributeValues.RegistrationConfirmationEmailAdditionalDetails, e.attributes.RegistrationConfirmationEmailAdditionalDetails.name)]" ref="validators_details">
+        <rck-field
+          v-model="e.attributeValues.RegistrationConfirmationEmailAdditionalDetails"
+          :attribute="e.attributes.RegistrationConfirmationEmailAdditionalDetails"
+          :is-edit-mode="!readonly"
+          :showEmptyValue="true"
+          id="txtRegistrationConfirmationEmailAdditionalDetails"
+        ></rck-field>
+      </tcc-validator>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col col-xs-12">
+      <tcc-switch
+        v-model="e.attributeValues.NeedsReminderEmail"
+        :label="e.attributes.NeedsReminderEmail.name"
+        v-if="!readonly"
+        id="boolNeedsReminderEmail"
+      ></tcc-switch>
+      <rck-field
+        v-else
+        v-model="e.attributeValues.NeedsReminderEmail"
+        :attribute="e.attributes.NeedsReminderEmail"
+        :is-edit-mode="false"
+        :showEmptyValue="true"
+        id="boolNeedsReminderEmail"
+      ></rck-field>
+    </div>
+  </div>
+  <template v-if="e.attributeValues.NeedsReminderEmail == 'True'">
+    <div class="row" v-if="e.attributeValues.NeedsCustomCommContent == 'True'">
       <div class="col col-xs-12">
-        <tcc-switch
-          v-model="e.attributeValues.NeedsCustomCommContent"
-          :label="e.attributes.NeedsCustomCommContent.name"
-          :hint="e.attributes.NeedsCustomCommContent.description"
-          :persistentHint="true"
-          v-if="!readonly"
-          id="boolNeedsCustomCommContent"
-        ></tcc-switch>
+        <tcc-validator :name="e.attributes.RegistrationReminderEmailAdditionalDetails.key" :rules="[rules.required(e.attributeValues.RegistrationReminderEmailAdditionalDetails, e.attributes.RegistrationReminderEmailAdditionalDetails.name)]" ref="validators_reminderdetails">
+          <rck-field
+            v-model="e.attributeValues.RegistrationReminderEmailAdditionalDetails"
+            :attribute="e.attributes.RegistrationReminderEmailAdditionalDetails"
+            :is-edit-mode="!readonly"
+            :showEmptyValue="true"
+            id="txtRegistrationReminderEmailAdditionalDetails"
+          ></rck-field>
+        </tcc-validator>
+      </div>
+    </div>
+    <div class="row mb-2">
+      <div class="col col-xs-12 col-md-6">
         <rck-field
-          v-else
-          v-model="e.attributeValues.NeedsCustomCommContent"
-          :attribute="e.attributes.NeedsCustomCommContent"
-          :is-edit-mode="false"
+          v-model="e.attributeValues.ReminderEmailSendDate"
+          :attribute="e.attributes.ReminderEmailSendDate"
+          :is-edit-mode="!readonly"
           :showEmptyValue="true"
-          id="boolNeedsCustomCommContent"
-        ></rck-field>
-      </div>
-      <div class="col col-xs-12">
-        <tcc-validator :name="e.attributes.RegistrationConfirmationEmailSender.key" :rules="[rules.required(e.attributeValues.RegistrationConfirmationEmailSender, e.attributes.RegistrationConfirmationEmailSender.name)]" ref="validators_sender">
-          <rck-field
-            v-model="e.attributeValues.RegistrationConfirmationEmailSender"
-            :attribute="e.attributes.RegistrationConfirmationEmailSender"
-            :is-edit-mode="!readonly"
-            :showEmptyValue="true"
-            id="txtRegistrationConfirmationEmailSender"
-          ></rck-field>
-        </tcc-validator>
-      </div>
-    </div>
-    <div class="row">
-      <div class="col col-xs-12">
-        <tcc-validator :rules="[]" ref="validators_email">
-          <rck-field
-            v-model="e.attributeValues.RegistrationConfirmationEmailFromAddress"
-            :attribute="e.attributes.RegistrationConfirmationEmailFromAddress"
-            :is-edit-mode="!readonly"
-            :showEmptyValue="true"
-            id="txtRegistrationConfirmationEmailFromAddress"
-          ></rck-field>
-          <div class="input-hint rock-hint">If you want to use an email other than your sender's firstname.lastname@thecrossing email enter it here</div>
-        </tcc-validator>
-      </div>
-    </div>
-    <div class="row mb-2" v-if="e.attributeValues.NeedsCustomCommContent == 'True'">
-      <div class="col col-xs-12">
-        <tcc-validator :name="e.attributes.RegistrationConfirmationEmailAdditionalDetails.key" :rules="[rules.required(e.attributeValues.RegistrationConfirmationEmailAdditionalDetails, e.attributes.RegistrationConfirmationEmailAdditionalDetails.name)]" ref="validators_details">
-          <rck-field
-            v-model="e.attributeValues.RegistrationConfirmationEmailAdditionalDetails"
-            :attribute="e.attributes.RegistrationConfirmationEmailAdditionalDetails"
-            :is-edit-mode="!readonly"
-            :showEmptyValue="true"
-            id="txtRegistrationConfirmationEmailAdditionalDetails"
-          ></rck-field>
-        </tcc-validator>
-      </div>
-    </div>
-    <div class="row">
-      <div class="col col-xs-12">
-        <tcc-switch
-          v-model="e.attributeValues.NeedsReminderEmail"
-          :label="e.attributes.NeedsReminderEmail.name"
-          v-if="!readonly"
-          id="boolNeedsReminderEmail"
-        ></tcc-switch>
-        <rck-field
-          v-else
-          v-model="e.attributeValues.NeedsReminderEmail"
-          :attribute="e.attributes.NeedsReminderEmail"
-          :is-edit-mode="false"
-          :showEmptyValue="true"
-          id="boolNeedsReminderEmail"
+          id="dateReminderEmailSendDate"
         ></rck-field>
       </div>
     </div>
-    <template v-if="e.attributeValues.NeedsReminderEmail == 'True'">
-      <div class="row" v-if="e.attributeValues.NeedsCustomCommContent == 'True'">
-        <div class="col col-xs-12">
-          <tcc-validator :name="e.attributes.RegistrationReminderEmailAdditionalDetails.key" :rules="[rules.required(e.attributeValues.RegistrationReminderEmailAdditionalDetails, e.attributes.RegistrationReminderEmailAdditionalDetails.name)]" ref="validators_reminderdetails">
-            <rck-field
-              v-model="e.attributeValues.RegistrationReminderEmailAdditionalDetails"
-              :attribute="e.attributes.RegistrationReminderEmailAdditionalDetails"
-              :is-edit-mode="!readonly"
-              :showEmptyValue="true"
-              id="txtRegistrationReminderEmailAdditionalDetails"
-            ></rck-field>
-          </tcc-validator>
-        </div>
-      </div>
-      <div class="row mb-2">
-        <div class="col col-xs-12 col-md-6">
-          <rck-field
-            v-model="e.attributeValues.ReminderEmailSendDate"
-            :attribute="e.attributes.ReminderEmailSendDate"
-            :is-edit-mode="!readonly"
-            :showEmptyValue="true"
-            id="dateReminderEmailSendDate"
-          ></rck-field>
-        </div>
-      </div>
-    </template>
   </template>
+
+  <!--
   <h4 class="text-accent">Check-in Information</h4>
   <div class="row mb-2">
     <div class="col col-xs-12 col-md-6">
@@ -661,6 +667,7 @@ export default defineComponent({
       </tcc-validator>
     </div>
   </div>
+  -->
 </rck-form>
 `
 });

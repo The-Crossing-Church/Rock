@@ -82,6 +82,7 @@ export default defineComponent({
             && this.viewModel?.request?.attributeValues?.NeedsChildCareCatering == "False"
             && this.viewModel?.request?.attributeValues?.NeedsOpsAccommodations == "False"
             && this.viewModel?.request?.attributeValues?.NeedsRegistration == "False"
+            && this.viewModel?.request?.attributeValues?.NeedsCheckin == "False"
             && this.viewModel?.request?.attributeValues?.NeedsPublicity == "False"
             && this.viewModel?.request?.attributeValues?.NeedsProductionAccommodations == "False"
             && this.viewModel?.request?.attributeValues?.NeedsWebCalendar == "False"

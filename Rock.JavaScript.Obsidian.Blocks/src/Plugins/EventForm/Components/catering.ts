@@ -1,5 +1,6 @@
 import { defineComponent, PropType } from "vue"
 import { ContentChannelItemBag } from "../../ViewModels/contentChannelItemBag"
+import { DateTime } from "luxon"
 import RockField from "@Obsidian/Controls/rockField.obs"
 import RockForm from "@Obsidian/Controls/rockForm.obs"
 import RockButton from "@Obsidian/Controls/rockButton.obs"
@@ -7,144 +8,152 @@ import RockLabel from "@Obsidian/Controls/rockLabel.obs"
 import Toggle from "./toggle"
 import TimePicker from "./timePicker"
 import Validator from "./validator"
-import { DateTime } from "luxon"
 import rules from "../Rules/rules"
 
 
 export default defineComponent({
-    name: "EventForm.Components.Catering",
-    components: {
-      "rck-field": RockField,
-      "rck-form": RockForm,
-      "rck-lbl": RockLabel,
-      "rck-btn": RockButton,
-      "tcc-validator": Validator,
-      "tcc-switch": Toggle,
-      "tcc-time": TimePicker,
+  name: "EventForm.Components.Catering",
+  components: {
+    "rck-field": RockField,
+    "rck-form": RockForm,
+    "rck-lbl": RockLabel,
+    "rck-btn": RockButton,
+    "tcc-validator": Validator,
+    "tcc-switch": Toggle,
+    "tcc-time": TimePicker,
+  },
+  props: {
+    e: {
+      type: Object as PropType<ContentChannelItemBag>,
+      required: false
     },
-    props: {
-      e: {
-        type: Object as PropType<ContentChannelItemBag>,
-        required: false
-      },
-      request: {
-        type: Object as PropType<ContentChannelItemBag>,
-        required: false
-      },
-      vendorList: Array as PropType<any[]>,
-      showValidation: Boolean,
-      refName: String,
-      readonly: Boolean
+    request: {
+      type: Object as PropType<ContentChannelItemBag>,
+      required: false
     },
-    setup() {
+    vendorList: Array as PropType<any[]>,
+    showValidation: Boolean,
+    refName: String,
+    readonly: Boolean,
+    isMultiOccurrence: Boolean
+  },
+  setup() {
 
-    },
-    data() {
-      return {
-        rules: rules,
-        errors: [] as Record<string, string>[],
-        vendorMenu: false,
-        // vendors: [
-        //   "Pancheros",
-        //   "Domino’s",
-        //   "Pizza Tree",
-        //   "Italian Village",
-        //   "Shakespeare’s",
-        //   "HyVee",
-        //   "Como S&F",
-        //   "D’Rowes",
-        //   "CFA",
-        //   "Pickleman’s",
-        //   "Panera",
-        //   "Ozark Mountain Biscuit",
-        //   "Eclipse"
-        // ]
-      };
-    },
-    computed: {
-      vendors() {
-        return this.vendorList?.filter(dv => dv.isActive).map(dv => dv.value)
-      }
-    },
-    methods: {
-      validate() {
-        let formRef = this.$refs as any
-        for(let r in formRef) {
-          if(formRef[r].className?.includes("validator")) {
-            formRef[r].validate()
-          }
-        }
-      },
-      validationChange(errs: Record<string, string>[]) {
-        this.errors = errs
-      },
-      setVendor(vendor: string) {
-        if(this.e?.attributeValues && vendor) {
-          this.e.attributeValues.PreferredVendor = vendor
+  },
+  data() {
+    return {
+      rules: rules,
+      errors: [] as Record<string, string>[],
+      vendorMenu: false,
+    };
+  },
+  computed: {
+    vendors() {
+      return this.vendorList?.filter(dv => dv.isActive).map(dv => dv.value)
+    }
+  },
+  methods: {
+    validate() {
+      let formRef = this.$refs as any
+      for(let r in formRef) {
+        if(formRef[r].className?.includes("validator")) {
+          formRef[r].validate()
         }
       }
     },
-    watch: {
-      'e.attributeValues.FoodSetupLocation'(val) {
-        if(this.e?.attributeValues) {
-          if(this.e.attributeValues.SetupFoodandDrinkTogether == "True") {
-            this.e.attributeValues.DrinkSetupLocation = val
-          }
-        }
-      },
-      'e.attributeValues.DrinkSetupLocation'(val) {
-        if(this.e?.attributeValues) {
-          if(this.e.attributeValues.FoodSetupLocation != val) { 
-            this.e.attributeValues.SetupFoodandDrinkTogether = "False"
-          }
-        }
-      },
-      'e.attributeValues.SetupFoodandDrinkTogether'(val) {
-        if(val == 'True' && this.e?.attributeValues) {
-          this.e.attributeValues.DrinkSetupLocation = this.e.attributeValues.FoodSetupLocation
-        }
-      },
-      'e.attributeValues.NeedsDelivery'(val) {
-        if(this.e?.attributes) {
-          if(val == 'True') {
-            this.e.attributes.FoodTime.name = 'What time would you like your food to be delivered?'
-          } else {
-            this.e.attributes.FoodTime.name = 'What time would you like your food ready for pickup?'
-          }
-        }
-      },
-      errors: {
-        handler(val) {
-          this.$emit("validation-change", { ref: this.refName, errors: val})
-        },
-        deep: true
+    validationChange(errs: Record<string, string>[]) {
+      this.errors = errs
+    },
+    setVendor(vendor: string) {
+      if(this.e?.attributeValues && vendor) {
+        this.e.attributeValues.PreferredVendor = vendor
+      }
+    }
+  },
+  watch: {
+    isMultiOccurrence(val) {
+      if(val == false && this.e?.attributeValues) {
+        this.e.attributeValues.NeedsCatering = 'True'
       }
     },
-    mounted() {
-      if(this.showValidation) {
-        this.validate()
-      }
-      if(this.e?.attributeValues?.StartTime) {
-        let dt = DateTime.fromFormat(this.e?.attributeValues?.StartTime, "HH:mm:ss")
-        let defaultTime = dt.minus({minutes: 30})
-        if(this.e.attributeValues.DrinkTime == '') {
-          this.e.attributeValues.DrinkTime = defaultTime.toFormat("HH:mm:ss")
+    'e.attributeValues.FoodSetupLocation'(val) {
+      if(this.e?.attributeValues) {
+        if(this.e.attributeValues.SetupFoodandDrinkTogether == "True") {
+          this.e.attributeValues.DrinkSetupLocation = val
         }
-        if(this.e.attributeValues.FoodTime == '') {
-          this.e.attributeValues.FoodTime = defaultTime.toFormat("HH:mm:ss")
-        }
-      }
-      if(this.readonly) {
-        document.querySelectorAll('.catering-form input').forEach((el: any) => {
-          el.setAttribute("readonly", "")
-        })
-        document.querySelectorAll('.catering-form textarea').forEach((el: any) => {
-          el.setAttribute("readonly", "")
-        })
       }
     },
-    template: `
-<rck-form ref="form" @validationChanged="validationChange" class="catering-form">
+    'e.attributeValues.DrinkSetupLocation'(val) {
+      if(this.e?.attributeValues) {
+        if(this.e.attributeValues.FoodSetupLocation != val) { 
+          this.e.attributeValues.SetupFoodandDrinkTogether = "False"
+        }
+      }
+    },
+    'e.attributeValues.SetupFoodandDrinkTogether'(val) {
+      if(val == 'True' && this.e?.attributeValues) {
+        this.e.attributeValues.DrinkSetupLocation = this.e.attributeValues.FoodSetupLocation
+      }
+    },
+    'e.attributeValues.NeedsDelivery'(val) {
+      if(this.e?.attributes) {
+        if(val == 'True') {
+          this.e.attributes.FoodTime.name = 'What time would you like your food to be delivered?'
+        } else {
+          this.e.attributes.FoodTime.name = 'What time would you like your food ready for pickup?'
+        }
+      }
+    },
+    errors: {
+      handler(val) {
+        this.$emit("validation-change", { ref: this.refName, errors: val})
+      },
+      deep: true
+    }
+  },
+  mounted() {
+    if(this.showValidation) {
+      this.validate()
+    }
+    if(this.e?.attributeValues?.StartTime) {
+      let dt = DateTime.fromFormat(this.e?.attributeValues?.StartTime, "HH:mm:ss")
+      let defaultTime = dt.minus({minutes: 30})
+      if(this.e.attributeValues.DrinkTime == '') {
+        this.e.attributeValues.DrinkTime = defaultTime.toFormat("HH:mm:ss")
+      }
+      if(this.e.attributeValues.FoodTime == '') {
+        this.e.attributeValues.FoodTime = defaultTime.toFormat("HH:mm:ss")
+      }
+    }
+    if(this.readonly) {
+      document.querySelectorAll('.catering-form input').forEach((el: any) => {
+        el.setAttribute("readonly", "")
+      })
+      document.querySelectorAll('.catering-form textarea').forEach((el: any) => {
+        el.setAttribute("readonly", "")
+      })
+    }
+  },
+  template: `
+<div class="row" v-if="isMultiOccurrence">
+  <div class="col col-xs-12 col-md-6">
+    <tcc-switch
+      v-model="e.attributeValues.NeedsCatering"
+      :label="e.attributes.NeedsCatering.name"
+      v-if="!readonly"
+      id="boolNeedsCatering"
+    ></tcc-switch>
+    <rck-field
+      v-else
+      v-model="e.attributeValues.NeedsCatering"
+      :attribute="e.attributes.NeedsCatering"
+      :is-edit-mode="false"
+      :showEmptyValue="true"
+      id="boolNeedsCatering"
+    ></rck-field>
+  </div>
+</div>
+<rck-form ref="form" @validationChanged="validationChange" class="catering-form" v-if="e.attributeValues.NeedsCatering == 'True' || !isMultiOccurrence">
   <div class="form-group dropdown" v-if="!readonly">
     <rck-btn btnType="link" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="vendoreMenu">
       <rck-lbl class="hover">

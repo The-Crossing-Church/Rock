@@ -2,100 +2,124 @@ import { defineComponent, PropType } from "vue";
 import { ContentChannelItemBag } from "../../ViewModels/contentChannelItemBag"
 import RockForm from "@Obsidian/Controls/rockForm.obs"
 import RockField from "@Obsidian/Controls/rockField.obs"
+import { DateTime } from "luxon"
 import Validator from "./validator"
 import Toggle from "./toggle"
 import TimePicker from "./timePicker"
-import { DateTime } from "luxon"
 import rules from "../Rules/rules"
 
 
 export default defineComponent({
-    name: "EventForm.Components.ChildCare",
-    components: {
-      "rck-field": RockField,
-      "tcc-validator": Validator,
-      "rck-form": RockForm,
-      "tcc-switch": Toggle,
-      "tcc-time": TimePicker,
+  name: "EventForm.Components.ChildCare",
+  components: {
+    "rck-field": RockField,
+    "tcc-validator": Validator,
+    "rck-form": RockForm,
+    "tcc-switch": Toggle,
+    "tcc-time": TimePicker,
+  },
+  props: {
+    e: {
+      type: Object as PropType<ContentChannelItemBag>,
+      required: false
     },
-    props: {
-      e: {
-          type: Object as PropType<ContentChannelItemBag>,
-          required: false
-      },
-      showValidation: Boolean,
-      refName: String,
-      readonly: Boolean
-    },
-    setup() {
+    showValidation: Boolean,
+    refName: String,
+    readonly: Boolean,
+    isMultiOccurrence: Boolean
+  },
+  setup() {
 
+  },
+  data() {
+    return {
+      rules: rules,
+      errors: [] as Record<string, string>[],
+      childcareOptsAttr: {} as any
+    };
+  },
+  computed: {
+    
+  },
+  methods: {
+    validate() {
+      let formRef = this.$refs as any
+      for(let r in formRef) {
+        if(formRef[r].className?.includes("validator")) {
+          formRef[r].validate()
+        }
+      }
     },
-    data() {
-        return {
-          rules: rules,
-          errors: [] as Record<string, string>[],
-          childcareOptsAttr: {} as any
-        };
+    validationChange(errs: Record<string, string>[]) {
+      this.errors = errs
+    }
+  },
+  watch: {
+    errors: {
+      handler(val) {
+        this.$emit("validation-change", { ref: this.refName, errors: val})
+      },
+      deep: true
     },
-    computed: {
-      
+    isMultiOccurrence(val) {
+      if(val == false && this.e?.attributeValues) {
+        this.e.attributeValues.NeedsChildCare = 'True'
+      }
     },
-    methods: {
-      validate() {
-        let formRef = this.$refs as any
-        for(let r in formRef) {
-          if(formRef[r].className?.includes("validator")) {
-            formRef[r].validate()
-          }
+    'e.attributeValues.ChildcareOptions': {
+      handler(val) {
+        if(val.includes("All") && this.e?.attributes?.ChildcareOptions && this.e?.attributeValues?.ChildcareOptions) {
+          let rawConfigValues = this.e?.attributes?.ChildcareOptions?.configurationValues?.values as string
+          let values = JSON.parse(rawConfigValues)
+          this.e.attributeValues.ChildcareOptions = values.map((v: any) => { return v.value }).join(",")
         }
       },
-      validationChange(errs: Record<string, string>[]) {
-        this.errors = errs
+      deep: true
+    }
+  },
+  mounted() {
+    if(this.showValidation) {
+      this.validate()
+    }
+    if(this.e?.attributeValues?.StartTime) {
+      let dt = DateTime.fromFormat(this.e?.attributeValues?.StartTime, "HH:mm:ss")
+      let defaultTime = dt.minus({minutes: 15})
+      if(this.e.attributeValues.ChildcareStartTime == '') {
+        this.e.attributeValues.ChildcareStartTime = defaultTime.toFormat("HH:mm:ss")
       }
-    },
-    watch: {
-      errors: {
-        handler(val) {
-          this.$emit("validation-change", { ref: this.refName, errors: val})
-        },
-        deep: true
-      },
-      'e.attributeValues.ChildcareOptions': {
-        handler(val) {
-          if(val.includes("All") && this.e?.attributes?.ChildcareOptions && this.e?.attributeValues?.ChildcareOptions) {
-            let rawConfigValues = this.e?.attributes?.ChildcareOptions?.configurationValues?.values as string
-            let values = JSON.parse(rawConfigValues)
-            this.e.attributeValues.ChildcareOptions = values.map((v: any) => { return v.value }).join(",")
-          }
-        },
-        deep: true
+    }
+    if(this.e?.attributeValues?.EndTime) {
+      if(this.e.attributeValues.ChildcareEndTime == '') {
+        this.e.attributeValues.ChildcareEndTime = this.e?.attributeValues?.EndTime
       }
-    },
-    mounted() {
-      if(this.showValidation) {
-        this.validate()
-      }
-      if(this.e?.attributeValues?.StartTime) {
-        let dt = DateTime.fromFormat(this.e?.attributeValues?.StartTime, "HH:mm:ss")
-        let defaultTime = dt.minus({minutes: 15})
-        if(this.e.attributeValues.ChildcareStartTime == '') {
-          this.e.attributeValues.ChildcareStartTime = defaultTime.toFormat("HH:mm:ss")
-        }
-      }
-      if(this.e?.attributeValues?.EndTime) {
-        if(this.e.attributeValues.ChildcareEndTime == '') {
-          this.e.attributeValues.ChildcareEndTime = this.e?.attributeValues?.EndTime
-        }
-      }
-      if(this.e?.attributes?.ChildcareOptions) {
-        this.childcareOptsAttr = JSON.parse(JSON.stringify(this.e?.attributes?.ChildcareOptions))
-        let configValues = JSON.parse(this.childcareOptsAttr.configurationValues.values)
-        configValues.push({"value": "All", "text": "Select All"})
-        this.childcareOptsAttr.configurationValues.values = JSON.stringify(configValues)
-      }
-    },
-    template: `
-<rck-form ref="form" @validationChanged="validationChange">
+    }
+    if(this.e?.attributes?.ChildcareOptions) {
+      this.childcareOptsAttr = JSON.parse(JSON.stringify(this.e?.attributes?.ChildcareOptions))
+      let configValues = JSON.parse(this.childcareOptsAttr.configurationValues.values)
+      configValues.push({"value": "All", "text": "Select All"})
+      this.childcareOptsAttr.configurationValues.values = JSON.stringify(configValues)
+    }
+  },
+  template: `
+<div class="row" v-if="isMultiOccurrence">
+  <div class="col col-xs-12 col-md-6">
+    <tcc-switch
+      v-model="e.attributeValues.NeedsChildCare"
+      :label="e.attributes.NeedsChildCare.name"
+      v-if="!readonly"
+      id="boolNeedsChildCare"
+    ></tcc-switch>
+    <rck-field
+      v-else
+      v-model="e.attributeValues.NeedsChildCare"
+      :attribute="e.attributes.NeedsChildCare"
+      :is-edit-mode="false"
+      :showEmptyValue="true"
+      id="boolNeedsChildCare"
+    ></rck-field>
+  </div>
+</div>
+<rck-form ref="form" @validationChanged="validationChange" v-if="e.attributeValues.NeedsChildCare == 'True' || !isMultiOccurrence">
   <div class="row">
     <div class="col col-xs-12 col-md-6">
       <tcc-validator :name="e.attributes.ChildcareStartTime.key" :rules="[rules.required(e.attributeValues.ChildcareStartTime, e.attributes.ChildcareStartTime.name)]" ref="validators_start" v-if="!readonly">

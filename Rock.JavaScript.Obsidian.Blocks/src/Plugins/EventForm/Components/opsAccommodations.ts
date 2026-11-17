@@ -38,341 +38,353 @@ type ListItem = {
 }
 
 export default defineComponent({
-    name: "EventForm.Components.Ops",
-    components: {
-      "rck-field": RockField,
-      "rck-form": RockForm,
-      "rck-lbl": RockLabel,
-      "tcc-validator": Validator,
-      "tcc-switch": Toggle,
-      "tcc-setup": RoomSetUp,
-      "tcc-time": TimePicker,
-      "tcc-ops-inv": OpsInv,
-      "rck-btn": RockButton,
-      "rck-modal": Modal
+  name: "EventForm.Components.Ops",
+  components: {
+    "rck-field": RockField,
+    "rck-form": RockForm,
+    "rck-lbl": RockLabel,
+    "tcc-validator": Validator,
+    "tcc-switch": Toggle,
+    "tcc-setup": RoomSetUp,
+    "tcc-time": TimePicker,
+    "tcc-ops-inv": OpsInv,
+    "rck-btn": RockButton,
+    "rck-modal": Modal
+  },
+  props: {
+    e: {
+        type: Object as PropType<ContentChannelItemBag>,
+        required: false
     },
-    props: {
-      e: {
-          type: Object as PropType<ContentChannelItemBag>,
-          required: false
-      },
-      locations: Array,
-      locationSetUp: Array as PropType<any[]>,
-      showValidation: Boolean,
-      refName: String,
-      request: Object as PropType<ContentChannelItemBag>,
-      originalRequest: Object as PropType<ContentChannelItemBag>,
-      inventoryList: Array as PropType<any[]>,
-      inventoryAttrs: Array as PropType<AttributeBag[]>,
-      existing: Array as PropType<any[]>,
-      readonly: Boolean
-    },
-    setup() {
+    locations: Array,
+    locationSetUp: Array as PropType<any[]>,
+    showValidation: Boolean,
+    refName: String,
+    request: Object as PropType<ContentChannelItemBag>,
+    originalRequest: Object as PropType<ContentChannelItemBag>,
+    inventoryList: Array as PropType<any[]>,
+    inventoryAttrs: Array as PropType<AttributeBag[]>,
+    existing: Array as PropType<any[]>,
+    readonly: Boolean,
+    isMultiOccurrence: Boolean
+  },
+  setup() {
 
-    },
-    data() {
-        return {
-          roomSetUp: [] as RoomSetUp[],
-          selectedRoomSetUp: [] as RoomSetUp[],
-          rules: rules,
-          errors: [] as Record<string, string>[],
-          modal: false
-        };
-    },
-    computed: {
-      rooms() {
-        if(this.locations) {
-          return this.locations.filter((r: any) => {
-            return r.attributeValues?.IsDoor.value == "False"
-          })
-        }
-        return []
-      },
-      doorsAttr() {
-        if(this.e?.attributes?.Doors) {
-          let attr = this.e?.attributes?.Doors
-          if(attr.configurationValues && this.locations) {
-            let doors = this.locations.filter((l: any) => { 
-              return l.attributeValues.IsDoor.value == 'True' 
-            }).map((l: any) => { 
-              return { value: l.guid, text: l.value, description: ""}  
-            })
-            attr.configurationValues.values = JSON.stringify(doors)
-            return attr
-          }
-        }
-        return null
-      },
-      selectedRooms() {
-        let rawVal = this.e?.attributeValues?.Rooms as string
-        if(rawVal && rawVal != '') {
-          let selection = JSON.parse(rawVal) as SelectedListItem
-          let guids = selection.value.split(',')
-          return this.rooms?.filter((r: any) => {
-            return guids.includes(r.guid)
-          })
-        } else {
-          return []
-        }
-      },
-      groupedSetUp() {
-        let arr = [] as any[]
-        this.selectedRooms.forEach((r: any) => {
-          arr.push({room: r.value, guid: r.guid, items: this.setUpForRoom(r.guid), standard: this.getSetUpDesc(r.guid)})
+  },
+  data() {
+    return {
+      roomSetUp: [] as RoomSetUp[],
+      selectedRoomSetUp: [] as RoomSetUp[],
+      rules: rules,
+      errors: [] as Record<string, string>[],
+      modal: false
+    };
+  },
+  computed: {
+    rooms() {
+      if(this.locations) {
+        return this.locations.filter((r: any) => {
+          return r.attributeValues?.IsDoor.value == "False"
         })
-        return arr
-      },
-      setUpImageAttr() {
-        if(this.e?.attributes?.SetupImage) {
-          let val = this.e?.attributes?.SetupImage
-          if(val.key == 'SetupImage' && val.configurationValues && val.configurationValues["img_tag_template"]) {
-            if(val.configurationValues["img_tag_template"].includes("{{'Global' | Attribute:'InternalApplicationRoot'}}")) {
-              val.configurationValues["img_tag_template"] = val.configurationValues["img_tag_template"].replaceAll("{{'Global' | Attribute:'InternalApplicationRoot'}}", "/")
-            }
-          }
-          return val
+      }
+      return []
+    },
+    doorsAttr() {
+      if(this.e?.attributes?.Doors) {
+        let attr = this.e?.attributes?.Doors
+        if(attr.configurationValues && this.locations) {
+          let doors = this.locations.filter((l: any) => { 
+            return l.attributeValues.IsDoor.value == 'True' 
+          }).map((l: any) => { 
+            return { value: l.guid, text: l.value, description: ""}  
+          })
+          attr.configurationValues.values = JSON.stringify(doors)
+          return attr
         }
-        return null
+      }
+      return null
+    },
+    selectedRooms() {
+      let rawVal = this.e?.attributeValues?.Rooms as string
+      if(rawVal && rawVal != '') {
+        let selection = JSON.parse(rawVal) as SelectedListItem
+        let guids = selection.value.split(',')
+        return this.rooms?.filter((r: any) => {
+          return guids.includes(r.guid)
+        })
+      } else {
+        return []
       }
     },
-    methods: {
-      matchRoomsToSetup() {
-        let roomGuids = this.selectedRooms?.map((r: any) => { return r.guid})
-        this.roomSetUp = this.roomSetUp.filter((r: any) => {
-          return roomGuids?.includes(r.Room)
-        })
-      },
-      getSetUpDesc(guid: string) {
-        if(this.rooms) {
-          let room = this.rooms?.filter((r: any) => {
-            return r.guid == guid
-          }) as any[]
-          if(room) {
-            let setUpGuid = room[0]?.attributeValues?.StandardSetUp.value
-            let setUp = this.locationSetUp?.filter((r: any) => {
-              return r.guid == setUpGuid
-            })
-            if(setUp && setUp.length > 0) {
-              return setUp[0]?.matrixItems
-            }
+    groupedSetUp() {
+      let arr = [] as any[]
+      this.selectedRooms.forEach((r: any) => {
+        arr.push({room: r.value, guid: r.guid, items: this.setUpForRoom(r.guid), standard: this.getSetUpDesc(r.guid)})
+      })
+      return arr
+    },
+    setUpImageAttr() {
+      if(this.e?.attributes?.SetupImage) {
+        let val = this.e?.attributes?.SetupImage
+        if(val.key == 'SetupImage' && val.configurationValues && val.configurationValues["img_tag_template"]) {
+          if(val.configurationValues["img_tag_template"].includes("{{'Global' | Attribute:'InternalApplicationRoot'}}")) {
+            val.configurationValues["img_tag_template"] = val.configurationValues["img_tag_template"].replaceAll("{{'Global' | Attribute:'InternalApplicationRoot'}}", "/")
           }
         }
-        return []
-      },
-      setUpForRoom(guid: string) {
-        if(this.roomSetUp) {
-          let setUp = this.roomSetUp.filter((r: any) => {
-            return r.Room == guid
+        return val
+      }
+      return null
+    }
+  },
+  methods: {
+    matchRoomsToSetup() {
+      let roomGuids = this.selectedRooms?.map((r: any) => { return r.guid})
+      this.roomSetUp = this.roomSetUp.filter((r: any) => {
+        return roomGuids?.includes(r.Room)
+      })
+    },
+    getSetUpDesc(guid: string) {
+      if(this.rooms) {
+        let room = this.rooms?.filter((r: any) => {
+          return r.guid == guid
+        }) as any[]
+        if(room) {
+          let setUpGuid = room[0]?.attributeValues?.StandardSetUp.value
+          let setUp = this.locationSetUp?.filter((r: any) => {
+            return r.guid == setUpGuid
           })
           if(setUp && setUp.length > 0) {
-            return setUp
+            return setUp[0]?.matrixItems
           }
         }
-        return null
-      },
-      configureRoomSetUp(guid: string) {
-        let setup = this.roomSetUp.filter((r: any) => {
+      }
+      return []
+    },
+    setUpForRoom(guid: string) {
+      if(this.roomSetUp) {
+        let setUp = this.roomSetUp.filter((r: any) => {
           return r.Room == guid
         })
-        if(setup.length == 0) {
-          //Set to default if exists
-          let def = this.getSetUpDesc(guid)
-          if(def.length == 0) {
-            setup = [{ Room: guid, TypeofTable: '', NumberofTables: 0, NumberofChairs: 0, NeedsTablecloths: 'False'}]
-          } else {
-            setup = []
-            def.forEach((s: any) => {
-              setup.push({ Room: guid, TypeofTable: s.attributeValues.TypeofTable.value, NumberofTables: s.attributeValues.NumberofTables.value, NumberofChairs: s.attributeValues.NumberofChairs.value, NeedsTablecloths: s.attributeValues.NeedsTablecloths.value })
+        if(setUp && setUp.length > 0) {
+          return setUp
+        }
+      }
+      return null
+    },
+    configureRoomSetUp(guid: string) {
+      let setup = this.roomSetUp.filter((r: any) => {
+        return r.Room == guid
+      })
+      if(setup.length == 0) {
+        //Set to default if exists
+        let def = this.getSetUpDesc(guid)
+        if(def.length == 0) {
+          setup = [{ Room: guid, TypeofTable: '', NumberofTables: 0, NumberofChairs: 0, NeedsTablecloths: 'False'}]
+        } else {
+          setup = []
+          def.forEach((s: any) => {
+            setup.push({ Room: guid, TypeofTable: s.attributeValues.TypeofTable.value, NumberofTables: s.attributeValues.NumberofTables.value, NumberofChairs: s.attributeValues.NumberofChairs.value, NeedsTablecloths: s.attributeValues.NeedsTablecloths.value })
+          })
+        }
+      }
+      this.selectedRoomSetUp = JSON.parse(JSON.stringify(setup))
+      this.modal = true
+    },
+    addSetUpConfiguration() {
+      let room = this.selectedRoomSetUp[0].Room
+      this.selectedRoomSetUp.push({Room: room, TypeofTable: '', NumberofTables: 0, NumberofChairs: 0, NeedsTablecloths: 'False'})
+    },
+    removeSetUpConfiguration(idx: number) {
+      this.selectedRoomSetUp.splice(idx, 1)
+    },
+    useStandardSetUp() {
+      this.modal = false
+      let room = this.selectedRoomSetUp[0].Room
+      this.roomSetUp = this.roomSetUp.filter((s: any) => {
+        return s.Room != room
+      })
+    },
+    saveSetUpConfiguration() {
+      this.modal = false
+      let room = this.selectedRoomSetUp[0].Room
+      this.roomSetUp = this.roomSetUp.filter((s: any) => {
+        return s.Room != room
+      })
+      //Check that set up is not the same as standard 
+      let stdrSetUp = [] as any[]
+      this.groupedSetUp.forEach((s: any) => {
+        if(s.guid == room) {
+          if(s.standard.length > 0) {
+            s.standard.forEach((su: any) => {
+              stdrSetUp.push({Room: room, TypeofTable: su.attributeValues.TypeofTable.value, NumberofTables: su.attributeValues.NumberofTables.value, NumberofChairs: su.attributeValues.NumberofChairs.value, NeedsTablecloths: su.attributeValues.NeedsTablecloths.value })
             })
           }
         }
-        this.selectedRoomSetUp = JSON.parse(JSON.stringify(setup))
-        this.modal = true
-      },
-      addSetUpConfiguration() {
-        let room = this.selectedRoomSetUp[0].Room
-        this.selectedRoomSetUp.push({Room: room, TypeofTable: '', NumberofTables: 0, NumberofChairs: 0, NeedsTablecloths: 'False'})
-      },
-      removeSetUpConfiguration(idx: number) {
-        this.selectedRoomSetUp.splice(idx, 1)
-      },
-      useStandardSetUp() {
-        this.modal = false
-        let room = this.selectedRoomSetUp[0].Room
-        this.roomSetUp = this.roomSetUp.filter((s: any) => {
-          return s.Room != room
-        })
-      },
-      saveSetUpConfiguration() {
-        this.modal = false
-        let room = this.selectedRoomSetUp[0].Room
-        this.roomSetUp = this.roomSetUp.filter((s: any) => {
-          return s.Room != room
-        })
-        //Check that set up is not the same as standard 
-        let stdrSetUp = [] as any[]
-        this.groupedSetUp.forEach((s: any) => {
-          if(s.guid == room) {
-            if(s.standard.length > 0) {
-              s.standard.forEach((su: any) => {
-                stdrSetUp.push({Room: room, TypeofTable: su.attributeValues.TypeofTable.value, NumberofTables: su.attributeValues.NumberofTables.value, NumberofChairs: su.attributeValues.NumberofChairs.value, NeedsTablecloths: su.attributeValues.NeedsTablecloths.value })
-              })
+      })
+      stdrSetUp = stdrSetUp.sort((a: any, b: any) => this.sortSetUp(a, b))
+      this.selectedRoomSetUp.forEach((rsu: any) => {
+        rsu.NumberofTables = !rsu.NumberofTables ? 0 : rsu.NumberofTables
+        rsu.NumberofChairs = !rsu.NumberofChairs ? 0 : rsu.NumberofChairs
+      })
+      this.selectedRoomSetUp = this.selectedRoomSetUp.sort((a: any, b: any) => this.sortSetUp(a, b))
+      let isSame = true
+      if(stdrSetUp.length != this.selectedRoomSetUp.length) {
+        isSame = false
+      }
+      if(JSON.stringify(stdrSetUp) != JSON.stringify(this.selectedRoomSetUp)) {
+        isSame = false
+      }
+      //Check for empty room match 
+      let summedSetUp = this.selectedRoomSetUp.reduce((accummulator, currentItem) => {
+        return { NumberofTables: accummulator.NumberofTables + currentItem.NumberofTables, NumberofChairs: accummulator.NumberofChairs + currentItem.NumberofChairs }
+      }, { NumberofTables: 0, NumberofChairs: 0})
+      if(summedSetUp.NumberofTables == 0 && summedSetUp.NumberofChairs == 0 && stdrSetUp.length == 0) {
+        isSame = true
+      }
+      //Remove extra empty rows
+      if(this.selectedRoomSetUp.length > 1) {
+        if(summedSetUp.NumberofTables == 0 && summedSetUp.NumberofChairs == 0) {
+          console.log('Removing extra empty rooms when multiple empty rows')
+          this.selectedRoomSetUp = this.selectedRoomSetUp.filter((rsu: any, idx: Number) => {
+            return idx == 0
+          })
+        } else {
+          console.log('Removing empty row in middle of other set up')
+          this.selectedRoomSetUp = this.selectedRoomSetUp.filter((rsu: any) => {
+            return rsu.NumberofTables > 0 || rsu.NumberofChairs > 0
+          })
+        }
+      }
+      if(!isSame) {
+        this.roomSetUp.push(...this.selectedRoomSetUp)
+      }
+      this.selectedRoomSetUp = []
+    },
+    validate() {
+      let formRef = this.$refs as any
+      for(let r in formRef) {
+        if(formRef[r].className?.includes("validator")) {
+          formRef[r].validate()
+        }
+      }
+    },
+    validationChange(errs: Record<string, string>[]) {
+      this.errors = errs
+    },
+    sortSetUp(a: any, b: any): number {
+      if(a.TypeofTable < b.TypeofTable) {
+        return -1
+      } else if(a.TypeofTable > b.TypeofTable) {
+        return 1
+      }
+      if(parseInt(a.NumberofTables) < parseInt(b.NumberofTables)) {
+        return -1
+      } else if(parseInt(a.NumberofTables) > parseInt(b.NumberofTables)) {
+        return 1
+      }
+      if(parseInt(a.NumberofChairs) < parseInt(b.NumberofChairs)) {
+        return -1
+      } else if(parseInt(a.NumberofChairs) > parseInt(b.NumberofChairs)) {
+        return 1
+      }
+      return 0
+    },
+  },
+  watch: {
+    roomSetUp: {
+      handler(val){
+        if(this.e?.attributeValues) {
+          this.e.attributeValues.RoomSetUp = JSON.stringify(val)
+          if(val.length > 0) {
+            let startBuffer = this.e.attributeValues.StartBuffer ? parseInt(this.e.attributeValues.StartBuffer) : 0
+            let endBuffer = this.e.attributeValues.EndBuffer ? parseInt(this.e.attributeValues.EndBuffer) : 0
+            if(startBuffer < 30) {
+              this.e.attributeValues.StartBuffer = "30"
+            }
+            if(endBuffer < 30) {
+              this.e.attributeValues.EndBuffer = "30"
             }
           }
-        })
-        stdrSetUp = stdrSetUp.sort((a: any, b: any) => this.sortSetUp(a, b))
-        this.selectedRoomSetUp.forEach((rsu: any) => {
-          rsu.NumberofTables = !rsu.NumberofTables ? 0 : rsu.NumberofTables
-          rsu.NumberofChairs = !rsu.NumberofChairs ? 0 : rsu.NumberofChairs
-        })
-        this.selectedRoomSetUp = this.selectedRoomSetUp.sort((a: any, b: any) => this.sortSetUp(a, b))
-        let isSame = true
-        if(stdrSetUp.length != this.selectedRoomSetUp.length) {
-          isSame = false
-        }
-        if(JSON.stringify(stdrSetUp) != JSON.stringify(this.selectedRoomSetUp)) {
-          isSame = false
-        }
-        //Check for empty room match 
-        let summedSetUp = this.selectedRoomSetUp.reduce((accummulator, currentItem) => {
-          return { NumberofTables: accummulator.NumberofTables + currentItem.NumberofTables, NumberofChairs: accummulator.NumberofChairs + currentItem.NumberofChairs }
-        }, { NumberofTables: 0, NumberofChairs: 0})
-        if(summedSetUp.NumberofTables == 0 && summedSetUp.NumberofChairs == 0 && stdrSetUp.length == 0) {
-          isSame = true
-        }
-        //Remove extra empty rows
-        if(this.selectedRoomSetUp.length > 1) {
-          if(summedSetUp.NumberofTables == 0 && summedSetUp.NumberofChairs == 0) {
-            console.log('Removing extra empty rooms when multiple empty rows')
-            this.selectedRoomSetUp = this.selectedRoomSetUp.filter((rsu: any, idx: Number) => {
-              return idx == 0
-            })
-          } else {
-            console.log('Removing empty row in middle of other set up')
-            this.selectedRoomSetUp = this.selectedRoomSetUp.filter((rsu: any) => {
-              return rsu.NumberofTables > 0 || rsu.NumberofChairs > 0
-            })
-          }
-        }
-        if(!isSame) {
-          this.roomSetUp.push(...this.selectedRoomSetUp)
-        }
-        this.selectedRoomSetUp = []
-      },
-      validate() {
-        let formRef = this.$refs as any
-        for(let r in formRef) {
-          if(formRef[r].className?.includes("validator")) {
-            formRef[r].validate()
-          }
         }
       },
-      validationChange(errs: Record<string, string>[]) {
-        this.errors = errs
-      },
-      sortSetUp(a: any, b: any): number {
-        if(a.TypeofTable < b.TypeofTable) {
-          return -1
-        } else if(a.TypeofTable > b.TypeofTable) {
-          return 1
-        }
-        if(parseInt(a.NumberofTables) < parseInt(b.NumberofTables)) {
-          return -1
-        } else if(parseInt(a.NumberofTables) > parseInt(b.NumberofTables)) {
-          return 1
-        }
-        if(parseInt(a.NumberofChairs) < parseInt(b.NumberofChairs)) {
-          return -1
-        } else if(parseInt(a.NumberofChairs) > parseInt(b.NumberofChairs)) {
-          return 1
-        }
-        return 0
-      },
+      deep: true
     },
-    watch: {
-      roomSetUp: {
-        handler(val){
+    errors: {
+      handler(val) {
+        this.$emit("validation-change", { ref: this.refName, errors: val})
+      },
+      deep: true
+    },
+    isMultiOccurrence(val) {
+      if(val == false && this.e?.attributeValues) {
+        this.e.attributeValues.NeedsOpsAccommodations = 'True'
+      }
+    },
+    'e.attributeValues.HasDangerousActivity': {
+      handler(val) {
+        if(val == 'False') {
           if(this.e?.attributeValues) {
-            this.e.attributeValues.RoomSetUp = JSON.stringify(val)
-            if(val.length > 0) {
-              let startBuffer = this.e.attributeValues.StartBuffer ? parseInt(this.e.attributeValues.StartBuffer) : 0
-              let endBuffer = this.e.attributeValues.EndBuffer ? parseInt(this.e.attributeValues.EndBuffer) : 0
-              if(startBuffer < 30) {
-                this.e.attributeValues.StartBuffer = "30"
-              }
-              if(endBuffer < 30) {
-                this.e.attributeValues.EndBuffer = "30"
-              }
-            }
+            this.e.attributeValues.DangerousActivityInfo = ""
+            this.e.attributeValues.InsuranceCertificate = ""
           }
-        },
-        deep: true
-      },
-      errors: {
-        handler(val) {
-          this.$emit("validation-change", { ref: this.refName, errors: val})
-        },
-        deep: true
-      },
-      'e.attributeValues.HasDangerousActivity': {
-        handler(val) {
-          if(val == 'False') {
-            if(this.e?.attributeValues) {
-              this.e.attributeValues.DangerousActivityInfo = ""
-              this.e.attributeValues.InsuranceCertificate = ""
-            }
-          }
-        }
-      },
-      'e.attributeValues.Rooms': {
-        handler(val) {
-          if(val) {
-            let rooms = JSON.parse(val)
-            if(rooms.value) {
-              rooms = rooms.value.split(',')
-            } else {
-              rooms = []
-            }
-            this.roomSetUp = this.roomSetUp.filter((set: any) => {
-              return rooms.includes(set.Room)
-            })
-          }
-        }
-      },
-      // 'e.attributeValues.ExpectedAttendance': {
-      //   handler(val) {
-      //     if(val >= 200) {
-      //       if(this.request?.attributeValues) {
-      //         this.request.attributeValues.NeedsOpsAccommodations = 'True'
-      //       }
-      //       if(this.e?.attributeValues) {
-      //         this.e.attributeValues.NeedsSecurity = 'True'
-      //       }
-      //     }
-      //   }
-      // }
-    },
-    mounted() {
-      if(this.e?.attributeValues) {
-        if(this.e.attributeValues.RoomSetUp) {
-          this.roomSetUp = JSON.parse(this.e.attributeValues.RoomSetUp)
-        }
-        this.matchRoomsToSetup()
-      }
-      if(this.showValidation) {
-        this.validate()
-      }
-      //Default delivery time for drinks
-      if(this.e?.attributeValues?.StartTime) {
-        let dt = DateTime.fromFormat(this.e?.attributeValues?.StartTime, "HH:mm:ss")
-        let defaultTime = dt.minus({minutes: 30})
-        if(this.e.attributeValues.DrinkTime == '') {
-          this.e.attributeValues.DrinkTime = defaultTime.toFormat("HH:mm:ss")
         }
       }
     },
-    template: `
-<rck-form ref="form" @validationChanged="validationChange">
+    'e.attributeValues.Rooms': {
+      handler(val) {
+        if(val) {
+          let rooms = JSON.parse(val)
+          if(rooms.value) {
+            rooms = rooms.value.split(',')
+          } else {
+            rooms = []
+          }
+          this.roomSetUp = this.roomSetUp.filter((set: any) => {
+            return rooms.includes(set.Room)
+          })
+        }
+      }
+    },
+  },
+  mounted() {
+    if(this.e?.attributeValues) {
+      if(this.e.attributeValues.RoomSetUp) {
+        this.roomSetUp = JSON.parse(this.e.attributeValues.RoomSetUp)
+      }
+      this.matchRoomsToSetup()
+    }
+    if(this.showValidation) {
+      this.validate()
+    }
+    //Default delivery time for drinks
+    if(this.e?.attributeValues?.StartTime) {
+      let dt = DateTime.fromFormat(this.e?.attributeValues?.StartTime, "HH:mm:ss")
+      let defaultTime = dt.minus({minutes: 30})
+      if(this.e.attributeValues.DrinkTime == '') {
+        this.e.attributeValues.DrinkTime = defaultTime.toFormat("HH:mm:ss")
+      }
+    }
+  },
+  template: `
+<div class="row" v-if="isMultiOccurrence">
+  <div class="col col-xs-12 col-md-6">
+    <tcc-switch
+      v-model="e.attributeValues.NeedsOpsAccommodations"
+      :label="e.attributes.NeedsOpsAccommodations.name"
+      v-if="!readonly"
+      id="boolNeedsOpsAccommodations"
+    ></tcc-switch>
+    <rck-field
+      v-else
+      v-model="e.attributeValues.NeedsOpsAccommodations"
+      :attribute="e.attributes.NeedsOpsAccommodations"
+      :is-edit-mode="false"
+      :showEmptyValue="true"
+      id="boolNeedsOpsAccommodations"
+    ></rck-field>
+  </div>
+</div>
+<rck-form ref="form" @validationChanged="validationChange" v-if="e.attributeValues.NeedsOpsAccommodations == 'True' || !isMultiOccurrence">
   <h4 class="text-accent">Tech Needs</h4>
   <div class="row">
     <div class="col col-xs-12">

@@ -1,83 +1,109 @@
 import { defineComponent, PropType } from "vue"
 import { ContentChannelItemBag } from "../../ViewModels/contentChannelItemBag"
+import { DateTime } from "luxon"
 import RockField from "@Obsidian/Controls/rockField.obs"
 import RockForm from "@Obsidian/Controls/rockForm.obs"
 import Validator from "./validator"
 import TimePicker from "./timePicker"
-import { DateTime } from "luxon"
+import Toggle from "./toggle"
 import rules from "../Rules/rules"
 
 export default defineComponent({
-    name: "EventForm.Components.ChildcareCatering",
-    components: {
-      "rck-field": RockField,
-      "rck-form": RockForm,
-      "tcc-validator": Validator,
-      "tcc-time": TimePicker,
+  name: "EventForm.Components.ChildcareCatering",
+  components: {
+    "rck-field": RockField,
+    "rck-form": RockForm,
+    "tcc-validator": Validator,
+    "tcc-time": TimePicker,
+    "tcc-switch": Toggle,
+  },
+  props: {
+    e: {
+      type: Object as PropType<ContentChannelItemBag>,
+      required: false
     },
-    props: {
-      e: {
-          type: Object as PropType<ContentChannelItemBag>,
-          required: false
-      },
-      showValidation: Boolean,
-      refName: String,
-      readonly: Boolean
-    },
-    setup() {
+    showValidation: Boolean,
+    refName: String,
+    readonly: Boolean,
+    isMultiOccurrence: Boolean
+  },
+  setup() {
 
-    },
-    data() {
-        return {
-          rules: rules,
-          errors: [] as Record<string, string>[]
-        };
-    },
-    computed: {
-      
-    },
-    methods: {
-      validate() {
-        let formRef = this.$refs as any
-        for(let r in formRef) {
-          if(formRef[r].className?.includes("validator")) {
-            formRef[r].validate()
-          }
+  },
+  data() {
+      return {
+        rules: rules,
+        errors: [] as Record<string, string>[]
+      };
+  },
+  computed: {
+    
+  },
+  methods: {
+    validate() {
+      let formRef = this.$refs as any
+      for(let r in formRef) {
+        if(formRef[r].className?.includes("validator")) {
+          formRef[r].validate()
         }
+      }
+    },
+    validationChange(errs: Record<string, string>[]) {
+      this.errors = errs
+    }
+  },
+  watch: {
+    errors: {
+      handler(val) {
+        this.$emit("validation-change", { ref: this.refName, errors: val})
       },
-      validationChange(errs: Record<string, string>[]) {
-        this.errors = errs
+      deep: true
+    }, 
+    isMultiOccurrence(val) {
+      if(val == false && this.e?.attributeValues) {
+        this.e.attributeValues.NeedsChildCareCatering = 'True'
       }
     },
-    watch: {
-      errors: {
-        handler(val) {
-          this.$emit("validation-change", { ref: this.refName, errors: val})
-        },
-        deep: true
-      }, 
-      'e.attributeValues.ChildcareVendor': {
-        handler(val) {
-          if(val == 'Pizza' && this.e?.attributeValues && this.e.attributeValues.ChildcarePreferredMenu == '') {
-            this.e.attributeValues.ChildcarePreferredMenu = 'Pizza'
-          }
+    'e.attributeValues.ChildcareVendor': {
+      handler(val) {
+        if(val == 'Pizza' && this.e?.attributeValues && this.e.attributeValues.ChildcarePreferredMenu == '') {
+          this.e.attributeValues.ChildcarePreferredMenu = 'Pizza'
         }
       }
-    },
-    mounted() {
-      if(this.showValidation) {
-        this.validate()
+    }
+  },
+  mounted() {
+    if(this.showValidation) {
+      this.validate()
+    }
+    if(this.e?.attributeValues?.StartTime) {
+      let dt = DateTime.fromFormat(this.e?.attributeValues?.StartTime, "HH:mm:ss")
+      let defaultTime = dt.minus({minutes: 15})
+      if(this.e.attributeValues.ChildcareFoodTime == '') {
+        this.e.attributeValues.ChildcareFoodTime = defaultTime.toFormat("HH:mm:ss")
       }
-      if(this.e?.attributeValues?.StartTime) {
-        let dt = DateTime.fromFormat(this.e?.attributeValues?.StartTime, "HH:mm:ss")
-        let defaultTime = dt.minus({minutes: 15})
-        if(this.e.attributeValues.ChildcareFoodTime == '') {
-          this.e.attributeValues.ChildcareFoodTime = defaultTime.toFormat("HH:mm:ss")
-        }
-      }
-    },
-    template: `
-<rck-form ref="form" @validationChanged="validationChange">
+    }
+  },
+  template: `
+<div class="row" v-if="isMultiOccurrence">
+  <div class="col col-xs-12 col-md-6">
+    <tcc-switch
+      v-model="e.attributeValues.NeedsChildCareCatering"
+      :label="e.attributes.NeedsChildCareCatering.name"
+      v-if="!readonly"
+      id="boolNeedsChildCareCatering"
+    ></tcc-switch>
+    <rck-field
+      v-else
+      v-model="e.attributeValues.NeedsChildCareCatering"
+      :attribute="e.attributes.NeedsChildCareCatering"
+      :is-edit-mode="false"
+      :showEmptyValue="true"
+      id="boolNeedsChildCareCatering"
+    ></rck-field>
+  </div>
+</div>
+<rck-form ref="form" @validationChanged="validationChange" v-if="e.attributeValues.NeedsChildCareCatering == 'True' || !isMultiOccurrence">
   <div class="row">
     <div class="col col-xs-12 col-md-6">
       <tcc-validator :name="e.attributes.ChildcareVendor.key" :rules="[rules.required(e.attributeValues.ChildcareVendor, e.attributes.ChildcareVendor.name)]" ref="validators_vendor">

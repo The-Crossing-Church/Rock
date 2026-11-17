@@ -385,6 +385,7 @@ const rules = {
           request.attributeValues.NeedsWebCalendar = 'False'
           request.attributeValues.NeedsProductionAccommodations = 'False'
           request.attributeValues.NeedsRegistration = 'False'
+          request.attributeValues.NeedsCheckin = 'False'
           request.attributeValues.NeedsWorship = 'False'
           let removeSections = helper.sectionInfo.filter(si => {
             return si.attr == 'NeedsOnline' || si.attr == 'NeedsCatering' || si.attr == 'NeedsOpsAccommodations' || si.attr == 'NeedsWebCalendar' || 
@@ -721,6 +722,11 @@ const rules = {
             request.attributeValues.NeedsRegistration = 'False'
           }
         }
+        if(registrationTense == 'was') {
+          if(invalidSections.includes('Check-in')) {
+            request.attributeValues.NeedsCheckin = 'False'
+          }
+        }
         if(webCalTense == 'was') {
           if(invalidSections.includes('Calendar')) {
             request.attributeValues.NeedsWebCalendar = 'False'
@@ -744,6 +750,7 @@ const rules = {
         }
         if(registrationTense == 'was') {
           readonlySections.push('Registration')
+          readonlySections.push('Check-in')
         }
         if(webCalTense == 'was') {
           readonlySections.push('Calendar')
