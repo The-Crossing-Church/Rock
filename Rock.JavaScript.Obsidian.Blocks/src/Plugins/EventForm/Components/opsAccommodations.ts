@@ -11,7 +11,7 @@ import { DateTime } from "luxon"
 import Validator from "./validator"
 import Toggle from "./toggle"
 import rules from "../Rules/rules"
-import RoomSetUp from "./roomSetUp"
+import RoomSetUp from "./additionalSetUp"
 import TimePicker from "./timePicker"
 import OpsInv from "./opsInventory"
 
@@ -397,6 +397,18 @@ export default defineComponent({
     </div>
   </div>
   <h4 class="text-accent mt-2">Additional Set-Up Details</h4>
+  <tcc-setup
+    :e="e"
+    :locations="locations"
+    :locationSetUp="locationSetUp"
+    :showValidation="showValidation"
+    :refName="refName"
+    :request="request"
+    :originalRequest="originalRequest"
+    :existing="existing"
+    :readonly="readonly"
+  ></tcc-setup>
+  <!--
   <div class="my-2 setup-table">
     <template v-if="selectedRooms.length == 0">
       <rck-lbl>
@@ -452,6 +464,7 @@ export default defineComponent({
       </div>
     </template>
   </div>
+  -->
   <div class="row">
     <div class="col col-xs-12 col-md-6">
       <tcc-switch
@@ -679,6 +692,7 @@ export default defineComponent({
     </div>
   </div>
 </rck-form>
+<!--
 <rck-modal v-model="modal" style="min-width: 50%;" :isCloseButtonHidden="true" cancelText="" :clickBackdropToClose="true" modalWrapperClasses="modal-no-header">
   <div style="height: 16px;"></div>
   <tcc-setup v-model="su" v-for="(su, idx) in selectedRoomSetUp" :key="(su.Room + '_' + idx + '_' + Math.random())" v-on:removeconfig="removeSetUpConfiguration(idx)" :disabled="selectedRoomSetUp.length == 1"></tcc-setup>
@@ -696,6 +710,7 @@ export default defineComponent({
     </div>
   </template>
 </rck-modal>
+-->
 <v-style>
   .setup-table {
     border-radius: 6px;
