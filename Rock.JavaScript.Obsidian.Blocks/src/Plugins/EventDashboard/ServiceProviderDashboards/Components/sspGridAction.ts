@@ -26,7 +26,7 @@ export default defineComponent({
   },
   computed: {
     btnColor() {
-      return this.request?.attributeValues?.RequestStatus.replace(" ", "").replace(" ", "").toLowerCase().replace("legacyrequest", "default")
+      return this.request?.attributeValues?.RequestStatus?.replace(" ", "").replace(" ", "").toLowerCase().replace("legacyrequest", "default")
     },
   },
   methods: {

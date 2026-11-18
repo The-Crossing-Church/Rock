@@ -5,12 +5,11 @@ using System.Data.Entity;
 using System.Linq;
 
 using Rock.Attribute;
+using Rock.Blocks.Plugins.ViewModels;
 using Rock.Communication;
 using Rock.Data;
 using Rock.Model;
-using Rock.SystemGuid;
 using Rock.Web.Cache;
-using Rock.Blocks.Plugins.ViewModels;
 
 namespace Rock.Blocks.Plugins.EventForm
 {
@@ -41,25 +40,12 @@ namespace Rock.Blocks.Plugins.EventForm
 
     [LinkedPage( "Admin Dashboard", key: AttributeKey.AdminDashboard, category: "Pages", required: true, order: 0 )]
     [LinkedPage( "User Dashboard", key: AttributeKey.UserDashboard, category: "Pages", required: true, order: 1 )]
-    [LinkedPage( "Catering SSP Dashboard", key: AttributeKey.CateringSSPDashboardPage, category: "Pages", required: true, order: 2 )]
-    [LinkedPage( "Childcare SSP Dashboard", key: AttributeKey.ChildcareSSPDashboardPage, category: "Pages", required: true, order: 3 )]
-    [LinkedPage( "Database SSP Dashboard", key: AttributeKey.DatabaseSSPDashboardPage, category: "Pages", required: true, order: 4 )]
-    [LinkedPage( "Daily OPS SSP Dashboard", key: AttributeKey.OpsSSPDashboardPage, category: "Pages", required: true, order: 5 )]
-    [LinkedPage( "Publicity SSP Dashboard", key: AttributeKey.PublicitySSPDashboardPage, category: "Pages", required: true, order: 6 )]
-    [LinkedPage( "Production SSP Dashboard", key: AttributeKey.ProductionSSPDashboardPage, category: "Pages", required: true, order: 7 )]
-    [LinkedPage( "Worship SSP Dashboard", key: AttributeKey.WorshipSSPDashboardPage, category: "Pages", required: true, order: 8 )]
-    [LinkedPage( "Event Submission Form", key: AttributeKey.SubmissionPage, category: "Pages", required: true, order: 9 )]
+    [LinkedPage( "Event Submission Form", key: AttributeKey.SubmissionPage, category: "Pages", required: true, order: 2 )]
 
     [SecurityRoleField( "Event Request Admin", key: AttributeKey.EventAdminRole, category: "Security", required: true, order: 0 )]
     [SecurityRoleField( "Room Request Admin", key: AttributeKey.RoomAdminRole, category: "Security", required: true, order: 1 )]
     [SecurityRoleField( "Ministry Event Admin", key: AttributeKey.SuperUserRole, category: "Security", required: true, order: 2 )]
-    [SecurityRoleField( "Catering SSP Role", key: AttributeKey.CateringSSPRole, category: "Security", required: true, order: 5 )]
-    [SecurityRoleField( "Childcare SSP Role", key: AttributeKey.ChildcareSSPRole, category: "Security", required: true, order: 6 )]
-    [SecurityRoleField( "Database SSP Role", key: AttributeKey.DatabaseSSPRole, category: "Security", required: true, order: 7 )]
-    [SecurityRoleField( "Daily OPS SSP Role", key: AttributeKey.OpsSSPRole, category: "Security", required: true, order: 8 )]
-    [SecurityRoleField( "Publicity SSP Role", key: AttributeKey.PublicitySSPRole, category: "Security", required: true, order: 9 )]
-    [SecurityRoleField( "Production SSP Role", key: AttributeKey.ProductionSSPRole, category: "Security", required: true, order: 10 )]
-    [SecurityRoleField( "Worship SSP Role", key: AttributeKey.WorshipSSPRole, category: "Security", required: true, order: 11 )]
+    [DefinedTypeField( "Support Services Defined Type", key: AttributeKey.SupportServicesList, category: "Security", required: true, order: 3 )]
 
     [AttributeField( name: "Request Status", key: AttributeKey.RequestStatusAttr, allowMultiple: false, category: "Attributes", entityTypeGuid: SystemGuid.EntityType.CONTENT_CHANNEL_ITEM, entityTypeQualifierColumn: "ContentChannelTypeId", entityTypeQualifierValue: "16", order: 0 )]
     [AttributeField( name: "Event Dates", key: AttributeKey.EventDatesAttr, allowMultiple: false, category: "Attributes", entityTypeGuid: SystemGuid.EntityType.CONTENT_CHANNEL_ITEM, entityTypeQualifierColumn: "ContentChannelTypeId", entityTypeQualifierValue: "16", order: 1 )]
@@ -108,24 +94,11 @@ namespace Rock.Blocks.Plugins.EventForm
             public const string SubmissionPage = "SubmissionPage";
             public const string AdminDashboard = "AdminDashboard";
             public const string UserDashboard = "UserDashboard";
-            public const string CateringSSPDashboardPage = "CateringSSPDashboardPage";
-            public const string ChildcareSSPDashboardPage = "ChildcareSSPDashboardPage";
-            public const string DatabaseSSPDashboardPage = "DatabaseSSPDashboardPage";
-            public const string OpsSSPDashboardPage = "OpsSSPDashboardPage";
-            public const string PublicitySSPDashboardPage = "PublicitySSPDashboardPage";
-            public const string ProductionSSPDashboardPage = "ProductionSSPDashboardPage";
-            public const string WorshipSSPDashboardPage = "WorshipSSPDashboardPage";
 
             public const string EventAdminRole = "EventAdminRole";
             public const string RoomAdminRole = "RoomAdminRole";
             public const string SuperUserRole = "SuperUserRole";
-            public const string CateringSSPRole = "CateringSSPRole";
-            public const string ChildcareSSPRole = "ChildcareSSPRole";
-            public const string DatabaseSSPRole = "DatabaseSSPRole";
-            public const string OpsSSPRole = "OpsSSPRole";
-            public const string PublicitySSPRole = "PublicitySSPRole";
-            public const string ProductionSSPRole = "ProductionSSPRole";
-            public const string WorshipSSPRole = "WorshipSSPRole";
+            public const string SupportServicesList = "SupportServicesList";
 
             public const string EventDatesAttr = "EventDatesAttr";
             public const string IsSameAttr = "IsSameAttr";
@@ -275,6 +248,7 @@ namespace Rock.Blocks.Plugins.EventForm
         private string DiscountCodeKey { get; set; }
         private string AdditionalRegQuestionsKey { get; set; }
         private string OpsInventoryKey { get; set; }
+        protected List<DefinedValue> SupportServices { get; set; }
 
         #endregion
 
@@ -724,6 +698,8 @@ namespace Rock.Blocks.Plugins.EventForm
         private FormResponse SaveRequest( ContentChannelItemBag viewModel, List<ContentChannelItemBag> events, bool isSubmission )
         {
             SetProperties();
+            UpdateSupportServiceStatuses( viewModel, events );
+
             ContentChannelItem item = FromViewModel( viewModel );
             var authCheck = CheckRequestPermissions( new SubmissionFormViewModel(), item );
             if ( !authCheck.permissions.Contains( "Edit" ) )
@@ -841,7 +817,6 @@ namespace Rock.Blocks.Plugins.EventForm
                 var existingAssociations = assocSvc.Queryable().Where( a => a.ContentChannelItemId == item.Id && a.ChildContentChannelItem.ContentChannelId == EventDetailsContentChannelId ).ToList();
                 List<ContentChannelItem> currentDetails = new List<ContentChannelItem>();
 
-
                 for ( int i = 0; i < events.Count(); i++ )
                 {
                     var detail = FromViewModel( events[i] );
@@ -920,7 +895,6 @@ namespace Rock.Blocks.Plugins.EventForm
                     context.SaveChanges();
                 }
             }
-
             FormResponse res = new FormResponse() { id = item.Id, idKey = item.IdKey, notValidForPreApprovalReasons = notValidForPreApprovalReasons, isPreApproved = notValidForPreApprovalReasons.Count() == 0 };
             return res;
         }
@@ -1491,8 +1465,149 @@ namespace Rock.Blocks.Plugins.EventForm
             OpsInventoryKey = GetAttributeValue( AttributeKey.OpsInventory );
             DiscountCodeKey = GetAttributeValue( AttributeKey.DiscountCode );
             AdditionalRegQuestionsKey = GetAttributeValue( AttributeKey.RegistrationQuestions );
-        }
 
+            Guid sspsGuid = Guid.Empty;
+            if ( Guid.TryParse( GetAttributeValue( AttributeKey.SupportServicesList ), out sspsGuid ) )
+            {
+                DefinedType sspDT = new DefinedTypeService( context ).Get( sspsGuid );
+                SupportServices = new DefinedValueService( context ).Queryable().Where( dv => dv.DefinedTypeId == sspDT.Id ).ToList();
+                SupportServices.LoadAttributes();
+            }
+        }
+        private void UpdateSupportServiceStatuses( ContentChannelItemBag viewModel, List<ContentChannelItemBag> events )
+        {
+            ContentChannelItem item = FromViewModel( viewModel );
+            if ( item.Id == 0 )
+            {
+                //New item, no additional work necessary 
+                return;
+            }
+
+            EventFormShared helper = new EventFormShared();
+            ContentChannelItemService cci_svc = new ContentChannelItemService( new RockContext() );
+            List<SectionMap> relevantSections = new List<SectionMap>();
+
+            ContentChannelItem original = cci_svc.Get( item.Id );
+            original.LoadAttributes();
+            for ( int i = 0; i < helper.SectionMappings.Count(); i++ )
+            {
+                SectionMap section = helper.SectionMappings[i];
+                if ( !String.IsNullOrEmpty( section.attr ) && original.GetAttributeValue( section.attr ) == "True" )
+                {
+                    //Service is Requested
+                    if ( !String.IsNullOrEmpty( section.status ) )
+                    {
+                        int? status = original.GetAttributeValue( section.status ).AsIntegerOrNull();
+                        if ( status.HasValue && status > 0 )
+                        {
+                            relevantSections.Add( section );
+                        }
+                    }
+                }
+            }
+
+            if ( relevantSections.Count() == 0 )
+            {
+                //No non-pending support services 
+                return;
+            }
+
+            //Only care about sections that had a non-pending status on the original request
+            //These need to be checked for changes in the section to notify the SSP
+            List<SectionMap> modifiedSections = new List<SectionMap>();
+            for ( int i = 0; i < relevantSections.Count(); i++ )
+            {
+                SectionMap section = relevantSections[i];
+                var attrs = item.Attributes.Where( kvp => kvp.Value.Categories.Select( cc => cc.Name ).Contains( section.category ) ).Select( kvp => kvp.Key ).ToList();
+                foreach ( string key in attrs )
+                {
+                    if ( original.GetAttributeValue( key ) != item.GetAttributeValue( key ) )
+                    {
+                        modifiedSections.Add( section );
+                        break; //At least one change found, no need to continue
+                    }
+                }
+            }
+
+            var remainingRelevantSections = relevantSections.Where( s => !modifiedSections.Contains( s ) ).ToList();
+            if ( remainingRelevantSections.Count() > 0 )
+            {
+                //Only need to process relevant sections that we haven't alrady confirmed have changes 
+                for ( int i = 0; i < events.Count(); i++ )
+                {
+                    ContentChannelItem details = FromViewModel( events[i] );
+                    ContentChannelItem originalDetails = cci_svc.Get( details.Id );
+                    originalDetails.LoadAttributes();
+                    for ( int k = 0; k < remainingRelevantSections.Count(); k++ )
+                    {
+                        SectionMap section = remainingRelevantSections[k];
+                        var attrs = details.Attributes.Where( kvp => kvp.Value.Categories.Select( cc => cc.Name ).Contains( section.category ) ).Select( kvp => kvp.Key ).ToList();
+                        foreach ( string key in attrs )
+                        {
+                            if ( originalDetails.GetAttributeValue( key ) != details.GetAttributeValue( key ) )
+                            {
+                                modifiedSections.Add( section );
+                                break; //At least one change found, no need to continue
+                            }
+                        }
+                    }
+                }
+            }
+
+            //Alert SSP of Changes to the details of support being requested
+            modifiedSections = modifiedSections.Distinct().ToList();
+            List<DefinedValue> sspsNeedingNotifications = new List<DefinedValue>();
+            for ( int i = 0; i < modifiedSections.Count(); i++ )
+            {
+                sspsNeedingNotifications.AddRange( SupportServices.Where( rm => rm.Value == modifiedSections[i].section ) );
+            }
+            //TODO: Group By Dashboard Links
+            List<DefinedValue> roles = sspsNeedingNotifications;
+
+            //Notify SSPs
+            GlobalAttributesCache attributesCache = GlobalAttributesCache.Get();
+            Person p = GetCurrentPerson();
+            string subject = p.FullName + " Has Requested Changes to " + item.Title;
+            string message = "";
+            string url = "";
+            Dictionary<string, string> queryParams = new Dictionary<string, string>();
+            string baseUrl = attributesCache.GetValue( "InternalApplicationRoot" );
+
+            var header = attributesCache.GetValue( "EmailHeader" );
+            var footer = attributesCache.GetValue( "EmailFooter" );
+            for ( int i = 0; i < roles.Count; i++ )
+            {
+                var roleDetails = roles[i];
+                var relevantServices = modifiedSections.Where( sm => sm.section == roleDetails.Value ).ToList();
+
+                Page dashboard = new PageService( new RockContext() ).Get( roleDetails.GetAttributeValue( "DashboardPage" ).AsGuid() );
+                Web.PageReference pageReference = new Rock.Web.PageReference( dashboard.Id );
+                url = pageReference.BuildRouteURL( queryParams );
+
+                message = "<p>" + p.FullName + " is requesting changes to your support service on their request, " + item.Title + "</p>" +
+                    "<p>The status of the following support services have been changed back to Pending and are waiting for your review.</p>" +
+                    "<ul>";
+                for ( int k = 0; k < relevantServices.Count; k++ )
+                {
+                    message += "<li>" + relevantServices[k].section + "</li>";
+                    item.SetAttributeValue( relevantServices[k].status, "0" );
+                    item.SaveAttributeValue( relevantServices[k].status );
+                }
+                message +=
+                    "</ul>" +
+                    "<p style='width: 100%; text-align: center;'><a href = '" + baseUrl + url.Substring( 1 ) + "?Id=" + item.Id + "' style = 'background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;' > Open Request </a></p>";
+                message += "<p style='color: #347689; text-align: center; margin-top: 12px;'><i>Replies to this email will not be received. Open your event request to communicate with the Event Admin and Support Service Providers.</i></p>";
+                message = header + message + footer;
+
+                List<Person> users = helper.GetAdminUsers( roleDetails.GetAttributeValue( "SecurityRole" ).AsGuid().ToString() ).Where( u => u.Id != p.Id ).ToList();
+                users.Remove( p );
+
+                if ( users.Count() > 0 )
+                {
+                    helper.SendNotification( subject, message, users );
+                }
+            }
+        }
         private void SubmittedNotifications( ContentChannelItem item )
         {
             item.LoadAttributes();

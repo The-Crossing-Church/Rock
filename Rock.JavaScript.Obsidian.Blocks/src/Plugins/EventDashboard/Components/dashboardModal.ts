@@ -282,15 +282,17 @@ export default defineComponent({
         let statusKey = section.status as string
         if(statusKey) {
           let statusAttr = this.request?.attributes[statusKey]
-          let options = JSON.parse(statusAttr.configurationValues.values)
-          let status = this.request?.attributeValues[statusKey]
-          let currentStatus = options.filter(opt => opt.value == status)
-          if(currentStatus && currentStatus.length > 0) {
-            currentStatus = currentStatus[0]
-          } else {
-            currentStatus = options[0]
+          if(statusAttr) {
+            let options = JSON.parse(statusAttr.configurationValues.values)
+            let status = this.request?.attributeValues[statusKey]
+            let currentStatus = options.filter(opt => opt.value == status)
+            if(currentStatus && currentStatus.length > 0) {
+              currentStatus = currentStatus[0]
+            } else {
+              currentStatus = options[0]
+            }
+            className += " chip-background-" + currentStatus.value
           }
-          className += " chip-background-" + currentStatus.value
         }
         return className
       },

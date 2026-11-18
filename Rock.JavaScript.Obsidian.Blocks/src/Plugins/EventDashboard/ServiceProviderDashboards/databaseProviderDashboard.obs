@@ -220,17 +220,19 @@ export default defineComponent({
             //before the SSP can take action on the status of the support service
             let statusKey = info.status
             let statusAttr = this.selected?.attributes[statusKey] as any
-            let options = JSON.parse(statusAttr.configurationValues.values)
-            let status = this.selected?.attributeValues[statusKey]
-            let currentStatus = options.filter(opt => opt.value == status)
-            if(currentStatus && currentStatus.length > 0) {
-              currentStatus = currentStatus[0]
-            } else {
-              currentStatus = options[0]
+            if(statusAttr) {
+              let options = JSON.parse(statusAttr.configurationValues.values)
+              let status = this.selected?.attributeValues[statusKey]
+              let currentStatus = options.filter(opt => opt.value == status)
+              if(currentStatus && currentStatus.length > 0) {
+                currentStatus = currentStatus[0]
+              } else {
+                currentStatus = options[0]
+              }
+              options.filter(opt => opt.value != status).forEach(opt => {
+                sspActions.push({ service: info.section, action: opt.text, value: opt.value, statusKey: statusKey })
+              })
             }
-            options.filter(opt => opt.value != status).forEach(opt => {
-              sspActions.push({ service: info.section, action: opt.text, value: opt.value, statusKey: statusKey })
-            })
           }
         })
       }

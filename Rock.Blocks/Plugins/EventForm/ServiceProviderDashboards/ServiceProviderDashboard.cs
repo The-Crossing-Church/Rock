@@ -29,26 +29,13 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
     [SecurityRoleField( "Room Request Admin", key: AttributeKeyBase.RoomAdminRole, category: "Security", required: true, order: 2 )]
     [CategoryField( "Editable Cateogires", key: AttributeKeyBase.EditCategories, allowMultiple: true, entityTypeName: "Rock.Model.Attribute", entityTypeQualifierColumn: "EntityTypeId", entityTypeQualifierValue: "208", category: "Security", required: true, order: 3 )]
     [CategoryField( "Read Only Cateogires", key: AttributeKeyBase.ViewCategories, allowMultiple: true, entityTypeName: "Rock.Model.Attribute", entityTypeQualifierColumn: "EntityTypeId", entityTypeQualifierValue: "208", category: "Security", required: true, order: 4 )]
-    [SecurityRoleField( "Catering SSP Role", key: AttributeKeyBase.CateringSSPRole, category: "Security", required: true, order: 5 )]
-    [SecurityRoleField( "Childcare SSP Role", key: AttributeKeyBase.ChildcareSSPRole, category: "Security", required: true, order: 6 )]
-    [SecurityRoleField( "Database SSP Role", key: AttributeKeyBase.DatabaseSSPRole, category: "Security", required: true, order: 7 )]
-    [SecurityRoleField( "Daily OPS SSP Role", key: AttributeKeyBase.OpsSSPRole, category: "Security", required: true, order: 8 )]
-    [SecurityRoleField( "Publicity SSP Role", key: AttributeKeyBase.PublicitySSPRole, category: "Security", required: true, order: 9 )]
-    [SecurityRoleField( "Production SSP Role", key: AttributeKeyBase.ProductionSSPRole, category: "Security", required: true, order: 10 )]
-    [SecurityRoleField( "Worship SSP Role", key: AttributeKeyBase.WorshipSSPRole, category: "Security", required: true, order: 11 )]
+    [DefinedTypeField( "Support Services Defined Type", key: AttributeKeyBase.SupportServicesList, category: "Security", required: true, order: 5 )]
 
     [GroupTypeField( "Shared Event Group Type", "Group Type of groups that allow for seeing shared requests", false, "", "Sharing", 0, AttributeKeyBase.SharingGroupType )]
     [TextField( "Shared With Attribut Key", category: "Sharing", order: 1, key: AttributeKeyBase.SharedWithAttrKey )]
 
     [LinkedPage( "User Dashboard", key: AttributeKeyBase.UserDashboardPage, category: "Pages", required: true, order: 0 )]
     [LinkedPage( "Admin Dashboard", key: AttributeKeyBase.AdminDashboardPage, category: "Pages", required: true, order: 1 )]
-    [LinkedPage( "Catering SSP Dashboard", key: AttributeKeyBase.CateringSSPDashboardPage, category: "Pages", required: true, order: 2 )]
-    [LinkedPage( "Childcare SSP Dashboard", key: AttributeKeyBase.ChildcareSSPDashboardPage, category: "Pages", required: true, order: 3 )]
-    [LinkedPage( "Database SSP Dashboard", key: AttributeKeyBase.DatabaseSSPDashboardPage, category: "Pages", required: true, order: 4 )]
-    [LinkedPage( "Daily OPS SSP Dashboard", key: AttributeKeyBase.OpsSSPDashboardPage, category: "Pages", required: true, order: 5 )]
-    [LinkedPage( "Publicity SSP Dashboard", key: AttributeKeyBase.PublicitySSPDashboardPage, category: "Pages", required: true, order: 6 )]
-    [LinkedPage( "Production SSP Dashboard", key: AttributeKeyBase.ProductionSSPDashboardPage, category: "Pages", required: true, order: 7 )]
-    [LinkedPage( "Worship SSP Dashboard", key: AttributeKeyBase.WorshipSSPDashboardPage, category: "Pages", required: true, order: 8 )]
     #endregion
     public abstract class ServiceProviderDashboard : RockBlockType
     {
@@ -73,26 +60,13 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
             public const string RoomAdminRole = "RoomAdminRole";
             public const string EditCategories = "EditCategories";
             public const string ViewCategories = "ViewCategories";
-            public const string CateringSSPRole = "CateringSSPRole";
-            public const string ChildcareSSPRole = "ChildcareSSPRole";
-            public const string DatabaseSSPRole = "DatabaseSSPRole";
-            public const string OpsSSPRole = "OpsSSPRole";
-            public const string PublicitySSPRole = "PublicitySSPRole";
-            public const string ProductionSSPRole = "ProductionSSPRole";
-            public const string WorshipSSPRole = "WorshipSSPRole";
+            public const string SupportServicesList = "SupportServicesList";
 
             public const string SharingGroupType = "SharingGroupType";
             public const string SharedWithAttrKey = "SharedWithAttrKey";
 
             public const string UserDashboardPage = "UserDashboardPage";
             public const string AdminDashboardPage = "AdminDashboardPage";
-            public const string CateringSSPDashboardPage = "CateringSSPDashboardPage";
-            public const string ChildcareSSPDashboardPage = "ChildcareSSPDashboardPage";
-            public const string DatabaseSSPDashboardPage = "DatabaseSSPDashboardPage";
-            public const string OpsSSPDashboardPage = "OpsSSPDashboardPage";
-            public const string PublicitySSPDashboardPage = "PublicitySSPDashboardPage";
-            public const string ProductionSSPDashboardPage = "ProductionSSPDashboardPage";
-            public const string WorshipSSPDashboardPage = "WorshipSSPDashboardPage";
         }
 
         /// <summary>
@@ -119,7 +93,7 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
         protected List<Category> ViewCategories { get; set; }
         protected List<AttributeCache> VisibleAttributes { get; set; }
         protected List<AttributeCache> EditableAttributes { get; set; }
-        private List<RoleMap> RoleMappings { get; set; }
+        protected List<DefinedValue> SupportServices { get; set; }
         #endregion
 
         #region Obsidian Block Type Overrides
@@ -898,17 +872,14 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
 
             ministryAttr = request.Attributes.FirstOrDefault( attr => attr.Key == "Ministry" ).Value;
 
-            RoleMappings = new List<RoleMap>()
+            Guid sspsGuid = Guid.Empty;
+            if ( Guid.TryParse( GetAttributeValue( AttributeKeyBase.SupportServicesList ), out sspsGuid ) )
             {
-                new RoleMap() { Tag = "Admin", PageAttributeKey = AttributeKeyBase.AdminDashboardPage, RoleAttributeKey = AttributeKeyBase.EventAdminRole },
-                new RoleMap() { Tag = "Catering", PageAttributeKey = AttributeKeyBase.CateringSSPDashboardPage, RoleAttributeKey = AttributeKeyBase.CateringSSPRole },
-                new RoleMap() { Tag = "Childcare", PageAttributeKey = AttributeKeyBase.ChildcareSSPDashboardPage, RoleAttributeKey = AttributeKeyBase.ChildcareSSPRole },
-                new RoleMap() { Tag = "Database", PageAttributeKey = AttributeKeyBase.DatabaseSSPDashboardPage, RoleAttributeKey = AttributeKeyBase.DatabaseSSPRole },
-                new RoleMap() { Tag = "OPS", PageAttributeKey = AttributeKeyBase.OpsSSPDashboardPage, RoleAttributeKey = AttributeKeyBase.OpsSSPRole },
-                new RoleMap() { Tag = "Publicity", PageAttributeKey = AttributeKeyBase.PublicitySSPDashboardPage, RoleAttributeKey = AttributeKeyBase.PublicitySSPRole },
-                new RoleMap() { Tag = "Production", PageAttributeKey = AttributeKeyBase.ProductionSSPDashboardPage, RoleAttributeKey = AttributeKeyBase.ProductionSSPRole },
-                new RoleMap() { Tag = "Worship", PageAttributeKey = AttributeKeyBase.WorshipSSPDashboardPage, RoleAttributeKey = AttributeKeyBase.WorshipSSPRole }
-            };
+                DefinedType sspDT = new DefinedTypeService( rockContext ).Get( sspsGuid );
+                SupportServices = new DefinedValueService( rockContext ).Queryable().Where( dv => dv.DefinedTypeId == sspDT.Id ).ToList();
+                SupportServices.LoadAttributes();
+            }
+
         }
 
         /// <summary>
@@ -994,17 +965,19 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
             subject = p.FullName + " Has Added a Comment to " + item.Title;
             foreach ( string tag in tags )
             {
-                var roleDetails = RoleMappings.FirstOrDefault( rm => rm.Tag == tag );
+                var roleDetails = SupportServices.FirstOrDefault( dv => dv.Value == tag );
                 if ( roleDetails != null )
                 {
-                    url = this.GetLinkedPageUrl( roleDetails.PageAttributeKey, queryParams );
+                    Page dashboard = new PageService( new RockContext() ).Get( roleDetails.GetAttributeValue( "DashboardPage" ).AsGuid() );
+                    Web.PageReference pageReference = new Rock.Web.PageReference( dashboard.Id );
+                    url = pageReference.BuildRouteURL( queryParams );
                     message = "<p>This comment has been added to " + p.FullName + "'s request, " + item.Title + "</p>" +
                         "<blockquote>" + comment.Content + "</blockquote><br/>" +
                         "<p style='width: 100%; text-align: center;'><a href = '" + baseUrl + url.Substring( 1 ) + "?Id=" + item.Id + "' style = 'background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;' > Open Request </a></p>";
                     message += "<p style='color: #347689; text-align: center; margin-top: 12px;'><i>Replies to this email will not be received. Open your event request to communicate with the Event Admin and Support Service Providers.</i></p>";
                     message = header + message + footer;
 
-                    List<Person> users = EventFormHelper.GetAdminUsers( GetAttributeValue( roleDetails.RoleAttributeKey ) ).Where( u => u.Id != p.Id ).ToList();
+                    List<Person> users = EventFormHelper.GetAdminUsers( roleDetails.GetAttributeValue( "SecurityRole" ).AsGuid().ToString() ).Where( u => u.Id != p.Id ).ToList();
                     users.Remove( p );
 
                     if ( users.Count() > 0 )

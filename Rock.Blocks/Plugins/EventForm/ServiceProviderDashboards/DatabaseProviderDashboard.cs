@@ -26,6 +26,8 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
     [DefinedTypeField( "Drinks Defined Type", key: AttributeKey.DrinksList, category: "Lists", required: true, order: 3 )]
     [DefinedTypeField( "Ops Inventory Defined Type", key: AttributeKey.InventoryList, category: "Lists", required: true, order: 4 )]
 
+    [DefinedTypeField( "Support Services Defined Type", key: AttributeKey.SupportServicesList, category: "Security", required: true, order: 5 )]
+
     [IntegerField( "Discount Code Matrix Id", key: AttributeKey.DiscountCodeMatrixId, category: "Attributes", required: true, order: 0 )]
     [IntegerField( "Additional Registration Questions Matrix Id", key: AttributeKey.AdditionalRegQuestionsMatrixId, category: "Attributes", required: true, order: 1 )]
     #endregion
@@ -41,6 +43,8 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
             public const string BudgetList = "BudgetList";
             public const string DrinksList = "DrinksList";
             public const string InventoryList = "InventoryList";
+
+            public const string SupportServicesList = "SupportServicesList";
 
             public const string DiscountCodeMatrixId = "DiscountCodeMatrixId";
             public const string AdditionalRegQuestionsMatrixId = "AdditionalRegQuestionsMatrixId";

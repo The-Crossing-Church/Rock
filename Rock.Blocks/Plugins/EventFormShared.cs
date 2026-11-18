@@ -34,11 +34,12 @@ namespace Rock.Blocks.Plugins.EventForm
             {
                 var map = new List<SectionMap>();
                 map.Add( new SectionMap() { category = "Event", section = "Time" } );
-                map.Add( new SectionMap() { attr = "NeedsSpace", category = "Event Space", section = "Space", type = "Room" } );
-                map.Add( new SectionMap() { attr = "NeedsOnline", category = "Event Online", section = "Online", type = "Online Event" } );
+                map.Add( new SectionMap() { attr = "NeedsSpace", occ_attr = "NeedsSpace", category = "Event Space", section = "Space", type = "Room" } );
+                map.Add( new SectionMap() { attr = "NeedsOnline", occ_attr = "NeedsOnline", category = "Event Online", section = "Online", type = "Online Event" } );
                 map.Add( new SectionMap()
                 {
                     attr = "NeedsCatering",
+                    occ_attr = "NeedsCatering",
                     category = "Event Catering",
                     section = "Catering",
                     type = "Catering",
@@ -47,6 +48,7 @@ namespace Rock.Blocks.Plugins.EventForm
                 map.Add( new SectionMap()
                 {
                     attr = "NeedsChildCare",
+                    occ_attr = "NeedsChildCare",
                     category = "Event Childcare",
                     section = "Childcare",
                     type = "Childcare",
@@ -55,6 +57,7 @@ namespace Rock.Blocks.Plugins.EventForm
                 map.Add( new SectionMap()
                 {
                     attr = "NeedsChildCareCatering",
+                    occ_attr = "NeedsChildCareCatering",
                     category = "Event Childcare Catering",
                     section = "Childcare Catering",
                     type = "Childcare Catering",
@@ -63,6 +66,7 @@ namespace Rock.Blocks.Plugins.EventForm
                 map.Add( new SectionMap()
                 {
                     attr = "NeedsChildCare",
+                    occ_attr = "NeedsChildCare",
                     category = "Event Childcare Registration",
                     section = "Childcare Registration",
                     type = "Childcare",
@@ -71,6 +75,7 @@ namespace Rock.Blocks.Plugins.EventForm
                 map.Add( new SectionMap()
                 {
                     attr = "NeedsOpsAccommodations",
+                    occ_attr = "NeedsOpsAccommodations",
                     category = "Event Ops Requests",
                     section = "Ops",
                     type = "Extra Resources",
@@ -79,6 +84,7 @@ namespace Rock.Blocks.Plugins.EventForm
                 map.Add( new SectionMap()
                 {
                     attr = "NeedsRegistration",
+                    occ_attr = "EventNeedsSeparateLink",
                     category = "Event Registration",
                     section = "Registration",
                     type = "Registration",
@@ -86,7 +92,17 @@ namespace Rock.Blocks.Plugins.EventForm
                 } );
                 map.Add( new SectionMap()
                 {
+                    attr = "NeedsCheckin",
+                    occ_attr = "NeedsAttendanceOccurrence",
+                    category = "Event Check-in",
+                    section = "Check-in",
+                    type = "Check-in",
+                    status = "DatabaseStatus"
+                } );
+                map.Add( new SectionMap()
+                {
                     attr = "NeedsPublicity",
+                    occ_attr = "NeedsPublicity",
                     category = "Event Publicity",
                     section = "Publicity",
                     type = "Publicity",
@@ -95,6 +111,7 @@ namespace Rock.Blocks.Plugins.EventForm
                 map.Add( new SectionMap()
                 {
                     attr = "NeedsProductionAccommodations",
+                    occ_attr = "NeedsProductionAccommodations",
                     category = "Event Production",
                     section = "Production",
                     type = "Production",
@@ -103,6 +120,7 @@ namespace Rock.Blocks.Plugins.EventForm
                 map.Add( new SectionMap()
                 {
                     attr = "NeedsWorship",
+                    occ_attr = "NeedsWorship",
                     category = "Event Worship",
                     section = "Worship",
                     type = "Worship",
@@ -111,6 +129,7 @@ namespace Rock.Blocks.Plugins.EventForm
                 map.Add( new SectionMap()
                 {
                     attr = "NeedsWebCalendar",
+                    occ_attr = "NeedsWebCalendar",
                     category = "Event Calendar",
                     section = "Calendar",
                     type = "Web Calendar",
@@ -905,6 +924,10 @@ namespace Rock.Blocks.Plugins.EventForm
         /// The Event Request Attribute that indicates the service is being requested
         /// </summary>
         public string attr { get; set; }
+        /// <summary>
+        /// The Event Request Details Attribute that indicates the service is being requested on that occurrence 
+        /// </summary>
+        public string occ_attr { get; set; }
         /// <summary>
         /// The Attribute Category assigned to information for that service
         /// </summary>

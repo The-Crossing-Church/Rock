@@ -43,24 +43,11 @@ namespace Rock.Blocks.Plugins.EventDashboard
 
     [LinkedPage( "Event Submission Form", key: AttributeKey.SubmissionPage, category: "Pages", required: true, order: 0 )]
     [LinkedPage( "User Dashboard", key: AttributeKey.UserDashboard, category: "Pages", required: true, order: 1 )]
-    [LinkedPage( "Catering SSP Dashboard", key: AttributeKey.CateringSSPDashboardPage, category: "Pages", required: true, order: 2 )]
-    [LinkedPage( "Childcare SSP Dashboard", key: AttributeKey.ChildcareSSPDashboardPage, category: "Pages", required: true, order: 3 )]
-    [LinkedPage( "Database SSP Dashboard", key: AttributeKey.DatabaseSSPDashboardPage, category: "Pages", required: true, order: 4 )]
-    [LinkedPage( "Daily OPS SSP Dashboard", key: AttributeKey.OpsSSPDashboardPage, category: "Pages", required: true, order: 5 )]
-    [LinkedPage( "Publicity SSP Dashboard", key: AttributeKey.PublicitySSPDashboardPage, category: "Pages", required: true, order: 6 )]
-    [LinkedPage( "Production SSP Dashboard", key: AttributeKey.ProductionSSPDashboardPage, category: "Pages", required: true, order: 7 )]
-    [LinkedPage( "Worship SSP Dashboard", key: AttributeKey.WorshipSSPDashboardPage, category: "Pages", required: true, order: 8 )]
-    [LinkedPage( "Workflow Entry Page", key: AttributeKey.WorkflowEntryPage, category: "Pages", required: true, order: 9 )]
+    [LinkedPage( "Workflow Entry Page", key: AttributeKey.WorkflowEntryPage, category: "Pages", required: true, order: 2 )]
+    [DefinedTypeField( "Support Services Defined Type", key: AttributeKey.SupportServicesList, category: "Security", required: true, order: 3 )]
 
     [SecurityRoleField( "Event Request Admin", key: AttributeKey.EventAdminRole, category: "Security", required: true, order: 0 )]
     [SecurityRoleField( "Room Request Admin", key: AttributeKey.RoomAdminRole, category: "Security", required: true, order: 1 )]
-    [SecurityRoleField( "Catering SSP Role", key: AttributeKey.CateringSSPRole, category: "Security", required: true, order: 5 )]
-    [SecurityRoleField( "Childcare SSP Role", key: AttributeKey.ChildcareSSPRole, category: "Security", required: true, order: 6 )]
-    [SecurityRoleField( "Database SSP Role", key: AttributeKey.DatabaseSSPRole, category: "Security", required: true, order: 7 )]
-    [SecurityRoleField( "Daily OPS SSP Role", key: AttributeKey.OpsSSPRole, category: "Security", required: true, order: 8 )]
-    [SecurityRoleField( "Publicity SSP Role", key: AttributeKey.PublicitySSPRole, category: "Security", required: true, order: 9 )]
-    [SecurityRoleField( "Production SSP Role", key: AttributeKey.ProductionSSPRole, category: "Security", required: true, order: 10 )]
-    [SecurityRoleField( "Worship SSP Role", key: AttributeKey.WorshipSSPRole, category: "Security", required: true, order: 11 )]
 
     [TextField( "Default Statuses", key: AttributeKey.DefaultStatuses, category: "Filters", defaultValue: "Submitted,In Progress,Pending Changes,Proposed Changes Denied,Changes Accepted by User", required: true, order: 0 )]
     [TextField( "Request Status Attribute Key", key: AttributeKey.RequestStatusAttrKey, category: "Filters", defaultValue: "RequestStatus", required: true, order: 1 )]
@@ -110,23 +97,10 @@ namespace Rock.Blocks.Plugins.EventDashboard
             public const string WorkflowEntryPage = "WorkflowEntryPage";
             public const string AdminDashboard = "AdminDashboard";
             public const string UserDashboard = "UserDashboard";
-            public const string CateringSSPDashboardPage = "CateringSSPDashboardPage";
-            public const string ChildcareSSPDashboardPage = "ChildcareSSPDashboardPage";
-            public const string DatabaseSSPDashboardPage = "DatabaseSSPDashboardPage";
-            public const string OpsSSPDashboardPage = "OpsSSPDashboardPage";
-            public const string PublicitySSPDashboardPage = "PublicitySSPDashboardPage";
-            public const string ProductionSSPDashboardPage = "ProductionSSPDashboardPage";
-            public const string WorshipSSPDashboardPage = "WorshipSSPDashboardPage";
 
             public const string EventAdminRole = "EventAdminRole";
             public const string RoomAdminRole = "RoomAdminRole";
-            public const string CateringSSPRole = "CateringSSPRole";
-            public const string ChildcareSSPRole = "ChildcareSSPRole";
-            public const string DatabaseSSPRole = "DatabaseSSPRole";
-            public const string OpsSSPRole = "OpsSSPRole";
-            public const string PublicitySSPRole = "PublicitySSPRole";
-            public const string ProductionSSPRole = "ProductionSSPRole";
-            public const string WorshipSSPRole = "WorshipSSPRole";
+            public const string SupportServicesList = "SupportServicesList";
 
             public const string DefaultStatuses = "DefaultStatuses";
             public const string RequestStatusAttrKey = "RequestStatusAttrKey";
@@ -162,7 +136,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
         #endregion Keys
 
         private ObsidianPluginsShared EventFormHelper = new ObsidianPluginsShared();
-        private List<RoleMap> RoleMappings { get; set; }
+        protected List<DefinedValue> SupportServices { get; set; }
 
         #region Obsidian Block Type Overrides
 
@@ -1044,17 +1018,13 @@ namespace Rock.Blocks.Plugins.EventDashboard
                 EventCommentsContentChannelId = cCC.Id;
             }
 
-            RoleMappings = new List<RoleMap>()
+            Guid sspsGuid = Guid.Empty;
+            if ( Guid.TryParse( GetAttributeValue( AttributeKey.SupportServicesList ), out sspsGuid ) )
             {
-                new RoleMap() { Tag = "Admin", PageAttributeKey = AttributeKey.AdminDashboard, RoleAttributeKey = AttributeKey.EventAdminRole },
-                new RoleMap() { Tag = "Catering", PageAttributeKey = AttributeKey.CateringSSPDashboardPage, RoleAttributeKey = AttributeKey.CateringSSPRole },
-                new RoleMap() { Tag = "Childcare", PageAttributeKey = AttributeKey.ChildcareSSPDashboardPage, RoleAttributeKey = AttributeKey.ChildcareSSPRole },
-                new RoleMap() { Tag = "Database", PageAttributeKey = AttributeKey.DatabaseSSPDashboardPage, RoleAttributeKey = AttributeKey.DatabaseSSPRole },
-                new RoleMap() { Tag = "OPS", PageAttributeKey = AttributeKey.OpsSSPDashboardPage, RoleAttributeKey = AttributeKey.OpsSSPRole },
-                new RoleMap() { Tag = "Publicity", PageAttributeKey = AttributeKey.PublicitySSPDashboardPage, RoleAttributeKey = AttributeKey.PublicitySSPRole },
-                new RoleMap() { Tag = "Production", PageAttributeKey = AttributeKey.ProductionSSPDashboardPage, RoleAttributeKey = AttributeKey.ProductionSSPRole },
-                new RoleMap() { Tag = "Worship", PageAttributeKey = AttributeKey.WorshipSSPDashboardPage, RoleAttributeKey = AttributeKey.WorshipSSPRole }
-            };
+                DefinedType sspDT = new DefinedTypeService( rockContext ).Get( sspsGuid );
+                SupportServices = new DefinedValueService( rockContext ).Queryable().Where( dv => dv.DefinedTypeId == sspDT.Id ).ToList();
+                SupportServices.LoadAttributes();
+            }
         }
 
         private string LaunchWorkflow( int id, string action )
@@ -1346,17 +1316,19 @@ namespace Rock.Blocks.Plugins.EventDashboard
             subject = p.FullName + " Has Added a Comment to " + item.Title;
             foreach ( string tag in tags )
             {
-                var roleDetails = RoleMappings.FirstOrDefault( rm => rm.Tag == tag );
+                var roleDetails = SupportServices.FirstOrDefault( dv => dv.Value == tag );
                 if ( roleDetails != null )
                 {
-                    url = this.GetLinkedPageUrl( roleDetails.PageAttributeKey, queryParams );
+                    Page dashboard = new PageService( new RockContext() ).Get( roleDetails.GetAttributeValue( "DashboardPage" ).AsGuid() );
+                    Web.PageReference pageReference = new Rock.Web.PageReference( dashboard.Id );
+                    url = pageReference.BuildRouteURL( queryParams );
                     message = "<p>This comment has been added to " + p.FullName + "'s request, " + item.Title + "</p>" +
                         "<blockquote>" + comment.Content + "</blockquote><br/>" +
                         "<p style='width: 100%; text-align: center;'><a href = '" + baseUrl + url.Substring( 1 ) + "?Id=" + item.Id + "' style = 'background-color: rgb(5,69,87); color: #fff; font-weight: bold; font-size: 16px; padding: 15px;' > Open Request </a></p>";
                     message += "<p style='color: #347689; text-align: center; margin-top: 12px;'><i>Replies to this email will not be received. Open your event request to communicate with the Event Admin and Support Service Providers.</i></p>";
                     message = header + message + footer;
-
-                    List<Person> users = helper.GetAdminUsers( GetAttributeValue( roleDetails.RoleAttributeKey ) ).Where( u => u.Id != p.Id ).ToList();
+                    var x = roleDetails.GetAttributeValue( "SecurityRole" );
+                    List<Person> users = helper.GetAdminUsers( roleDetails.GetAttributeValue( "SecurityRole" ).AsGuid().ToString() ).Where( u => u.Id != p.Id ).ToList();
                     users.Remove( p );
 
                     if ( users.Count() > 0 )
