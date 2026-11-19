@@ -277,7 +277,6 @@ const rules = {
   },
   findTense(request: ContentChannelItemBag, ministries: DefinedValueBag[] | undefined, numDays: any, specificDate?: any): String {
     if (request.attributeValues) {
-      console.log('Specific Date Value:', specificDate)
       let av = request?.attributeValues.EventDates
       if (av) {
         let dates = av?.split(",").map(d => d.trim())
@@ -288,10 +287,6 @@ const rules = {
             //DateTime.fromFormat(i, 'yyyy-MM-dd')
           })?.sort().shift()?.minus({ days: numDays })
           if(specificDate) {
-            // if(specificDate.includes('T')) {
-            //   specificDate = specificDate.split('T')[0]
-            // }
-            // first = DateTime.fromFormat(specificDate, 'yyyy-MM-dd').minus({ days: numDays })
             first = helper.dateFromString(specificDate).minus({ days: numDays })
           }
           let isFuneralRequest = false
@@ -306,20 +301,405 @@ const rules = {
           if(ministry?.value?.toLowerCase().includes("funeral")) {
             isFuneralRequest = true
           }
-          console.log(first, today)
-          console.log((first && first.startOf("day") >= today.startOf("day")))
           if (isFuneralRequest || (first && first.startOf("day") >= today.startOf("day"))) {
-            console.log('valid')
             return 'is'
           }
-          console.log('invalid')
           return 'was'
         } 
       }
     }
     return 'is'
   },
+  isSectionLocked(request: ContentChannelItemBag | undefined, days: number | null, date: DateTime | null) {
+    let today = DateTime.now()
+    // if(request?.attributeValues?.RequestStatus != "Draft" && request?.attributeValues?.RequestStatus != "Submitted" ) {
+    //   today = helper.dateFromString(request?.startDateTime)
+    // }
+    let checkDate = date.minus({ days: days})
+    return checkDate.startOf("day") < today.startOf("day")
+  },
   validate(request: ContentChannelItemBag | undefined, events: ContentChannelItemBag[], locations: DefinedValueBag[] | undefined, ministries: DefinedValueBag[] | undefined, isSuperUser: boolean | undefined) {
+    console.log('validate')
+    let requestIsValid = true
+    let invalidSections = [] as string[]
+    let detailInvalidSections = [] as any[]
+    let invalidCategories = [] as string[]
+    let readonlySections = [] as string[]
+    let detailReadonlySections = [] as any[]
+
+    if(request && request.attributeValues) {
+      let dates = request.attributeValues.EventDates.split(',').map((d) => DateTime.fromFormat(d.trim(), 'yyyy-MM-dd')).sort()
+      let firstDate = dates[0]
+      let lastDate = dates[dates.length - 1]
+      events.forEach((e: any) => {
+        if(e?.attributeValues) {
+          if(e.attributeValues.EventDate) {
+            e.date = DateTime.fromFormat(e.attributeValues.EventDate.trim(), 'yyyy-MM-dd')
+          } else {
+            e.date = firstDate
+          }
+        }
+      })
+      console.log('Events with Date', events)
+
+      if(this.required(request.title, '') != true ||
+        this.required(request.attributeValues.Contact, '') != true ||
+        this.required(request.attributeValues.Ministry, '') != true ||
+        this.required(request.attributeValues.EventDates, '') != true
+      ) {
+        requestIsValid = false
+      }
+
+      let isFuneralRequest = false
+      let val = request.attributeValues.Ministry
+      let ministry = {} as DefinedValueBag
+      if(val != '' && ministries) {
+        let min = JSON.parse(val) as ListItemBag
+        ministry = ministries?.filter((dv: any) => {
+          return dv.guid == min.value
+        })[0]
+      }
+      if(ministry?.value?.toLowerCase().includes("funeral")) {
+        isFuneralRequest = true
+      }
+
+      if(!isFuneralRequest) {
+        //Process Readonly Sections for Request
+        let reqSections = helper.sectionInfo.filter(section => section.section == "Publicity" || section.section == "Calendar" || section.section == "Production" || section.section == "Worship")
+        reqSections.forEach(section => {
+          if(section.attr) {
+            if(request.attributeValues[section.attr] == 'True') {
+              let details = events as any
+              if(section.occ_attr) {
+                details = events.filter((e: any) => {
+                  if(e?.attributeValues) {
+                    return e.attributeValues[section.occ_attr] == 'True'
+                  }
+                }) as any
+              } 
+              let date = firstDate
+              if(details?.length > 0) {
+                date = details[0].date
+              }
+              if(section.section == "Calendar") {
+                if(request?.attributeValues?.WebCalendarGoLive) {
+                  date = helper.dateFromString(request?.attributeValues?.WebCalendarGoLive)
+                }
+              }
+              let isLocked = this.isSectionLocked(request, section.days, date)
+              console.log('is ' + section.section + ' Locked?')
+              console.log(section, isLocked)
+              if(isLocked) {
+                readonlySections.push(section.section)
+              }
+            }
+          }
+        })
+      }
+      //Process Readonly Sections for Details
+      events.forEach((e: any, idx: number) => {
+        detailReadonlySections.push({ idx: idx, date: e?.attributeValues?.EventDate, readonlySections: [] })
+        if(!isFuneralRequest) {
+          helper.sectionInfo.forEach(section => {
+            if(section.attr) {
+              if(request.attributeValues[section.attr] == 'True') {
+                let date = firstDate
+                if(e.attributeValues.EventDate) {
+                  date = helper.dateFromString(e.attributeValues.EventDate)
+                }
+                if(section.occ_attr) {
+                  if(e.attributeValues[section.occ_attr] == 'True') {
+                    //Service requested for this date, so process additional rules
+                    if(section.section == "Registration" || section.section == "Childcare Registration") {
+                      if(e.attributeValues.RegistrationStartDate) {
+                        date = helper.dateFromString(e.attributeValues.RegistrationStartDate)
+                      }
+                    } 
+                  }
+                } 
+                let isLocked = this.isSectionLocked(request, section.days, date)
+                console.log('is ' + section.section + ' Locked?', isLocked)
+                if(isLocked) {
+                  detailReadonlySections[idx].readonlySections.push(section.section)
+                }
+              }
+            }
+          })
+        }
+      })
+
+      //Drafts, cut anything that is past-deadline
+      //Do this before validation so we don't have errors display for sections not on the request anymore
+      if(request.attributeValues.RequestStatus == 'Draft') {
+        helper.sectionInfo.forEach(section => {
+          if(readonlySections.includes(section.section)) {
+            if(section.attr) {
+              request.attributeValues[section.attr] = 'False'
+              let validSections = request.attributeValues?.RequestType.split(',') as string[]
+              validSections = validSections.filter(s => {
+                return s.trim() != section.section
+              })
+              request.attributeValues.RequestType = validSections.join(',')
+            }
+          }
+        })
+        events.forEach((e: any, idx: number) => {
+          helper.sectionInfo.forEach(section => {
+            if(detailReadonlySections[idx].readonlySections.includes(section.section)) {
+              if(section.occ_attr) {
+                e.attributeValues[section.occ_attr] = 'False'
+              }
+            }
+          })
+        })
+      }
+
+      //Process Invalid Sections for Request
+      if(request.attributeValues.NeedsPublicity == 'True') {
+        if(this.required(request.attributeValues?.WhyAttend, '') != true) {
+          requestIsValid = false
+          let idx = invalidSections.indexOf('Publicity')
+          if(idx < 0) {
+            invalidSections.push('Publicity')
+          }
+        }
+      }
+      if(request.attributeValues.NeedsWebCalendar == 'True') {
+        if(this.required(request.attributeValues?.WebCalendarDescription, '') != true || 
+          this.required(request.attributeValues?.WebCalendarGoLive, '') != true || 
+          this.dateCannotBeAfterEvent(request.attributeValues?.WebCalendarGoLive, lastDate.toFormat("yyyy-MM-dd"), '') != true
+        ) {
+          requestIsValid = false
+          let idx = invalidSections.indexOf('Calendar')
+          if(idx < 0) {
+            invalidSections.push('Calendar')
+          }
+        }
+      }
+      if(request.attributeValues.NeedsProductionAccommodations == 'True' && request.attributeValues.IsExecApproved == 'True') {
+        if(this.required(request.attributeValues?.ProductionLightingNeeds, '') != true ||
+          this.required(request.attributeValues?.ProductionMediaNeeds, '') != true ||
+          this.required(request.attributeValues?.ProductionSetup, '') != true ||
+          this.required(request.attributeValues?.PublicArrivalTime, '') != true
+        ) {
+          requestIsValid = false
+          let idx = invalidSections.indexOf('Production')
+          if(idx < 0) {
+            invalidSections.push('Production')
+          }
+        }
+      }
+      if(request.attributeValues.NeedsWorship == 'True') {
+        if(this.required(request.attributeValues?.NumberOfMusiciansDesired, '') != true ||
+          this.required(request.attributeValues?.AmountBudgetedForMusicians, '') != true ||
+          this.required(request.attributeValues?.WorshipLeaderRequest, '') != true ||
+          this.required(request.attributeValues?.PublicArrivalTime, '') != true
+        ) {
+          requestIsValid = false
+          let idx = invalidSections.indexOf('Worship')
+          if(idx < 0) {
+            invalidSections.push('Worship')
+          }
+        }
+      }
+      
+      //Process Invalid Sections for Details
+      if(events && events.length > 0) {
+        for(let i=0; i < events.length; i++) {
+          detailInvalidSections.push({idx: i, date: events[i]?.attributeValues?.EventDate, invalidSections: [] })
+          let eventIsValid = true
+          if(this.required(events[i].attributeValues?.StartTime, '') != true ||
+            this.required(events[i].attributeValues?.EndTime, '') != true ||
+            this.timeIsValid(events[i].attributeValues?.StartTime as string, events[i].attributeValues?.EndTime as string, true) != true 
+          ) {
+            requestIsValid = false
+            eventIsValid = false
+          }
+          helper.sectionInfo.forEach(section => {
+            if(section.attr) {
+              if(request.attributeValues[section.attr] == 'True') {
+                if(section.occ_attr) {
+                  if(events[i].attributeValues[section.occ_attr] == 'True') {
+                    if(section.section == 'Space') {
+                      let attendance = events[i].attributeValues?.ExpectedAttendance as string
+                      let numAttendance = parseInt(attendance)
+                      let rooms = events[i].attributeValues?.Rooms as string
+                      if(this.required(events[i].attributeValues?.Rooms, '') != true ||
+                        this.required(events[i].attributeValues?.ExpectedAttendance, '') != true ||
+                        ( locations && this.attendance(numAttendance, rooms, locations, '') != true ) || 
+                        this.largeEventSecurity(numAttendance, request.attributeValues.NeedsOpsAccommodations, `${events[i].attributeValues?.NeedsSecurity}`, isSuperUser ) != true
+                      ) {
+                        requestIsValid = false
+                        eventIsValid = false
+                        detailInvalidSections[i].invalidSections.push(section.section)
+                      }
+                    } else if (section.section == 'Online') {
+                      if(this.required(events[i].attributeValues?.EventURL, '') != true) {
+                        requestIsValid = false
+                        eventIsValid = false
+                        detailInvalidSections[i].invalidSections.push(section.section)
+                      }
+                    } else if (section.section == 'Catering') {
+                      let drinkTime = events[i].attributeValues?.DrinkTime as string
+                      let foodTime = events[i].attributeValues?.FoodTime as string
+                      let endTime = events[i].attributeValues?.EndTime as string
+                      let drinks = events[i].attributeValues?.Drinks as string
+                      if(this.required(events[i].attributeValues?.PreferredVendor, '') != true ||
+                        this.required(events[i].attributeValues?.FoodBudgetLine, '') != true ||
+                        this.required(events[i].attributeValues?.PreferredMenu, '') != true ||
+                        this.required(events[i].attributeValues?.FoodTime, '') != true ||
+                        this.timeCannotBeAfterEvent(foodTime, endTime, '') != true ||
+                        this.drinkTimeRequired(drinkTime, drinks, '') != true ||
+                        (events[i].attributeValues?.NeedsDelivery == 'True' && 
+                          this.required(events[i].attributeValues?.FoodSetupLocation, '') != true) ||
+                        (events[i].attributeValues?.NeedsDietaryAccommodations == 'True' && 
+                          this.required(events[i].attributeValues?.DietaryAccommodationInfo, '') != true
+                        ) 
+                      ) {
+                        requestIsValid = false
+                        eventIsValid = false
+                        detailInvalidSections[i].invalidSections.push(section.section)
+                      }
+                    } else if (section.section == 'Childcare') {
+                      let ccStartTime = events[i].attributeValues?.ChildcareStartTime as string
+                      let endTime = events[i].attributeValues?.EndTime as string
+                      if(this.required(events[i].attributeValues?.ChildcareStartTime, '') != true ||
+                        this.timeCannotBeAfterEvent(ccStartTime, endTime, '') != true ||
+                        this.required(events[i].attributeValues?.ChildcareEndTime, '') != true ||
+                        this.required(events[i].attributeValues?.ChildcareOptions, '') != true ||
+                        this.required(events[i].attributeValues?.EstimatedNumberofKids, '') != true ||
+                        this.required(events[i].attributeValues?.ChildcareBudgetMinistry, '') != true ||
+                        this.required(events[i].attributeValues?.ChildcareBudgetLine, '') != true ||
+                        this.required(events[i].attributeValues?.ChildcareOptions, '') != true 
+                      ) {
+                        requestIsValid = false
+                        eventIsValid = false
+                        detailInvalidSections[i].invalidSections.push(section.section)
+                      }
+                    } else if (section.section == 'Childcare Registration') {
+                      if(this.nonNegativeNumber(events[i].attributeValues?.ChildcareCost as string, '') != true ||
+                        this.required(events[i].attributeValues?.ChildcareRegistrationCloseDate, '') != true ||
+                        this.childcareCloseIsValid(events[i].attributeValues?.ChildcareRegistrationCloseDate as string, request.attributeValues.EventDates) != true 
+                      ) {
+                        requestIsValid = false
+                        eventIsValid = false
+                        detailInvalidSections[i].invalidSections.push(section.section)
+                      }
+                    } else if (section.section == 'Childcare Catering') {
+                      let ccFoodTime = events[i].attributeValues?.ChildcareFoodTime as string
+                      let endTime = events[i].attributeValues?.EndTime as string
+                      if(this.required(events[i].attributeValues?.ChildcareVendor, '') != true ||
+                        this.required(events[i].attributeValues?.ChildcareCateringBudgetMinistry, '') != true ||
+                        this.required(events[i].attributeValues?.ChildcareCateringBudgetLine, '') != true ||
+                        this.required(events[i].attributeValues?.ChildcarePreferredMenu, '') != true ||
+                        this.required(events[i].attributeValues?.ChildcareFoodTime, '') != true ||
+                        this.timeCannotBeAfterEvent(ccFoodTime, endTime, '') != true
+                      ) {
+                        requestIsValid = false
+                        eventIsValid = false
+                        detailInvalidSections[i].invalidSections.push(section.section)
+                      }
+                    } else if (section.section == 'Registration') {
+                      if(events[i].attributeValues?.EventNeedsSeparateLink == 'True') {
+                        let regStartDate = events[i].attributeValues?.RegistrationStartDate as string
+                        let regEndDate = events[i].attributeValues?.RegistrationEndDate as string
+                        let lastDate = events[i].attributeValues?.EventDate as string
+                        let maxReg = parseInt(events[i].attributeValues?.MaxRegistrants as string) 
+                        if(lastDate == '') {
+                          let dates = request.attributeValues.EventDates.split(",").map((d: string) => d.trim())
+                          if(dates && dates.length > 0) {
+                            lastDate == dates[dates.length - 1]
+                          }
+                        }
+                        if(this.required(events[i].attributeValues?.RegistrationStartDate, '') != true ||
+                          this.dateCannotBeAfterEvent(regStartDate, lastDate, '') != true ||
+                          this.required(events[i].attributeValues?.RegistrationFeeType, '') != true ||
+                          (events[i].attributeValues?.RegistrationFeeType.split(",").includes('Online Fee') && this.required(events[i].attributeValues?.OnlineRegistrationFee, '') != true) ||
+                          (events[i].attributeValues?.RegistrationFeeType.split(",").includes('Fee per Individual') && this.required(events[i].attributeValues?.IndividualRegistrationFee, '') != true) ||
+                          (events[i].attributeValues?.RegistrationFeeType.split(",").includes('Fee per Couple') && this.required(events[i].attributeValues?.CoupleRegistrationFee, '') != true) ||
+                          (!events[i].attributeValues?.RegistrationFeeType.split(",").includes('No Fees') && this.required(events[i].attributeValues?.RegistrationFeeBudgetMinistry, '') != true) ||
+                          (!events[i].attributeValues?.RegistrationFeeType.split(",").includes('No Fees') && this.required(events[i].attributeValues?.RegistrationFeeBudgetLine, '') != true) ||
+                          this.required(events[i].attributeValues?.RegistrationEndDate, '') != true ||
+                          this.dateCannotBeAfterEvent(regEndDate, lastDate, '') != true ||
+                          this.required(events[i].attributeValues?.RegistrationEndTime, '') != true ||
+                          this.required(events[i].attributeValues?.MaxRegistrants, '') != true ||
+                          this.maxRegistration(maxReg, events[i].attributeValues?.Rooms, locations as any[], events[i].attributes?.MaxRegistrants.name, request.attributeValues.NeedsOnline == 'True') != true ||
+                          this.required(events[i].attributeValues?.RegistrationConfirmationEmailSender, '') != true ||
+                          (events[i].attributeValues?.NeedsCustomCommContent == 'True' && this.required(events[i].attributeValues?.RegistrationConfirmationEmailAdditionalDetails, '') != true) ||
+                          (events[i].attributeValues?.NeedsCustomCommContent == 'True' && events[i].attributeValues?.NeedsReminderEmail == 'True' && this.required(events[i].attributeValues?.RegistrationReminderEmailAdditionalDetails, '') != true)
+                        ) {
+                          requestIsValid = false
+                          eventIsValid = false
+                          detailInvalidSections[i].invalidSections.push(section.section)
+                        }
+                      }
+                    } else if (section.section == 'Check-in') {
+                      if((events[i].attributeValues?.NeedsDatabaseSupportTeam == 'True' && this.required(events[i].attributeValues?.DatabaseSupportStartTime, '') != true) ||
+                        (events[i].attributeValues?.NeedsDatabaseSupportTeam == 'True' && this.timeCannotBeAfterEvent(events[i].attributeValues?.DatabaseSupportStartTime as string, events[i].attributeValues?.StartTime as string, '') != true) ||
+                        (events[i].attributeValues?.NeedsAttendanceOccurrence == 'True' && this.charLimit(events[i].attributeValues?.CheckinGroupName as string, 22, 'Check-in group names', true, '') != true) ||
+                        (events[i].attributeValues?.NeedsAttendanceOccurrence == 'True' && this.nonASCII(events[i].attributeValues?.CheckinGroupName as string, 'Check-in group names', true, '') != true)
+                      ) {
+                        requestIsValid = false
+                        eventIsValid = false
+                        detailInvalidSections[i].invalidSections.push(section.section)
+                      }
+                    } else if (section.section == 'Ops') {
+                      if(events[i].attributeValues?.NeedsSecurity == 'True') {
+                        if(this.required(events[i].attributeValues?.SecurityBudgetMinistry, '') != true ||
+                          this.required(events[i].attributeValues?.SecurityBudgetLine, '') != true ||
+                          this.required(events[i].attributeValues?.SecurityStartTime, '') != true ||
+                          this.required(events[i].attributeValues?.SecurityEndTime, '') != true ||
+                          this.securityMinimumHours(`${events[i].attributeValues?.SecurityStartTime}`, `${events[i].attributeValues?.SecurityEndTime}`) != true
+                        ) {
+                          requestIsValid = false
+                          eventIsValid = false
+                          detailInvalidSections[i].invalidSections.push(section.section)
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          })
+
+          let event = events[i]
+          if(event.attributeValues) {
+            event.attributeValues.EventIsValid = eventIsValid ? 'True' : 'False'
+          }
+        }
+      }
+
+      if (request.attributeValues.RequestStatus == 'Submitted' || request.attributeValues.RequestStatus == 'In Progress'){
+        helper.sectionInfo.forEach(section => {
+          if(request.attributeValues && section.attr) {
+            if(invalidSections.includes(section.section)) {
+              request.attributeValues[section.attr] = 'False'
+            }
+          }
+        })
+        events.forEach((e: any, idx: number) => {
+          helper.sectionInfo.forEach(section => {
+            if(e.attributeValues && section.occ_attr) {
+              if(detailInvalidSections[idx].invalidSections.includes(section.section)) {
+                e.attributeValues[section.attr] = 'False'
+              }
+            }
+          })
+        })
+      }
+      console.log('Readonly Sections')
+      console.log(readonlySections)
+      console.log(detailReadonlySections)
+      console.log('Invalid Sections')
+      console.log(invalidSections)
+      console.log(detailInvalidSections)
+
+      request.attributeValues.RequestIsValid = requestIsValid ? 'True' : 'False'
+      return { isValid: requestIsValid, invalidSections: invalidSections, detailInvalidSections: detailInvalidSections, readonlySections: readonlySections, detailReadonlySections: detailReadonlySections }
+    }
+  },
+  validateOG(request: ContentChannelItemBag | undefined, events: ContentChannelItemBag[], locations: DefinedValueBag[] | undefined, ministries: DefinedValueBag[] | undefined, isSuperUser: boolean | undefined) {
     let requestIsValid = true
     let invalidSections = [] as string[]
     let readonlySections = [] as string[]
@@ -337,7 +717,6 @@ const rules = {
       }
 
       let twoWeeksTense = this.findTense(request, ministries, 14)
-      console.log('CHILDCARE TENSE')
       let thirtyDaysTense = this.findTense(request, ministries,30)
       let pubDateCutOff = lastDate.minus({weeks: 6})
       if(request.attributeValues.PublicityStartDate) {
@@ -429,19 +808,10 @@ const rules = {
         }
       }
       if(request.attributeValues.NeedsPublicity == 'True') {
-        let minStart = submittedDate.plus({weeks: 3})
-        let minPubStartDate = minStart.toFormat("yyyy-MM-dd")
-        let maxPubStartDate = firstDate.minus({weeks: 3}).toFormat("yyyy-MM-dd")
-        // let minPubEndDate = DateTime.fromFormat(request.attributeValues.PublicityStartDate, 'yyyy-MM-dd').plus({weeks: 3}).toFormat("yyyy-MM-dd")
-        // let maxPubEndDate = lastDate.toFormat("yyyy-MM-dd")
-        if(this.required(request.attributeValues?.WhyAttend, '') != true //||
-          // this.required(request.attributeValues?.TargetAudience, '') != true ||
-          // this.required(request.attributeValues?.PublicityStartDate, '') != true ||
-          // this.pubStartIsValid(request.attributeValues?.PublicityStartDate, request.attributeValues?.PublicityEndDate, minPubStartDate, maxPubStartDate) != true ||
-          // this.required(request.attributeValues?.PublicityEndDate, '') != true ||
-          // this.pubEndIsValid(request.attributeValues?.PublicityEndDate, request.attributeValues?.PublicityStartDate, request.attributeValues.EventDates, minPubEndDate, maxPubEndDate) != true ||
-          // this.required(request.attributeValues?.PublicityStrategies, '') != true
-        ) {
+        // let minStart = submittedDate.plus({weeks: 3})
+        // let minPubStartDate = minStart.toFormat("yyyy-MM-dd")
+        // let maxPubStartDate = firstDate.minus({weeks: 3}).toFormat("yyyy-MM-dd")
+        if(this.required(request.attributeValues?.WhyAttend, '') != true) {
           requestIsValid = false
           let idx = invalidSections.indexOf('Publicity')
           if(idx < 0) {
@@ -707,11 +1077,14 @@ const rules = {
           if(invalidSections.includes('Childcare Catering')) {
             request.attributeValues.NeedsChildCareCatering = 'False'
           }
-          if(invalidSections.includes('Production')) {
-            request.attributeValues.NeedsProductionAccommodations = 'False'
-          }
           if(invalidSections.includes('Ops')) {
             request.attributeValues.NeedsOpsAccommodations = 'False'
+          }
+          if(invalidSections.includes('Check-in')) {
+            request.attributeValues.NeedsCheckin = 'False'
+          }
+          if(invalidSections.includes('Production')) {
+            request.attributeValues.NeedsProductionAccommodations = 'False'
           }
           if(invalidSections.includes('Worship')) {
             request.attributeValues.NeedsWorship = 'False'
@@ -720,11 +1093,6 @@ const rules = {
         if(registrationTense == 'was') {
           if(invalidSections.includes('Registration')) {
             request.attributeValues.NeedsRegistration = 'False'
-          }
-        }
-        if(registrationTense == 'was') {
-          if(invalidSections.includes('Check-in')) {
-            request.attributeValues.NeedsCheckin = 'False'
           }
         }
         if(webCalTense == 'was') {
@@ -745,12 +1113,12 @@ const rules = {
           readonlySections.push('Childcare Catering')
           readonlySections.push('Childcare Registration')
           readonlySections.push('Ops')
+          readonlySections.push('Check-in')
           readonlySections.push('Production')
           readonlySections.push('Worship')
         }
         if(registrationTense == 'was') {
           readonlySections.push('Registration')
-          readonlySections.push('Check-in')
         }
         if(webCalTense == 'was') {
           readonlySections.push('Calendar')

@@ -15,6 +15,7 @@ export default defineComponent({
     "tcc-switch": Toggle,
   },
   props: {
+    request: Object,
     e: {
       type: Object as PropType<ContentChannelItemBag>,
       required: false
@@ -70,7 +71,7 @@ export default defineComponent({
   template: `
 <rck-form ref="form" @validationChanged="validationChange" v-if="isMultiOccurrence">
   <div class="row">
-    <div class="col col-xs-12 col-md-6">
+    <div class="col col-xs-12 col-md-6" v-if="request?.attributeValues?.NeedsWebCalendar == 'True'">
       <tcc-switch
         v-model="e.attributeValues.NeedsWebCalendar"
         :label="e.attributes.NeedsWebCalendar.name"
@@ -86,7 +87,7 @@ export default defineComponent({
         id="boolNeedsWebCalendar"
       ></rck-field>
     </div>
-    <div class="col col-xs-12 col-md-6">
+    <div class="col col-xs-12 col-md-6" v-if="request?.attributeValues?.NeedsPublicity == 'True'">
       <tcc-switch
         v-model="e.attributeValues.NeedsPublicity"
         :label="e.attributes.NeedsPublicity.name"
@@ -104,7 +105,7 @@ export default defineComponent({
     </div>
   </div>
   <div class="row">
-    <div class="col col-xs-12 col-md-6">
+    <div class="col col-xs-12 col-md-6" v-if="request?.attributeValues?.NeedsProductionAccommodations == 'True'">
       <tcc-switch
         v-model="e.attributeValues.NeedsProductionAccommodations"
         :label="e.attributes.NeedsProductionAccommodations.name"
@@ -120,7 +121,7 @@ export default defineComponent({
         id="boolNeedsProductionAccommodations"
       ></rck-field>
     </div>
-    <div class="col col-xs-12 col-md-6">
+    <div class="col col-xs-12 col-md-6" v-if="request?.attributeValues?.NeedsWorship == 'True'">
       <tcc-switch
         v-model="e.attributeValues.NeedsWorship"
         :label="e.attributes.NeedsWorship.name"

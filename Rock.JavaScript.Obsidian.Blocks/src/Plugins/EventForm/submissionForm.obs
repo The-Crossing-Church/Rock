@@ -165,6 +165,7 @@ export default defineComponent({
       rules: rules,
       helper: helper,
       readonlySections: [] as string[],
+      detailReadonlySections: [] as any[],
       toastMessage: "",
       toastIsError: true
     };
@@ -690,8 +691,12 @@ export default defineComponent({
       console.log(JSON.parse(JSON.stringify(events)))
       let res = this.rules.validate(this.viewModel?.request, events, this.viewModel?.locations, this.viewModel?.ministries, this.viewModel?.isSuperUser ) as any
       this.readonlySections = res.readonlySections
+      this.detailReadonlySections = res.detailReadonlySections
       if(!this.viewModel?.permissions?.includes("Edit")) {
         this.readonlySections = this.helper.sectionInfo.map(si => si.section)
+        this.detailReadonlySections.forEach(s => {
+          s.readonlySections = this.readonlySections
+        })
       }
       if(this.viewModel?.request.attributeValues) {
         this.viewModel.request.attributeValues.RequestIsValid = res?.isValid ? 'True' : 'False'
@@ -1350,7 +1355,7 @@ export default defineComponent({
               Space Information
               <rck-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" btnType="accent-outlined" class="rounded-huge" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Space'; preFillModal = true;">Prefill Section</rck-btn>
             </h3>
-            <tcc-space :e="e" :request="viewModel.request" :originalRequest="viewModel.originalRequest" :locations="viewModel.locations" :existing="viewModel.existing" :showValidation="pagesViewed.includes(idx + 2)" :isSuperUser="viewModel.isSuperUser" :readonly="readonlySections.includes('Space')" :isMultiOccurrence="viewModel.events.length > 1" :refName="getRefName('space', idx)" @validation-change="validationChange" :ref="getRefName('space', idx)"></tcc-space>
+            <tcc-space :e="e" :request="viewModel.request" :originalRequest="viewModel.originalRequest" :locations="viewModel.locations" :existing="viewModel.existing" :showValidation="pagesViewed.includes(idx + 2)" :isSuperUser="viewModel.isSuperUser" :readonly="detailReadonlySections[idx]?.readonlySections?.includes('Space')" :isMultiOccurrence="viewModel.events.length > 1" :refName="getRefName('space', idx)" @validation-change="validationChange" :ref="getRefName('space', idx)"></tcc-space>
             <br/>
           </template>
           <template v-if="viewModel.request.attributeValues.NeedsCatering == 'True'">
@@ -1358,7 +1363,7 @@ export default defineComponent({
               Catering Information
               <rck-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" btnType="accent-outlined" class="rounded-huge" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Catering'; preFillModal = true;">Prefill Section</rck-btn>
             </h3>
-            <tcc-catering :e="e" :request="viewModel.request" :showValidation="pagesViewed.includes(idx + 2)" :vendorList="viewModel.vendorList" :refName="getRefName('catering', idx)" @validation-change="validationChange" :ref="getRefName('catering', idx)" :readonly="readonlySections.includes('Catering')" :isMultiOccurrence="viewModel.events.length > 1"></tcc-catering>
+            <tcc-catering :e="e" :request="viewModel.request" :showValidation="pagesViewed.includes(idx + 2)" :vendorList="viewModel.vendorList" :refName="getRefName('catering', idx)" @validation-change="validationChange" :ref="getRefName('catering', idx)" :readonly="detailReadonlySections[idx]?.readonlySections?.includes('Catering')" :isMultiOccurrence="viewModel.events.length > 1"></tcc-catering>
             <br/>
           </template>
           <template v-if="viewModel.request.attributeValues.NeedsOpsAccommodations == 'True'">
@@ -1366,7 +1371,7 @@ export default defineComponent({
               Other Accomodations
               <rck-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" btnType="accent-outlined" class="rounded-huge" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Ops Requests'; preFillModal = true;">Prefill Section</rck-btn>
             </h3>
-            <tcc-ops :e="e" :request="viewModel.request" :showValidation="pagesViewed.includes(idx + 2)" :locations="viewModel.locations" :locationSetUp="viewModel.locationSetupMatrix" :inventoryList="viewModel.inventoryList" :existing="viewModel.existing" :inventoryAttrs="viewModel.opsInventoryAttrs" :isMultiOccurrence="viewModel.events.length > 1" :refName="getRefName('ops', idx)" @validation-change="validationChange" :ref="getRefName('ops', idx)" :readonly="readonlySections.includes('Ops')"></tcc-ops>
+            <tcc-ops :e="e" :request="viewModel.request" :showValidation="pagesViewed.includes(idx + 2)" :locations="viewModel.locations" :locationSetUp="viewModel.locationSetupMatrix" :inventoryList="viewModel.inventoryList" :existing="viewModel.existing" :inventoryAttrs="viewModel.opsInventoryAttrs" :isMultiOccurrence="viewModel.events.length > 1" :refName="getRefName('ops', idx)" @validation-change="validationChange" :ref="getRefName('ops', idx)" :readonly="detailReadonlySections[idx]?.readonlySections?.includes('Ops')"></tcc-ops>
             <br/>
           </template>
           <template v-if="viewModel.request.attributeValues.NeedsChildCare == 'True'">
@@ -1374,14 +1379,14 @@ export default defineComponent({
               Childcare Information
               <rck-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" btnType="accent-outlined" class="rounded-huge" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Childcare'; preFillModal = true;">Prefill Section</rck-btn>
             </h3>
-            <tcc-childcare :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('childcare', idx)" @validation-change="validationChange" :ref="getRefName('childcare', idx)" :readonly="readonlySections.includes('Childcare')" :isMultiOccurrence="viewModel.events.length > 1"></tcc-childcare>
+            <tcc-childcare :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('childcare', idx)" @validation-change="validationChange" :ref="getRefName('childcare', idx)" :readonly="detailReadonlySections[idx]?.readonlySections?.includes('Childcare')" :isMultiOccurrence="viewModel.events.length > 1"></tcc-childcare>
             <br v-if="viewModel.request.attributeValues.NeedsChildCareCatering == 'True'" />
             <h4 class="text-accent" v-if="viewModel.request.attributeValues.NeedsChildCareCatering == 'True'">Childcare Catering Information</h4>
-            <tcc-childcare-catering v-if="viewModel.request.attributeValues.NeedsChildCareCatering == 'True'" :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('cccatering', idx)" @validation-change="validationChange" :ref="getRefName('cccatering', idx)" :readonly="readonlySections.includes('Childcare Catering')" :isMultiOccurrence="viewModel.events.length > 1"></tcc-childcare-catering>
+            <tcc-childcare-catering v-if="viewModel.request.attributeValues.NeedsChildCareCatering == 'True'" :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('cccatering', idx)" @validation-change="validationChange" :ref="getRefName('cccatering', idx)" :readonly="detailReadonlySections[idx]?.readonlySections?.includes('Childcare Catering')" :isMultiOccurrence="viewModel.events.length > 1"></tcc-childcare-catering>
             <br />
             <template v-if="e.attributeValues.NeedsChildCare == 'True' || viewModel.events.length == 1">
               <h4 class="text-accent">Childcare Registration Information</h4>
-              <tcc-childcare-registration :e="e" :request="viewModel.request" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('ccregistration', idx)" @validation-change="validationChange" :ref="getRefName('ccregistration', idx)" :readonly="readonlySections.includes('Childcare Registration')" :isMultiOccurrence="viewModel.events.length > 1"></tcc-childcare-registration>
+              <tcc-childcare-registration :e="e" :request="viewModel.request" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('ccregistration', idx)" @validation-change="validationChange" :ref="getRefName('ccregistration', idx)" :readonly="detailReadonlySections[idx]?.readonlySections?.includes('Childcare Registration')" :isMultiOccurrence="viewModel.events.length > 1"></tcc-childcare-registration>
               <br/>
             </template>
           </template>
@@ -1390,7 +1395,7 @@ export default defineComponent({
               Registration Information
               <rck-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" btnType="accent-outlined" class="rounded-huge" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Registration'; preFillModal = true;">Prefill Section</rck-btn>
             </h3>
-            <tcc-registration :e="e" :request="viewModel.request" :original="viewModel.originalRequest" :ministries="viewModel.ministries" :discountAttrs="viewModel.discountCodeAttrs" :regAttrs="viewModel.reqQuestionAttrs" :locations="viewModel.locations" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('reg', idx)" @validation-change="validationChange" :ref="getRefName('reg', idx)" :readonly="readonlySections.includes('Registration')" :isMultiOccurrence="viewModel.events.length > 1"></tcc-registration>
+            <tcc-registration :e="e" :request="viewModel.request" :original="viewModel.originalRequest" :ministries="viewModel.ministries" :discountAttrs="viewModel.discountCodeAttrs" :regAttrs="viewModel.reqQuestionAttrs" :locations="viewModel.locations" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('reg', idx)" @validation-change="validationChange" @validate="validate" :ref="getRefName('reg', idx)" :readonly="detailReadonlySections[idx]?.readonlySections?.includes('Registration')" :isMultiOccurrence="viewModel.events.length > 1"></tcc-registration>
             <br/>
           </template>
           <template v-if="viewModel.request.attributeValues.NeedsCheckin == 'True'">
@@ -1398,7 +1403,7 @@ export default defineComponent({
               Check-in Information
               <rck-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" btnType="accent-outlined" class="rounded-huge" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Check-in'; preFillModal = true;">Prefill Section</rck-btn>
             </h3>
-            <tcc-check-in :e="e" :request="viewModel.request" :original="viewModel.originalRequest" :ministries="viewModel.ministries" :locations="viewModel.locations" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('reg', idx)" @validation-change="validationChange" :ref="getRefName('reg', idx)" :readonly="readonlySections.includes('Check-in')" :isMultiOccurrence="viewModel.events.length > 1"></tcc-check-in>
+            <tcc-check-in :e="e" :request="viewModel.request" :original="viewModel.originalRequest" :ministries="viewModel.ministries" :locations="viewModel.locations" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('reg', idx)" @validation-change="validationChange" :ref="getRefName('reg', idx)" :readonly="detailReadonlySections[idx]?.readonlySections?.includes('Check-in')" :isMultiOccurrence="viewModel.events.length > 1"></tcc-check-in>
             <br/>
           </template>
           <template v-if="viewModel.request.attributeValues.NeedsOnline == 'True'">
@@ -1406,10 +1411,10 @@ export default defineComponent({
               Zoom Information
               <rck-btn v-if="viewModel.request.attributeValues.IsSame == 'False'" btnType="accent-outlined" class="rounded-huge" @click="preFillSource = ''; preFillTarget = e.attributeValues.EventDate; preFillModalOption = 'Event Online'; preFillModal = true;">Prefill Section</rck-btn>
             </h3>
-            <tcc-online :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('online', idx)" @validation-change="validationChange" :ref="getRefName('online', idx)" :readonly="readonlySections.includes('Online')" :isMultiOccurrence="viewModel.events.length > 1"></tcc-online>
+            <tcc-online :e="e" :showValidation="pagesViewed.includes(idx + 2)" :refName="getRefName('online', idx)" @validation-change="validationChange" :ref="getRefName('online', idx)" :readonly="detailReadonlySections[idx]?.readonlySections?.includes('Online')" :isMultiOccurrence="viewModel.events.length > 1"></tcc-online>
             <br/>
           </template>
-          <template v-if="viewModel.events.length > 1">
+          <template v-if="viewModel.events.length > 1 && (viewModel.request?.attributeValues?.NeedsWebCalendar == 'True' || viewModel.request?.attributeValues?.NeedsProduction == 'True' || viewModel.request?.attributeValues?.NeedsWorship == 'True')">
             <h3 class="text-primary">Additional Information</h3>
             <tcc-occ-svcs :e="e" :request="viewModel.request" :showValidation="pagesViewed.includes(idx + 2)" :readonlySections="readonlySections" :refName="getRefName('addinfo', idx)" @validation-change="validationChange" :ref="getRefName('addinfo', idx)" :isMultiOccurrence="viewModel.events.length > 1"></tcc-occ-svcs>
             <br/>
@@ -1420,7 +1425,7 @@ export default defineComponent({
     <template v-if="step == publicityStep">
       <template v-if="viewModel.request.attributeValues.NeedsWebCalendar == 'True'">
         <h3 class="text-primary">Web Calendar Information</h3>
-        <tcc-web-cal :request="viewModel.request" :originalRequest="viewModel.originalRequest" :ministries="viewModel.ministries" :showValidation="pagesViewed.includes(publicityStep)" refName="webcal" @validation-change="validationChange" ref="webcal" :readonly="readonlySections.includes('Calendar')"></tcc-web-cal>
+        <tcc-web-cal :request="viewModel.request" :originalRequest="viewModel.originalRequest" :ministries="viewModel.ministries" :showValidation="pagesViewed.includes(publicityStep)" refName="webcal" @validate="validate" @validation-change="validationChange" ref="webcal" :readonly="readonlySections.includes('Calendar')"></tcc-web-cal>
       </template>
       <template v-if="viewModel.request.attributeValues.NeedsPublicity == 'True'">
         <h3 class="text-primary">Publicity Information</h3>
@@ -1446,6 +1451,7 @@ export default defineComponent({
   </div>
   <div class="row steps-action pt-2">
     <div class="col">
+      <rck-btn @click="validate" btnType="accent-outlined">Validate</rck-btn>
       <rck-btn v-if="step == lastStep" class="pull-right" btnType="primary" @click="submitRequest" :disabled="canSubmit || isSubmitting || !viewModel.permissions.includes('Edit')">
         <template v-if="viewModel.request.attributeValues.RequestStatus == 'Approved'">
           Request Changes

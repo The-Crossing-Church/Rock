@@ -1587,7 +1587,7 @@ namespace Rock.Blocks.Plugins.EventForm
                 message = "<p>" + p.FullName + " is requesting changes to your support service on their request, " + item.Title + "</p>" +
                     "<p>The status of the following support services have been changed back to Pending and are waiting for your review.</p>" +
                     "<ul>";
-                for ( int k = 0; k < relevantServices.Count; k++ )
+                for ( int k = 0; k < relevantServices.Count(); k++ )
                 {
                     message += "<li>" + relevantServices[k].section + "</li>";
                     item.SetAttributeValue( relevantServices[k].status, "0" );

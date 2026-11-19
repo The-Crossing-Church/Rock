@@ -226,7 +226,7 @@ export default defineComponent({
       <template v-if="regQuestions.length > 0">
         <ul>
           <li v-for="(rq, idx) in regQuestions" :key="idx">
-            <b>{{rq.QuestionName}}:</b> {{getFieldType(rq)}} <i class="fa fa-pencil text-accent hover" @click="edit(idx)"></i>
+            <b>{{rq.QuestionName}}:</b> {{getFieldType(rq)}} <i class="fa fa-pencil text-accent hover" v-if="!readonly" @click="edit(idx)"></i>
           </li>
         </ul>
       </template>

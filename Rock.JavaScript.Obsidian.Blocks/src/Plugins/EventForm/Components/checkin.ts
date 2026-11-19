@@ -14,7 +14,7 @@ import rules from "../Rules/rules"
 
 
 export default defineComponent({
-  name: "EventForm.Components.Registration",
+  name: "EventForm.Components.Checkin",
   components: {
     "rck-field": RockField,
     "rck-form": RockForm,
