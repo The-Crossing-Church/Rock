@@ -1,13 +1,15 @@
 import { defineComponent, PropType } from "vue"
 import { ContentChannelItemBag } from "../../ViewModels/contentChannelItemBag"
+import { DateTime } from "luxon"
 import RockField from "@Obsidian/Controls/rockField.obs"
 import RockForm from "@Obsidian/Controls/rockForm.obs"
 import Validator from "./validator"
 import Toggle from "./toggle"
 import rules from "../Rules/rules"
+import helper from "../../EventDashboard/Helpers/helper"
 
 export default defineComponent({
-  name: "EventForm.Components.ChildcareCatering",
+  name: "EventForm.Components.OccurrenceServices",
   components: {
     "rck-field": RockField,
     "rck-form": RockForm,
@@ -31,6 +33,7 @@ export default defineComponent({
   data() {
     return {
       rules: rules,
+      helper: helper,
       errors: [] as Record<string, string>[]
     };
   },
@@ -48,6 +51,23 @@ export default defineComponent({
     },
     validationChange(errs: Record<string, string>[]) {
       this.errors = errs
+    },
+    isSectionValid(attr: string) {
+      let section = this.helper.sectionInfo.filter(si => si.attr == attr) as any
+      if(section && section.length > 0) {
+        section = section[0]
+      }
+      let eventDate = helper.dateFromString(this.e?.attributeValues?.EventDate)
+      let compareDate = DateTime.now()
+      if(this.request?.attributeValues?.RequestStatus != 'Draft' && this.request?.startDateTime) {
+        compareDate = helper.dateFromString(this.request.startDateTime)
+      }
+      compareDate = compareDate.startOf("day").plus({ days: section.days })
+      let isValid = compareDate <= eventDate
+      if(this.request?.attributeValues?.RequestStatus == 'Draft' && !isValid && this.e?.attributeValues) {
+        this.e.attributeValues[attr] = 'False'
+      }
+      return isValid
     }
   },
   watch: {
@@ -75,7 +95,7 @@ export default defineComponent({
       <tcc-switch
         v-model="e.attributeValues.NeedsWebCalendar"
         :label="e.attributes.NeedsWebCalendar.name"
-        v-if="!readonlySections.includes('Calendar')"
+        v-if="isSectionValid('NeedsWebCalendar') || e.attributeValues.NeedsWebCalendar == 'True'"
         id="boolNeedsWebCalendar"
       ></tcc-switch>
       <rck-field
@@ -91,7 +111,7 @@ export default defineComponent({
       <tcc-switch
         v-model="e.attributeValues.NeedsPublicity"
         :label="e.attributes.NeedsPublicity.name"
-        v-if="!readonlySections.includes('Publicity')"
+        v-if="isSectionValid('NeedsPublicity') || e.attributeValues.NeedsPublicity == 'True'"
         id="boolNeedsPublicity"
       ></tcc-switch>
       <rck-field
@@ -109,7 +129,7 @@ export default defineComponent({
       <tcc-switch
         v-model="e.attributeValues.NeedsProductionAccommodations"
         :label="e.attributes.NeedsProductionAccommodations.name"
-        v-if="!readonlySections.includes('Production')"
+        v-if="isSectionValid('NeedsProductionAccommodations') || e.attributeValues.NeedsProductionAccommodations == 'True'"
         id="boolNeedsProductionAccommodations"
       ></tcc-switch>
       <rck-field
@@ -125,7 +145,7 @@ export default defineComponent({
       <tcc-switch
         v-model="e.attributeValues.NeedsWorship"
         :label="e.attributes.NeedsWorship.name"
-        v-if="!readonlySections.includes('Worship')"
+        v-if="isSectionValid('NeedsWorship') || e.attributeValues.NeedsWorship == 'True'"
         id="boolNeedsWorship"
       ></tcc-switch>
       <rck-field

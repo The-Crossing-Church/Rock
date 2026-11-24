@@ -1451,7 +1451,7 @@ export default defineComponent({
   </div>
   <div class="row steps-action pt-2">
     <div class="col">
-      <rck-btn @click="validate" btnType="accent-outlined">Validate</rck-btn>
+      <!-- <rck-btn @click="validate" btnType="accent-outlined">Validate</rck-btn> -->
       <rck-btn v-if="step == lastStep" class="pull-right" btnType="primary" @click="submitRequest" :disabled="canSubmit || isSubmitting || !viewModel.permissions.includes('Edit')">
         <template v-if="viewModel.request.attributeValues.RequestStatus == 'Approved'">
           Request Changes
