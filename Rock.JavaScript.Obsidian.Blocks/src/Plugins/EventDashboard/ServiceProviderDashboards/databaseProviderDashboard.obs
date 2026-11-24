@@ -274,13 +274,15 @@ export default defineComponent({
         el.style.display = 'block'
       }
       this.loadDetails(item.idKey).then((response: any) => {
-        if(response.data) {
-          if(response.data.isError) {
-            // this.toastMessage = response.data.errorMessage
-            // let el = document.getElementById('toast')
-            // el?.classList.add("show")
-            // return
+        if(response.isError) {
+          this.toast = {
+            message: response.errorMessage,
+            class: "show",
+            title: "System Exception",
+            titleClass: "toast-header text-red",
+            iconClass: "fas fa-exclamation-triangle mr-1" 
           }
+        } else if(response.data) {
           response.data.details?.forEach((detail: any) => {
             detail.detail.changes = detail.detailChanges
           })
@@ -316,6 +318,15 @@ export default defineComponent({
           } else {
             this.categoriesWithChanges = []
           }
+        }
+      }).catch((ex) => {
+        console.log(ex)
+        this.toast = {
+          message: ex,
+          class: "show",
+          title: "System Exception",
+          titleClass: "toast-header text-red",
+          iconClass: "fas fa-exclamation-triangle mr-1" 
         }
       }).finally(() => {
         if(el) {

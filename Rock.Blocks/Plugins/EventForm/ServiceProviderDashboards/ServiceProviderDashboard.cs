@@ -894,8 +894,9 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
                 var p = GetCurrentPerson();
                 bool isEventAdmin = CheckSecurityRole( context, AttributeKeyBase.EventAdminRole );
                 bool isRoomAdmin = CheckSecurityRole( context, AttributeKeyBase.RoomAdminRole );
+                bool isSSP = CheckSecurityRole( context, AttributeKeyBase.ProviderRole );
                 Guid? sharedRequestGroupTypeGuid = GetAttributeValue( AttributeKeyBase.SharingGroupType ).AsGuidOrNull();
-                return EventFormHelper.CheckRequestPermissions( request, p, isEventAdmin, isRoomAdmin, sharedRequestGroupTypeGuid, GetAttributeValue( AttributeKeyBase.SharedWithAttrKey ) );
+                return EventFormHelper.CheckRequestPermissions( request, p, isEventAdmin, isRoomAdmin, isSSP, sharedRequestGroupTypeGuid, GetAttributeValue( AttributeKeyBase.SharedWithAttrKey ), GetAttributeValue( AttributeKeyBase.SupportServicesList ).AsGuidOrNull(), GetAttributeValue( AttributeKeyBase.ProviderRole ).AsGuidOrNull() );
             }
         }
 

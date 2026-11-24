@@ -1281,7 +1281,7 @@ namespace Rock.Blocks.Plugins.EventForm
                 bool isEventAdmin = CheckSecurityRole( context, AttributeKey.EventAdminRole );
                 bool isRoomAdmin = CheckSecurityRole( context, AttributeKey.RoomAdminRole );
                 Guid? sharedRequestGroupTypeGuid = GetAttributeValue( AttributeKey.SharingGroupType ).AsGuidOrNull();
-                RequestAuthorization auth = helper.CheckRequestPermissions( request, p, isEventAdmin, isRoomAdmin, sharedRequestGroupTypeGuid, GetAttributeValue( AttributeKey.SharedWithAttr ) );
+                RequestAuthorization auth = helper.CheckRequestPermissions( request, p, isEventAdmin, isRoomAdmin, false, sharedRequestGroupTypeGuid, GetAttributeValue( AttributeKey.SharedWithAttr ) );
                 List<string> permissions = new List<string>();
                 if ( auth.CanEdit )
                 {

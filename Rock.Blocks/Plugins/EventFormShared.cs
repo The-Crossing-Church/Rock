@@ -659,7 +659,7 @@ namespace Rock.Blocks.Plugins.EventForm
             return message;
         }
 
-        public RequestAuthorization CheckRequestPermissions( ContentChannelItem request, Person p, bool isEventAdmin, bool isRoomAdmin, Guid? sharedRequestGroupTypeGuid, string sharedWithAttributeKey )
+        public RequestAuthorization CheckRequestPermissions( ContentChannelItem request, Person p, bool isEventAdmin, bool isRoomAdmin, bool isSSP, Guid? sharedRequestGroupTypeGuid, string sharedWithAttributeKey, Guid? sspList = null, Guid? sspRole = null )
         {
             RequestAuthorization auth = new RequestAuthorization() { RequestId = request.Id, CanEdit = false, CanView = false };
 
@@ -679,6 +679,28 @@ namespace Rock.Blocks.Plugins.EventForm
                 }
                 else
                 {
+                    if ( isSSP && sspRole.HasValue && sspList.HasValue )
+                    {
+                        //SSP for a Request involving their service
+                        string requestStatus = request.GetAttributeValue( "RequestStatus" );
+                        if ( requestStatus != "Draft" && requestStatus != "Submitted" )
+                        {
+                            DefinedType sspDT = new DefinedTypeService( context ).Get( sspList.Value );
+                            sspDT.DefinedValues.LoadAttributes();
+                            foreach ( DefinedValue ssp in sspDT.DefinedValues )
+                            {
+                                Guid? role = ssp.GetAttributeValue( "SecurityRole" ).AsGuidOrNull();
+                                if ( role.HasValue && role.Value == sspRole.Value )
+                                {
+                                    string resourceKey = ssp.GetAttributeValue( "ServiceAttributeKey" );
+                                    if ( request.GetAttributeValue( resourceKey ) == "True" )
+                                    {
+                                        auth.CanView = true;
+                                    }
+                                }
+                            }
+                        }
+                    }
                     if ( sharedRequestGroupTypeGuid.HasValue )
                     {
                         var sharedRequestGT = new GroupTypeService( context ).Get( sharedRequestGroupTypeGuid.Value );
