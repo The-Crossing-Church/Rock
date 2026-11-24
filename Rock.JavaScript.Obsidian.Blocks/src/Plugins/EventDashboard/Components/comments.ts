@@ -135,6 +135,15 @@ export default defineComponent({
     },
     modelValue(val) {
       this.toggleNewComment(val)
+      if(!val) {
+        //reset tags when new comment is closed
+        this.tags = []
+        if(this.role == "Ministry") {
+          this.tags.push("Admin")
+        } else {
+          this.tags.push("Ministry")
+        }
+      }
     }
   },
   mounted() {

@@ -358,6 +358,7 @@ export default defineComponent({
             iconClass: "fas fa-exclamation-triangle mr-1" 
           }
         }
+        this.commentModal = false
       }).finally(() => {
         if(el) {
           el.style.display = 'none'

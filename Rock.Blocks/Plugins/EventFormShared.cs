@@ -779,6 +779,7 @@ namespace Rock.Blocks.Plugins.EventForm
             List<Person> users = new List<Person>();
             RockContext context = new RockContext();
             PersonService p_svc = new PersonService( context );
+            item.LoadAttributes();
             var sharedWithAttr = item.GetAttributeValue( sharedWithAttrKey );
             Guid? requestMinistry = item.GetAttributeValue( "Ministry" ).AsGuidOrNull();
             if ( sharedRequestGroupTypeGuid.HasValue )
