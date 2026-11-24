@@ -564,11 +564,132 @@ export default defineComponent({
     <tcc-childcare v-if="(sections == null || sections?.includes('Childcare')) && (request.attributeValues.NeedsChildCare == 'True' || ( request.changes && request.changes.attributeValues.NeedsChildCare == 'True' ))" :details="ci" :needsCatering="needsChildcareCatering" :index="idx" :requestValidation="requestValidation" :editCategories="editCategories"></tcc-childcare>
     <tcc-registration v-if="(sections == null || sections?.includes('Registration')) && (request.attributeValues.NeedsRegistration == 'True' || ( request.changes && request.changes.attributeValues.NeedsRegistration == 'True' ))" :details="ci" :index="idx" :requestValidation="requestValidation" :editCategories="editCategories"></tcc-registration>
     <tcc-online v-if="(sections == null || sections?.includes('Online')) && (request.attributeValues.NeedsOnline == 'True' || ( request.changes && request.changes.attributeValues.NeedsOnline == 'True' ))" :details="ci" :index="idx" :requestValidation="requestValidation" :editCategories="editCategories"></tcc-online>
+    <template v-if="request.attributeValues.NeedsWebCalendar == 'True' || request.attributeValues.NeedsPublicity == 'True' || request.attributeValues.NeedsProductionAccommodations == 'True' || request.attributeValues.NeedsWorship == 'True' || ( request.changes && ( request.changes.attributeValues.NeedsWebCalendar == 'True' || request.changes.attributeValues.NeedsPublicity == 'True' || request.changes.attributeValues.NeedsProductionAccommodations == 'True' || request.changes.attributeValues.NeedsWorship == 'True' ))">
+      <h4 class="text-accent">Additional Information</h4>
+      <div class="row">
+        <div v-if="(sections == null || sections?.includes('Web Calendar')) && (request.attributeValues.NeedsWebCalendar == 'True' || ( request.changes && request.changes.attributeValues.NeedsWebCalendar == 'True' ))" class="col col-xs-6">
+          <template v-if="ci.changes && ci.changes.attributeValues.NeedsWebCalendar != ci.attributeValues.NeedsWebCalendar">
+            <div class="row">
+              <div class="col col-xs-6">
+                <rck-field
+                  v-model="ci.attributeValues.NeedsWebCalendar"
+                  :attribute="ci.attributes.NeedsWebCalendar"
+                  class="text-red"
+                  :showEmptyValue="true"
+                ></rck-field>
+              </div>
+              <div class="col col-xs-6">
+                <rck-field
+                  v-model="ci.changes.attributeValues.NeedsWebCalendar"
+                  :attribute="ci.attributes.NeedsWebCalendar"
+                  class="text-primary hidden-label"
+                  :showEmptyValue="true"
+                ></rck-field>
+              </div>
+            </div>
+          </template>
+          <template v-else>
+            <rck-field
+              v-model="ci.attributeValues.NeedsWebCalendar"
+              :attribute="ci.attributes.NeedsWebCalendar"
+              :showEmptyValue="true"
+            ></rck-field>
+          </template>
+        </div>
+        <div v-if="(sections == null || sections?.includes('Publicity')) && (request.attributeValues.NeedsPublicity == 'True' || ( request.changes && request.changes.attributeValues.NeedsPublicity == 'True' ))" class="col col-xs-6">
+          <template v-if="ci.changes && ci.changes.attributeValues.NeedsPublicity != ci.attributeValues.NeedsPublicity">
+            <div class="row">
+              <div class="col col-xs-6">
+                <rck-field
+                  v-model="ci.attributeValues.NeedsPublicity"
+                  :attribute="ci.attributes.NeedsPublicity"
+                  class="text-red"
+                  :showEmptyValue="true"
+                ></rck-field>
+              </div>
+              <div class="col col-xs-6">
+                <rck-field
+                  v-model="ci.changes.attributeValues.NeedsPublicity"
+                  :attribute="ci.attributes.NeedsPublicity"
+                  class="text-primary hidden-label"
+                  :showEmptyValue="true"
+                ></rck-field>
+              </div>
+            </div>
+          </template>
+          <template v-else>
+            <rck-field
+              v-model="ci.attributeValues.NeedsPublicity"
+              :attribute="ci.attributes.NeedsPublicity"
+              :showEmptyValue="true"
+            ></rck-field>
+          </template>
+        </div>
+        <div v-if="(sections == null || sections?.includes('Production')) && (request.attributeValues.NeedsProductionAccommodations == 'True' || ( request.changes && request.changes.attributeValues.NeedsProductionAccommodations == 'True' ))" class="col col-xs-6">
+          <template v-if="ci.changes && ci.changes.attributeValues.NeedsProductionAccommodations != ci.attributeValues.NeedsProductionAccommodations">
+            <div class="row">
+              <div class="col col-xs-6">
+                <rck-field
+                  v-model="ci.attributeValues.NeedsProductionAccommodations"
+                  :attribute="ci.attributes.NeedsProductionAccommodations"
+                  class="text-red"
+                  :showEmptyValue="true"
+                ></rck-field>
+              </div>
+              <div class="col col-xs-6">
+                <rck-field
+                  v-model="ci.changes.attributeValues.NeedsProductionAccommodations"
+                  :attribute="ci.attributes.NeedsProductionAccommodations"
+                  class="text-primary hidden-label"
+                  :showEmptyValue="true"
+                ></rck-field>
+              </div>
+            </div>
+          </template>
+          <template v-else>
+            <rck-field
+              v-model="ci.attributeValues.NeedsProductionAccommodations"
+              :attribute="ci.attributes.NeedsProductionAccommodations"
+              :showEmptyValue="true"
+            ></rck-field>
+          </template>
+        </div>
+        <div v-if="(sections == null || sections?.includes('Worship')) && (request.attributeValues.NeedsWorship == 'True' || ( request.changes && request.changes.attributeValues.NeedsWorship == 'True' ))" class="col col-xs-6">
+          <template v-if="ci.changes && ci.changes.attributeValues.NeedsWorship != ci.attributeValues.NeedsWorship">
+            <div class="row">
+              <div class="col col-xs-6">
+                <rck-field
+                  v-model="ci.attributeValues.NeedsWorship"
+                  :attribute="ci.attributes.NeedsWorship"
+                  class="text-red"
+                  :showEmptyValue="true"
+                ></rck-field>
+              </div>
+              <div class="col col-xs-6">
+                <rck-field
+                  v-model="ci.changes.attributeValues.NeedsWorship"
+                  :attribute="ci.attributes.NeedsWorship"
+                  class="text-primary hidden-label"
+                  :showEmptyValue="true"
+                ></rck-field>
+              </div>
+            </div>
+          </template>
+          <template v-else>
+            <rck-field
+              v-model="ci.attributeValues.NeedsWorship"
+              :attribute="ci.attributes.NeedsWorship"
+              :showEmptyValue="true"
+            ></rck-field>
+          </template>
+        </div>
+      </div>
+    </template>
   </rck-panel>
   <tcc-web-cal v-if="(sections == null || sections?.includes('Web Calendar')) && (request.attributeValues.NeedsWebCalendar == 'True' || ( request.changes && request.changes.attributeValues.NeedsWebCalendar == 'True' ))" :request="request" :requestValidation="requestValidation" :editCategories="editCategories"></tcc-web-cal>
+  <tcc-publicity v-if="(sections == null || sections?.includes('Publicity')) && (request.attributeValues.NeedsPublicity == 'True' || ( request.changes && request.changes.attributeValues.NeedsPublicity == 'True' ))" :request="request" :requestValidation="requestValidation" :editCategories="editCategories"></tcc-publicity>
   <tcc-production v-if="(sections == null || sections?.includes('Production')) && (request.attributeValues.NeedsProductionAccommodations == 'True' || ( request.changes && request.changes.attributeValues.NeedsProductionAccommodations == 'True' ))" :request="request" :requestValidation="requestValidation" :editCategories="editCategories"></tcc-production>
   <tcc-worship v-if="(sections == null || sections?.includes('Worship')) && (request.attributeValues.NeedsWorship == 'True' || ( request.changes && request.changes.attributeValues.NeedsWorship == 'True' ))" :request="request" :requestValidation="requestValidation" :editCategories="editCategories"></tcc-worship>
-  <tcc-publicity v-if="(sections == null || sections?.includes('Publicity')) && (request.attributeValues.NeedsPublicity == 'True' || ( request.changes && request.changes.attributeValues.NeedsPublicity == 'True' ))" :request="request" :requestValidation="requestValidation" :editCategories="editCategories"></tcc-publicity>
   <div class="row" v-if="request.attributeValues.Notes != '' || (request.changes && request.changes.attributeValues.Notes != '')">
     <template v-if="request.changes && request.changes.attributeValues.Notes != request.attributeValues.Notes">
       <div class="col col-xs-6">

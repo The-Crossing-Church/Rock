@@ -62,6 +62,9 @@ export default defineComponent({
               if(this.needsCatering && categories.includes("Event Catering")) {
                 continue
               }
+              if(this.details?.attributeValues?.NeedsOpsAccommodations == 'False' && key != 'NeedsOpsAccommodations') {
+                continue
+              }
               if(!this.sectionIsValid && this.requestValidation) {
                 let errs = [] as any[]
                 this.requestValidation?.errors?.forEach(err => { 

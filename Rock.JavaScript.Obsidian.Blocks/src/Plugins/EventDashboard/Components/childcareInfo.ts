@@ -37,6 +37,9 @@ export default defineComponent({
               if(categories.includes("Event Childcare Catering") || categories.includes("Event Childcare Registration") ) {
                 continue
               } 
+              if(this.details?.attributeValues?.NeedsChildCare == 'False' && key != 'NeedsChildCare') {
+                continue
+              }
               item.value = this.details.attributeValues[key]
               if(this.details.changes && this.details.changes.attributeValues[key] != this.details.attributeValues[key]) {
                 item.changeValue = this.details.changes.attributeValues[key]

@@ -33,6 +33,9 @@ export default defineComponent({
                 item.changeValue = this.details.changes.attributeValues[key]
                 item.class = 'text-red'
               }
+              if(this.details?.attributeValues?.NeedsOnline == 'False' && key != 'NeedsOnline') {
+                continue
+              }
               if(!this.sectionIsValid && this.requestValidation) {
                 let errs = [] as any[]
                 this.requestValidation?.errors?.forEach(err => { 

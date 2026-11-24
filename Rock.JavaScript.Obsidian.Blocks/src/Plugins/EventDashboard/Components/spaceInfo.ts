@@ -35,6 +35,9 @@ export default defineComponent({
             let item = { attr: attr, value: "", changeValue: "", class: "", errors: [] as any[] }
             let categories = attr.categories.map((c: any) => c.name)
             if(categories.includes("Event Space")) {
+              if(this.details?.attributeValues?.NeedsSpace == 'False' && key != 'NeedsSpace') {
+                continue
+              }
               if(key == "Tablecloths") {
                 if(this.roomSetUp.length > 0) {
                   item.value = this.details.attributeValues[key]

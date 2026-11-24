@@ -1,6 +1,7 @@
 import { defineComponent, PropType } from "vue"
 import RockField from "@Obsidian/Controls/rockField.obs"
 import RockLabel from "@Obsidian/Controls/rockLabel.obs"
+import helper from "../Helpers/helper"
 
 type ListItem = {
   text: string,
@@ -9,112 +10,118 @@ type ListItem = {
 }
 
 export default defineComponent({
-    name: "EventDashboard.Components.Modal.CateringInfo",
-    components: {
-      "rck-field": RockField,
-      "rck-lbl": RockLabel
-    },
-    props: {
-      details: Object,
-      drinks: Array,
-      needsSpace: Boolean,
-      requestValidation: Object,
-      index: Number
-    },
-    setup() {
+  name: "EventDashboard.Components.Modal.CateringInfo",
+  components: {
+    "rck-field": RockField,
+    "rck-lbl": RockLabel
+  },
+  props: {
+    details: Object,
+    drinks: Array,
+    needsSpace: Boolean,
+    requestValidation: Object,
+    index: Number
+  },
+  setup() {
 
-    },
-    data() {
-        return {
-          
-        };
-    },
-    computed: {
-      cateringAttrs() {
-        let attrs = [] as any[]
-        if(this.details?.attributes && this.details.attributeValues) {
-          for(let key in this.details.attributes) {
-            let attr = this.details.attributes[key]
-            let item = { attr: attr, value: "", changeValue: "", class: "", errors: [] as any[] }
-            let categories = attr.categories.map((c: any) => c.name)
-            if(categories.includes("Event Catering")) {
-              item.value = this.details.attributeValues[key]
-              if(this.details.changes && this.details.changes.attributeValues[key] != this.details.attributeValues[key]) {
-                item.changeValue = this.details.changes.attributeValues[key]
-                item.class = 'text-red'
-              }
-              if(this.needsSpace && categories.includes("Event Space")) {
-                continue
-              }
-              if(!this.sectionIsValid && this.requestValidation) {
-                let errs = [] as any[]
-                this.requestValidation?.errors?.forEach(err => { 
-                  let errorsApply = false
-                  if(err.ref.includes("_")) {
-                    let idx = err.ref.split("_")[1]
-                    if(idx == this.index) {
-                      errorsApply = true
-                    }
-                  } else {
+  },
+  data() {
+    return {
+      helper: helper
+    };
+  },
+  computed: {
+    cateringAttrs() {
+      let attrs = [] as any[]
+      if(this.details?.attributes && this.details.attributeValues) {
+        for(let key in this.details.attributes) {
+          let attr = this.details.attributes[key]
+          let item = { attr: attr, value: "", changeValue: "", class: "", errors: [] as any[] }
+          let categories = attr.categories.map((c: any) => c.name)
+          if(categories.includes("Event Catering")) {
+            item.value = this.details.attributeValues[key]
+            if(this.details.changes && this.details.changes.attributeValues[key] != this.details.attributeValues[key]) {
+              item.changeValue = this.details.changes.attributeValues[key]
+              item.class = 'text-red'
+            }
+            if(this.needsSpace && categories.includes("Event Space")) {
+              continue
+            }
+            if(this.details?.attributeValues?.NeedsCatering == 'False' && key != 'NeedsCatering') {
+              continue
+            }
+            if(!this.sectionIsValid && this.requestValidation) {
+              let errs = [] as any[]
+              this.requestValidation?.errors?.forEach(err => { 
+                let errorsApply = false
+                if(err.ref.includes("_")) {
+                  let idx = err.ref.split("_")[1]
+                  if(idx == this.index) {
                     errorsApply = true
                   }
-                  if(errorsApply) {
-                    errs.push(...err.errors.filter(e => {
-                      return e.name == item.attr.key
-                    }))
-                  }
-                })
-                if(errs && errs.length > 0) {
-                  item.class += ' label-red'
-                  item.errors = errs
+                } else {
+                  errorsApply = true
                 }
-              } 
-              attrs.push(item)
-            }
+                if(errorsApply) {
+                  errs.push(...err.errors.filter(e => {
+                    return e.name == item.attr.key
+                  }))
+                }
+              })
+              if(errs && errs.length > 0) {
+                item.class += ' label-red'
+                item.errors = errs
+              }
+            } 
+            attrs.push(item)
           }
         }
-        return attrs.sort((a,b) => a.attr.order - b.attr.order)
-      },
-      sectionIsValid() {
-        if(this.requestValidation?.invalidSections) {
-          if(this.requestValidation.invalidSections.includes("Catering")) {
-            let errs = this.cateringAttrs.map(i => i.errors).flat()
-            if(errs.length > 0) {
-              return false
-            }
-            return true
-          } else {
-            return true
-          }
-        }
-        return false
       }
+      return attrs.sort((a,b) => a.attr.order - b.attr.order)
     },
-    methods: {
-      getDrinkInfo(value: string) {
-        let item = JSON.parse(value) as ListItem
-        let guids = item.value.split(",")
-        let selectedDrinks = this.drinks?.filter((d: any) => {
-          return guids.includes(d.guid)
+    sectionIsValid() {
+      if(this.requestValidation?.invalidSections) {
+        if(this.requestValidation.invalidSections.includes("Catering")) {
+          let errs = this.cateringAttrs.map(i => i.errors).flat()
+          if(errs.length > 0) {
+            return false
+          }
+          return true
+        } else {
+          return true
+        }
+      }
+      return false
+    },
+    hideSection() {
+      return this.details?.attributeValues?.NeedsCatering == 'False'
+    }
+  },
+  methods: {
+    getDrinkInfo(value: string) {
+      let item = JSON.parse(value) as ListItem
+      let guids = item.value.split(",")
+      let selectedDrinks = this.drinks?.filter((d: any) => {
+        return guids.includes(d.guid)
+      })
+      let expectedAttendance = this.details?.attributeValues.ExpectedAttendance
+      if(selectedDrinks && selectedDrinks.length > 0) {
+        return selectedDrinks.map((d: any) => { 
+          let amount = Math.ceil(expectedAttendance/d.attributeValues.NumberofPeople.value)
+          let term = amount > 1 ? d.attributeValues.UnitTerm.value + "s" : d.attributeValues.UnitTerm.value
+          return `${d.value}` 
+          // return `${d.value}: ${amount} ${term}` 
         })
-        let expectedAttendance = this.details?.attributeValues.ExpectedAttendance
-        if(selectedDrinks && selectedDrinks.length > 0) {
-          return selectedDrinks.map((d: any) => { 
-            let amount = Math.ceil(expectedAttendance/d.attributeValues.NumberofPeople.value)
-            let term = amount > 1 ? d.attributeValues.UnitTerm.value + "s" : d.attributeValues.UnitTerm.value
-            return `${d.value}` 
-            // return `${d.value}: ${amount} ${term}` 
-          })
-        }
       }
-    },
-    watch: {
-      
-    },
-    mounted() {
-      
-    },
-    template: `
+    }
+  },
+  watch: {
+    
+  },
+  mounted() {
+    
+  },
+  template: `
 <div>
   <h4 class="text-accent">
     Catering Information
