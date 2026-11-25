@@ -307,7 +307,7 @@ export default defineComponent({
 <div>
   <div class="row mb-2">
     <div class="col col-xs-12">
-      <h4>
+      <h4 class="request-title">
         <template v-if="request.changes && request.title != request.changes.title">
           <span class="text-red">{{request.title}}</span>: <span class="text-primary">{{request.changes.title}}</span>
         </template>
@@ -738,13 +738,13 @@ export default defineComponent({
     </div>
   </template>
 </div>
-<rck-modal v-model="modal" width="50%" :clickBackdropToClose="true" :isFooterHidden="true" modalWrapperClasses="modal-no-header">
+<rck-modal v-model="modal" isCloseButtonHidden cancelText="" :clickBackdropToClose="true" modalWrapperClasses="modal-no-header">
   <template v-if="request.changes && request.changes.attributeValues.EventDates.split(',').map(d => d.trim()).join(',') != request.attributeValues.EventDates.split(',').map(d => d.trim()).join(',')">
     <div class="row">
-      <div class="col col-xs-6">
+      <div class="col col-xs-12 col-md-6">
         <tcc-date v-model="request.changes.attributeValues.EventDates" :multiple="true" :readonly="true"></tcc-date>
       </div>
-      <div class="col col-xs-6">
+      <div class="col col-xs-12 col-md-6 col-ct-lg-2">
         <div v-for="d in changeDates">
           <span :class="d.class">{{d.date}}</span>
         </div>
@@ -753,18 +753,35 @@ export default defineComponent({
   </template>
   <template v-else>
     <div class="row">
-      <div class="col col-xs-6">
+      <div class="col col-xs-12 col-md-6">
         <tcc-date v-model="request.attributeValues.EventDates" :multiple="true" :readonly="true"></tcc-date>
       </div>
-      <div class="col col-xs-6">
+      <div class="col col-xs-12 col-md-6 col-ct-lg-2">
         <div v-for="d in eventDates">
           {{d}}
         </div>
       </div>
     </div>
   </template>
+  <template #customButtons>
+    <div class="btn-spacer"></div>
+    <rck-btn btnType="default" @click="modal = false;">
+      <i class="mr-1 ti ti-window-minimize"></i>
+      Close
+    </rck-btn>
+  </template>
 </rck-modal>
 <v-style>
+  @media (min-width: 1200px) {
+    .col-ct-lg-2 {
+      column-count: 2;
+    }
+  }
+  @media (max-width: 768px) {
+    .request-title {
+      margin-top: 40px;
+    }
+  }
   .status-box {
     padding: 4px 8px;
     border: 2px solid;
