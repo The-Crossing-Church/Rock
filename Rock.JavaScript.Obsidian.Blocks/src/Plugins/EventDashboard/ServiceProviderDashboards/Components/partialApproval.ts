@@ -54,6 +54,26 @@ export default defineComponent({
       }
       return attrs
     },
+    worshipChanges() {
+      let attrs = [] as any[]
+      if(this.request?.attributes && this.request?.attributeValues && this.request?.changes?.attributeValues) {
+        for(let key in this.request.attributes) {
+          let attr = this.request.attributes[key]
+          let item = { attr: attr, value: "", changeValue: null }
+          let categories = attr.categories.map((c: any) => c.name)
+          if(categories.includes("Event Worship")) {
+            item.value = this.request.attributeValues[key]
+            if(this.request.changes && this.request.changes?.attributeValues[key] != this.request.attributeValues[key]) {
+              item.changeValue = this.request.changes.attributeValues[key]
+            }
+            if(item.changeValue != null && item.value != item.changeValue) {
+              attrs.push(item)
+            }
+          }
+        }
+      }
+      return attrs
+    },
     publicityChanges() {
       let attrs = [] as any[]
       if(this.request?.attributes && this.request?.attributeValues && this.request?.changes?.attributeValues) {
@@ -204,6 +224,16 @@ export default defineComponent({
       v-on:denied="denyRequestAttribute(i.attr.key)"
     ></tcc-pa-val>
   </template>
+  <template v-if="request.attributeValues.WebCalendarDescription != request.changes.attributeValues.WebCalendarDescription">
+    <h4 class="text-accent">Web Calendar</h4>
+    <tcc-pa-val 
+      :attribute="request.attributes.WebCalendarDescription"
+      :originalValue="request.attributeValues.WebCalendarDescription"
+      :newValue="request.changes.attributeValues.WebCalendarDescription"
+      v-on:approved="approveRequestAttribute(request.attributes.WebCalendarDescription.key)"
+      v-on:denied="denyRequestAttribute(request.attributes.WebCalendarDescription.key)"
+    ></tcc-pa-val>
+  </template>
   <template v-if="productionTechChanges.length > 0">
     <h4 class="text-accent">Production Accommodations</h4>
     <tcc-pa-val 
@@ -216,14 +246,16 @@ export default defineComponent({
       v-on:denied="denyRequestAttribute(i.attr.key)"
     ></tcc-pa-val>
   </template>
-  <template v-if="request.attributeValues.WebCalendarDescription != request.changes.attributeValues.WebCalendarDescription">
-    <h4 class="text-accent">Web Calendar</h4>
+  <template v-if="worshipChanges.length > 0">
+    <h4 class="text-accent">Worship</h4>
     <tcc-pa-val 
-      :attribute="request.attributes.WebCalendarDescription"
-      :originalValue="request.attributeValues.WebCalendarDescription"
-      :newValue="request.changes.attributeValues.WebCalendarDescription"
-      v-on:approved="approveRequestAttribute(request.attributes.WebCalendarDescription.key)"
-      v-on:denied="denyRequestAttribute(request.attributes.WebCalendarDescription.key)"
+      v-for="(i, idx) in worshipChanges"
+      :key="idx"
+      :attribute="i.attr"
+      :originalValue="i.value"
+      :newValue="i.changeValue"
+      v-on:approved="approveRequestAttribute(i.attr.key)"
+      v-on:denied="denyRequestAttribute(i.attr.key)"
     ></tcc-pa-val>
   </template>
   
