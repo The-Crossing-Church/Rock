@@ -724,7 +724,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
                         if ( action == "Original" )
                         {
                             //Use Originally Approved
-                            item.SetAttributeValue( "RequestStatus", "Approved" );
+                            item.SetAttributeValue( "RequestStatus", "Pending Confirmation" );
                             item.SaveAttributeValue( "RequestStatus" );
                         }
                         else if ( action == "Cancelled" )

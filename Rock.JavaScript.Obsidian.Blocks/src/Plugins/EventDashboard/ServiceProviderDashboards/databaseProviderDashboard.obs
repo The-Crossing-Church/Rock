@@ -97,7 +97,7 @@ export default defineComponent({
 
     let defaultFilters = {
       title: "",
-      statuses: [ "Approved" ],
+      statuses: [ "Confirmed", "Pending Confirmation" ],
       resources: [] as string[],
       ministry: "",
       submitter: "",
@@ -220,7 +220,9 @@ export default defineComponent({
             //before the SSP can take action on the status of the support service
             let statusKey = info.status
             let statusAttr = this.selected?.attributes[statusKey] as any
-            if(statusAttr) {
+            let serviceKey = info.attr
+            let service = this.selected?.attributeValues[serviceKey]
+            if(statusAttr && service == 'True') {
               let options = JSON.parse(statusAttr.configurationValues.values)
               let status = this.selected?.attributeValues[statusKey]
               let currentStatus = options.filter(opt => opt.value == status)

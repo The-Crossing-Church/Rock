@@ -283,7 +283,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
                         item.SetAttributeValue( approved[i], changes.GetAttributeValue( approved[i] ) );
                     }
                 }
-                item.SetAttributeValue( "RequestStatus", "Approved" );
+                item.SetAttributeValue( "RequestStatus", "Pending Confirmation" );
                 List<String> resources = new List<string>();
                 if ( item.GetAttributeValue( "NeedsSpace" ) == "True" )
                 {
@@ -482,7 +482,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
                 item.ModifiedDateTime = RockDateTime.Now;
                 if ( currentStatus == "Pending Changes" )
                 {
-                    if ( status == "Approved" || status == "In Progress" )
+                    if ( status == "Pending Confirmation" || status == "Confirmed" || status == "In Progress" )
                     {
                         //From Pending to Approved, update all attribute values and delete the pending changes items 
                         var changesAssoc = item.ChildItems.FirstOrDefault( ci => ci.ChildContentChannelItem.ContentChannelId == EventChangesContentChannelId );
@@ -539,7 +539,7 @@ namespace Rock.Blocks.Plugins.EventDashboard
                 item.SetAttributeValue( requestStatusAttrKey, status );
                 item.SaveAttributeValue( requestStatusAttrKey );
 
-                if ( status == "Denied" || ( status == "Proposed Changes Denied" && denyWithComments ) || status == "Approved" )
+                if ( status == "Denied" || ( status == "Proposed Changes Denied" && denyWithComments ) || status == "Pending Confirmation" || status == "Confirmed" )
                 {
                     url = LaunchWorkflow( item.Id, status );
                 }

@@ -319,7 +319,7 @@ namespace Rock.Blocks.Plugins.EventForm
                 ContentChannelItem item = new ContentChannelItemService( context ).Get( r.id );
                 item.LoadAttributes();
                 string currentStatus = item.GetAttributeValue( "RequestStatus" );
-                if ( originalStatus == "Approved" || currentStatus == "Approved" )
+                if ( originalStatus == "Pending Confirmation" || currentStatus == "Pending Confirmation" || originalStatus == "Confirmed" || currentStatus == "Confirmed" )
                 {
                     SubmittedNotifications( item );
                     SubmittedConfirmation( item );
@@ -490,7 +490,7 @@ namespace Rock.Blocks.Plugins.EventForm
                 string status = "";
                 if ( viewModel.request.AttributeValues.TryGetValue( "RequestStatus", out status ) )
                 {
-                    if ( status == "Approved" )
+                    if ( status == "Pending Confirmation" || status == "Confirmed" )
                     {
                         viewModel.originalRequest = viewModel.request;
                         viewModel.request.ContentChannelId = EventChangesContentChannelId;
@@ -532,7 +532,7 @@ namespace Rock.Blocks.Plugins.EventForm
                 var eventAttr = attr_svc.Get( EventDatesAttrGuid );
                 var requestAttr = attr_svc.Get( RequestStatusAttrGuid );
                 var qryItems = svc.Queryable().Where( cci => cci.ContentChannelId == EventContentChannelId );
-                var qryStatusAttrs = av_svc.Queryable().Where( av => av.AttributeId == requestAttr.Id && ( av.Value == "In Progress" || av.Value == "Approved" || av.Value == "Pending Changes" || av.Value == "Proposed Changes Denied" || av.Value == "Changes Accepted by User" ) );
+                var qryStatusAttrs = av_svc.Queryable().Where( av => av.AttributeId == requestAttr.Id && ( av.Value == "In Progress" || av.Value == "Pending Confirmation" || av.Value == "Confirmed" || av.Value == "Pending Changes" || av.Value == "Proposed Changes Denied" || av.Value == "Changes Accepted by User" ) );
                 //Filter to Active Requests
                 qryItems = qryItems.Join( qryStatusAttrs,
                     i => i.Id,
@@ -733,7 +733,8 @@ namespace Rock.Blocks.Plugins.EventForm
                     {
                         original.SetAttributeValue( av.Key, item.AttributeValues[av.Key].Value );
                     }
-                    original.SetAttributeValue( "RequestStatus", "Approved" );
+                    //Pre-Approval means there are no Support Services so can skip Pending Confirmation
+                    original.SetAttributeValue( "RequestStatus", "Confirmed" );
                     original.SaveAttributeValues();
                 }
                 cciSvc.Delete( item );
@@ -761,7 +762,7 @@ namespace Rock.Blocks.Plugins.EventForm
             }
             else
             {
-                if ( viewModel.ContentChannelId == EventChangesContentChannelId && currentStatus == "Approved" )
+                if ( viewModel.ContentChannelId == EventChangesContentChannelId && ( currentStatus == "Pending Confirmation" || currentStatus == "Confirmed" ) )
                 {
                     if ( isPreApproved != "True" )
                     {
@@ -1182,7 +1183,7 @@ namespace Rock.Blocks.Plugins.EventForm
                         item.SetAttributeValue( "IsPreApproved", "True" );
                         if ( isSubmission ) //We were pre-approving when people tried to save drafts, need to not do that. 
                         {
-                            item.SetAttributeValue( "RequestStatus", "Approved" );
+                            item.SetAttributeValue( "RequestStatus", "Confirmed" );
                             item.SaveAttributeValue( "RequestStatus" );
                         }
                     }

@@ -13,9 +13,9 @@ const helper = {
     { attr: "NeedsRegistration",             occ_attr: "NeedsRegistration",             cat: "Event Registration",            section: "Registration",           type: "Registration",       status: "DatabaseStatus",              ssp: "Database",   days: 14 },
     { attr: "NeedsCheckin",                  occ_attr: "NeedsAttendanceOccurrence",     cat: "Event Check-in",                section: "Check-in",               type: "Check-in",           status: "DatabaseStatus",              ssp: "Database",   days: 14 },
     { attr: "NeedsPublicity",                occ_attr: "NeedsPublicity",                cat: "Event Publicity",               section: "Publicity",              type: "Publicity",          status: "PublicityStatus",             ssp: "Publicity",  days: 42 },
+    { attr: "NeedsWebCalendar",              occ_attr: "NeedsWebCalendar",              cat: "Event Calendar",                section: "Calendar",               type: "Web Calendar",       status: "PublicityStatus",             ssp: "Publicity",  days: 14 },
     { attr: "NeedsProductionAccommodations", occ_attr: "NeedsProductionAccommodations", cat: "Event Production",              section: "Production",             type: "Production",         status: "ProductionStatus",            ssp: "Production", days: 14 },
-    { attr: "NeedsWorship",                  occ_attr: "NeedsWorship",                  cat: "Event Worship",                 section: "Worship",                type: "Worship",            status: "WorshipStatus",               ssp: "Worship",    days: 14 },
-    { attr: "NeedsWebCalendar",              occ_attr: "NeedsWebCalendar",              cat: "Event Calendar",                section: "Calendar",               type: "Web Calendar",       status: "PublicityStatus",             ssp: "Publicity",  days: 14 }
+    { attr: "NeedsWorship",                  occ_attr: "NeedsWorship",                  cat: "Event Worship",                 section: "Worship",                type: "Worship",            status: "WorshipStatus",               ssp: "Worship",    days: 14 }
   ],
   requestStatuses: [
     { text: "Draft",                    value: "Draft"                    },

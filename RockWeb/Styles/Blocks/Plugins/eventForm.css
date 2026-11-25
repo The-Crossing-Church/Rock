@@ -15,6 +15,10 @@
   --color-pendingchanges-shade: color-mix(in srgb, var(--color-pendingchanges) 100%, #000 var(--shade-black-percentage));
   --color-pendingchanges-tint: color-mix(in srgb, var(color-pendingchanges) 50%, transparent var(--tint-white-percentage)); 
 
+  --color-pendingconfirmation: #009a96;
+  --color-pendingconfirmation-shade: color-mix(in srgb, var(--color-pendingconfirmation) 100%, #000 var(--shade-black-percentage));
+  --color-pendingconfirmation-tint: color-mix(in srgb, var(color-pendingconfirmation) 50%, transparent var(--tint-white-percentage)); 
+
   --color-cancelled: #9e9e9e;
   --color-cancelled-shade: color-mix(in srgb, var(--color-cancelled) 100%, #000 var(--shade-black-percentage));
   --color-cancelled-tint: color-mix(in srgb, var(color-cancelled) 50%, transparent var(--tint-white-percentage)); 
@@ -83,7 +87,7 @@
   background-color: var(--color-draft);
   border-color: var(--color-draft);
 }
-.btn-accent, .btn-approved {
+.btn-accent, .btn-approved, .btn-confirmed {
   background-color: var(--color-accent);
   border-color: var(--color-accent);
 }
@@ -99,6 +103,10 @@
 .btn-pendingchanges, .btn-med-blue {
   background-color: var(--color-pendingchanges);
   border-color: var(--color-pendingchanges);
+}
+.btn-pendingconfirmation, .btn-teal {
+  background-color: var(--color-pendingconfirmation);
+  border-color: var(--color-pendingconfirmation);
 }
 .btn-cancelled, .btn-cancelledbyuser, .btn-grey {
   background-color: var(--color-cancelled);
@@ -116,7 +124,7 @@
   background-color: var(--color-primary-shade);  /* rgba(52, 118, 137, .85); */
   border-color: var(--color-primary-shade);
 }
-.btn-accent:focus, .btn-accent:hover, .btn-approved:focus, .btn-approved:hover {
+.btn-accent:focus, .btn-accent:hover, .btn-approved:focus, .btn-approved:hover, .btn-confirmed:focus, .btn-confirmed:hover {
   background-color: var(--color-accent-shade); /* hsl(172deg 30% 55%); */
   border-color: var(--color-accent-shade);
 }
@@ -132,6 +140,10 @@
   background-color: var(--color-pendingchanges-shade); /* #5B999E; */
   border-color: var(--color-pendingchanges-shade);
 }
+.btn-pendingconfirmation:focus, .btn-pendingconfirmation:hover, .btn-teal:focus, .btn-teal:hover {
+  background-color: var(--color-pendingconfirmation-shade); /* #5B999E; */
+  border-color: var(--color-pendingconfirmation-shade);
+}
 .btn-grey:focus, .btn-grey:hover, .btn-cancelled:focus, .btn-cancelled:hover, .btn-cancelledbyuser:focus, .btn-cancelledbyuser:hover {
   background-color: var(--color-cancelled-shade); /* #929392; */
   border-color: var(--color-cancelled-shade);
@@ -140,11 +152,11 @@
   background-color: var(--color-denied-shade); /* #E43F32; */
   border-color: var(--color-denied-shade);
 }
-.btn-accent, .btn-approved,
-  .btn-yellow, .btn-inprogress,
-  .btn-draft,
-  .btn-cancelled, .btn-cancelledbyuser, .btn-grey,
-  .btn-denied, .btn-red, .btn-proposedchangesdenied  {
+.btn-accent, .btn-approved, .btn-confirmed,
+.btn-yellow, .btn-inprogress,
+.btn-draft,
+.btn-cancelled, .btn-cancelledbyuser, .btn-grey,
+.btn-denied, .btn-red, .btn-proposedchangesdenied  {
   color: var(--base-interface-stronger) !important;
 }
 .btn-primary, .btn-submitted {
@@ -160,7 +172,7 @@
 .text-primary, .text-submitted {
   color: var(--color-primary) !important;
 }
-.text-accent, .text-approved {
+.text-accent, .text-approved, .text-confirmed {
   color: var(--color-accent) !important;
 }
 .text-inprogress {
@@ -171,6 +183,9 @@
 }
 .text-pendingchanges {
   color: var(--color-pendingchanges) !important;
+}
+.text-pendingconfirmation {
+  color: var(--color-pendingconfirmation) !important;
 }
 .text-cancelled, .text-cancelledbyuser {
   color: var(--color-cancelled) !important;
@@ -186,7 +201,7 @@
 .border-submitted {
   border-color: var(--color-primary);
 }
-.border-approved {
+.border-approved, .border-confirmed {
   border-color: var(--color-accent);
 }
 .border-inprogress {
@@ -197,6 +212,9 @@
 }
 .border-pendingchanges {
   border-color: var(--color-pendingchanges) !important;
+}
+.border-pendingconfirmation {
+  border-color: var(--color-pendingconfirmation) !important;
 }
 .border-cancelled, .border-cancelledbyuser {
   border-color: var(--color-cancelled) !important;
