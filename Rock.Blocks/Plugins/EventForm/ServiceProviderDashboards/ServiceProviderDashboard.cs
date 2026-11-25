@@ -287,7 +287,7 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
                             validApproved.Add( item.Attributes[approved[i]].Name );
                         }
                     }
-                    for ( var i = 0; i <= denied.Count(); i++ )
+                    for ( var i = 0; i < denied.Count(); i++ )
                     {
                         if ( item.Attributes.ContainsKey( denied[i] ) )
                         {
@@ -346,6 +346,11 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
                 bool hasUnresolvedChange = false;
                 foreach ( var attr in item.Attributes )
                 {
+                    if ( attr.Key == "RequestIsValid" || attr.Key == "RequestErrors" )
+                    {
+                        //Outliers that cause the request not to resolve but don't matter from a data standpoint
+                        continue;
+                    }
                     if ( item.GetAttributeValue( attr.Key ) != changes.GetAttributeValue( attr.Key ) )
                     {
                         hasUnresolvedChange = true;
@@ -375,7 +380,7 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
 
                 if ( !hasUnresolvedChange )
                 {
-                    //Clean up Pending Changes Items and Update Request Status to Approved
+                    //Clean up Pending Changes Items and Update Request Status to Confirmed
                     cci_svc.Delete( changes );
                     ccia_svc.Delete( changesAssoc );
                     foreach ( ContentChannelItem detail in details )
@@ -385,7 +390,7 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
                         cci_svc.Delete( detailChanges );
                         ccia_svc.Delete( detailChangesAssoc );
                     }
-                    item.SetAttributeValue( "RequestStatus", "Approved" );
+                    item.SetAttributeValue( "RequestStatus", "Confirmed" );
                     item.SaveAttributeValue( "RequestStatus" );
                     rockContext.SaveChanges();
                 }
@@ -439,6 +444,39 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
                 if ( section != null )
                 {
                     message = section.section + " " + item.AttributeValues[statusKey].ValueFormatted + " for " + item.Title;
+                }
+                //If last Support Service was Resolved, update Request Status
+                bool hasUnresolvedService = false;
+                foreach ( DefinedValue service in SupportServices )
+                {
+                    string? attr = service.GetAttributeValue( "ServiceAttributeKey" );
+                    if ( !String.IsNullOrEmpty( attr ) )
+                    {
+                        bool? needsService = item.GetAttributeValue( attr ).AsBooleanOrNull();
+                        if ( needsService.HasValue && needsService.Value )
+                        {
+                            string? status = service.GetAttributeValue( "StatusAttributeKey" );
+                            if ( !String.IsNullOrEmpty( status ) )
+                            {
+                                int? serviceStatus = item.GetAttributeValue( status ).AsIntegerOrNull();
+                                if ( serviceStatus == 0 )
+                                {
+                                    hasUnresolvedService = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                if ( !hasUnresolvedService )
+                {
+                    //All Support Services Have Been Resolved
+                    string requestStatus = item.GetAttributeValue( "RequestStatus" );
+                    if ( requestStatus == "Pending Confirmation" )
+                    {
+                        item.SetAttributeValue( "RequestStatus", "Confirmed" );
+                        item.SaveAttributeValue( "RequestStatus" );
+                    }
                 }
                 return ActionOk( message );
             }
@@ -553,7 +591,7 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
 
             if ( statuses == null || statuses.Count == 0 )
             {
-                statuses = new List<string>() { "Approved", "In Progress", "Pending Changes", "Proposed Changes Denied", "Changes Accepted by User", "Cancelled by User" };
+                statuses = new List<string>() { "Pending Confirmation", "Confirmed", "In Progress", "Pending Changes", "Proposed Changes Denied", "Changes Accepted by User", "Cancelled by User" };
             }
 
             RockContext context = new RockContext();

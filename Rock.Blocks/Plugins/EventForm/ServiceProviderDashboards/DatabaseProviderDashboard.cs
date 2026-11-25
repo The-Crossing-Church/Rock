@@ -170,7 +170,7 @@ namespace Rock.Blocks.Plugins.EventDashboard.ServiceProviderDashboards
             }
             else
             {
-                statuses = new List<string>() { "Approved", "In Progress", "Pending Changes", "Proposed Changes Denied", "Changes Accepted by User" };
+                statuses = new List<string>() { "Confirmed", "Pending Confirmation", "Approved", "In Progress", "Pending Changes", "Proposed Changes Denied", "Changes Accepted by User" };
             }
             DateRangeParts eventDateRange = new DateRangeParts() { lowerValue = RockDateTime.Now.ToISO8601DateString() };
             return base.LoadRequests( null, statuses, option, eventDateRange, null, null, null, null, null );
